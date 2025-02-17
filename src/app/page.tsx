@@ -27,7 +27,7 @@ const LoginPage = () => {
 
  
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center " >
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white " >
       {message && (
         <div className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${messageType === "error" ? "bg-red-600 border-red-800" : "bg-green-600 border-green-800"} text-white`}>
           {message}
