@@ -1,6 +1,7 @@
 "use client";
 
-import Navbar from "../navbar/page";
+import Navbar from "@/app/navbar/page";
+
 
 const Dashboard = () => {
   return (
