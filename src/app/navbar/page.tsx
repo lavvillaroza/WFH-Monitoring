@@ -14,15 +14,13 @@ const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Map route paths to display names
     const pageTitles: { [key: string]: string } = {
-        "/dashboard": "Dashboard",
-        "/activityMonitoring": "Activity Monitoring",
-        "/approvals": "Approvals",
-        "/reports": "Reports",
-        "/screenCapture": "Screen Capture"
-    };
-
+      "/dashboard": "Dashboard",
+      "/activityMonitoring": "Activity Monitoring",
+      "/approvals": "Approvals",
+      "/reports": "Reports",
+      "/screenCapture": "Screen Capture"
+  };
     // Get the active page name
     const activePage = pageTitles[pathname] || "Dashboard";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Navbar from "../navbar/page";
+import Navbar from "@/app/navbar/page";
 import { useState } from "react";
 
 const Approvals = () => {
