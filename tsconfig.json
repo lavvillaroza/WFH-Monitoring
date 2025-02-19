@@ -63,7 +63,7 @@
     "electron/**/*",
     "next-env.d.ts",
     ".next/types/**/*.ts",
-    "src/global.d.ts",
+    "electron.d.ts",
   ],
   "exclude": [
     "node_modules"

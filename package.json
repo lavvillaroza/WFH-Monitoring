@@ -4,7 +4,7 @@
   "private": true,
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently \"next dev\" \"wait-on http://10.170.0.148:3000 && electron .\"",
+    "dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
     "build": "next build && electron-builder",
     "start": "next start",
     "lint": "next lint"

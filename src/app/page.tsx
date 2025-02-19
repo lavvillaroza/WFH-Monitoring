@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const LoginPage = () => {
@@ -33,17 +34,10 @@ const LoginPage = () => {
       }, 2000);
     }
   };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       {message && (
-        <div
-          className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${
-            messageType === "error"
-              ? "bg-red-600 border-red-800"
-              : "bg-green-600 border-green-800"
-          } text-white`}
-        >
+        <div className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${messageType === "error" ? "bg-red-600 border-red-800" : "bg-green-600 border-green-800"} text-white`}>
           {message}
         </div>
       )}
@@ -66,12 +60,7 @@ const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           <div className="card-actions justify-end">
-            <button
-              className="btn bg-[#2C6975] hover:bg-gray-600 text-white"
-              onClick={handleLogin}
-            >
-              Login
-            </button>
+            <button className="btn bg-[#2C6975] hover:bg-gray-600 text-white" onClick={handleLogin}>Login</button>
           </div>
         </div>
       </div>

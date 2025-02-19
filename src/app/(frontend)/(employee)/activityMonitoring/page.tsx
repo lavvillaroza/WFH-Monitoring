@@ -12,7 +12,7 @@ const ActivityMonitoring = () => {
             
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {/* Left Card */}
-              <div className="bg-gray-700 shadow-lg text-white p-6 rounded-lg">
+              <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
                 <h2 className="text-xl font-semibold">HUMAN ACTIVITY RECOGNITION</h2>
                 <p className="mt-2 text-sm text-gray-300">Alertness Report & Real-Time Alert Log.</p>
                 <ul className="mt-3 text-sm text-gray-400 list-disc list-inside">
@@ -26,7 +26,7 @@ const ActivityMonitoring = () => {
               </div>
   
               {/* Right Card */}
-              <div className="bg-gray-700 shadow-lg text-white p-6 rounded-lg">
+              <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
                 <h2 className="text-xl font-semibold">WAKEFULNESS DETECTION</h2>
                 <p className="mt-2 text-sm text-gray-300">
                   Recording of user interactions, including screen activity, keystrokes, and mouse movements.
@@ -41,7 +41,7 @@ const ActivityMonitoring = () => {
 
             {/* Row 1 - Full Width Card */}
             <div className="grid grid-cols-1">
-              <div className="bg-gray-700 shadow-lg text-white p-6 rounded-lg">
+              <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
                 <h2 className="text-xl font-semibold">SCREENCAST, KEYSTROKES AND MOUSE-CLICKS</h2>
                 <p className="mt-2 text-sm text-gray-300">
                   Activity Summary Report, Productivity Report, Inactivity/Idle Time Report, and Custom Activity Detection Report.
