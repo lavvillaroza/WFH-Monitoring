@@ -2,18 +2,37 @@
   "name": "wfh-monitoring-app",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "dev": "concurrently \"next dev\" \"wait-on http://10.170.0.148:3000 && electron .\"",
+    "build": "next build && electron-builder",
     "start": "next start",
     "lint": "next lint"
   },
+  "build": {
+    "appId": "com.yourcompany.timeapp",
+    "mac": {
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
   "dependencies": {
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.5",
     "daisyui": "^4.12.23",
+    "electron": "^20.2.0",
+    "electron-builder": "^25.1.8",
+    "express": "^4.21.2",
     "lucide-react": "^0.475.0",
-    "next": "15.1.7",
+    "next": "^15.1.7",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "wait-on": "^8.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

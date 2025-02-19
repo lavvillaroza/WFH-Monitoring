@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -8,7 +7,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
-  const router = useRouter(); // Use Next.js router
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -19,17 +18,32 @@ const LoginPage = () => {
       setMessageType("success");
 
       setTimeout(() => {
-        setMessage(""); 
-        router.push("/dashboard"); // Redirect to dashboard after login
+        setMessage("");
+        router.push("/dashboard"); // Redirect after login
+
+        // ✅ Send login event to Electron (Express server)
+        fetch("http://localhost:5000/login-success", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        })
+          .then((res) => res.json())
+          .then((data) => console.log("✅ Login event sent successfully:", data))
+          .catch((err) => console.error("❌ Error sending event:", err));
       }, 2000);
     }
   };
 
- 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white " >
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       {message && (
-        <div className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${messageType === "error" ? "bg-red-600 border-red-800" : "bg-green-600 border-green-800"} text-white`}>
+        <div
+          className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${
+            messageType === "error"
+              ? "bg-red-600 border-red-800"
+              : "bg-green-600 border-green-800"
+          } text-white`}
+        >
           {message}
         </div>
       )}
@@ -52,11 +66,17 @@ const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
           <div className="card-actions justify-end">
-            <button className="btn bg-[#2C6975] hover:bg-gray-600 text-white" onClick={handleLogin}>Login</button>
+            <button
+              className="btn bg-[#2C6975] hover:bg-gray-600 text-white"
+              onClick={handleLogin}
+            >
+              Login
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
 export default LoginPage;
