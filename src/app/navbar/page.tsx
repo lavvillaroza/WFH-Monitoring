@@ -166,7 +166,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Mobile Menu */}
-                <div className={`${isOpen ? "block" : "hidden"} md:hidden bg-[#135D66] py-2`}>
+                <div className={`${isOpen ? "block" : "hidden"} md:hidden bg-[#135D66] py-2 bg-white shadow-md text-gray-600`}>
                     {Object.keys(pageTitles).map((path) => (
                         path !== "/dtr" && path !== "/leaves" && path !== "/dtr-problem" && path !== "/overtime" ? (
                             <Link
