@@ -1,6 +1,8 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
+import dynamic from "next/dynamic";
+
 
 const ActivityMonitoring = () => {
     return (

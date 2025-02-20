@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, UserCircle, LogOut, CheckCircle, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const Navbar = () => {
+const NavbarEmployer = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [logoutMessage, setLogoutMessage] = useState(false);
@@ -15,12 +15,13 @@ const Navbar = () => {
     const pathname = usePathname();
 
     const pageTitles: { [key: string]: string } = {
-      "/dashboard": "Dashboard",
-      "/activityMonitoring": "Activity Monitoring",
-      "/approvals": "Approvals",
-      "/reports": "Reports",
-      "/screenCapture": "Screen Capture",
-    
+      "/employerDashboard": "Dashboard",
+      "/employeeMonitoring": "Employee Monitoring",
+      "/approvalRequest": "Approval Request",
+      "/manageEmployee": "Manage Employee",
+      "/employerReports": "Reports",
+      "/screenCapture": "Screen Capture"
+      
   };
     // Get the active page name
     const activePage = pageTitles[pathname] || "Dashboard";
@@ -61,10 +62,10 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="bg-gray-700 shadow-md text-white relative z-50">
+            <nav className="custom-card-bg shadow-md  relative z-50">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center">
-                        <button className="md:hidden text-white mr-3" onClick={() => setIsOpen(!isOpen)}>
+                        <button className="md:hidden text-red mr-3" onClick={() => setIsOpen(!isOpen)}>
                             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
                         <div className="hidden md:flex space-x-6">
@@ -72,7 +73,8 @@ const Navbar = () => {
                                 <Link
                                     key={path}
                                     href={path}
-                                    className={`${pathname === path ? "bg-[#FFFFFF] text-gray-700" : "text-white"} hover:bg-[#FFFFFF] hover:text-black px-3 py-2 rounded`}
+                                    className={`${pathname === path ? "bg-[#FFFFFF] text-gray-700 font-semibold text-lg" : "text-gray-400 text-base"} hover:bg-[#FFFFFF] hover:text-black px-2 py-2 rounded`}
+
                                 >
                                     {pageTitles[path]}
                                 </Link>
@@ -124,16 +126,16 @@ const Navbar = () => {
             {/* Card Below Navbar */}
             <div className="container mx-auto mt-6 p-6 bg-gray-700 shadow-xl flex justify-between items-center">
                 <h1 className="text-xl font-semibold text-white">{activePage}</h1>
-                <div className="flex items-center space-x-4 text-sm">
+                {/* <div className="flex items-center space-x-4 text-sm">
                     <span className="text-gray-300">{timezone}</span>
                     <button className="bg-purple-600 text-white px-4 py-1 rounded-full flex items-center">
                         <Play className="w-4 h-4 mr-1" /> Play
                     </button>
                     <span className="text-gray-300">{currentTime}</span>
-                </div>
+                </div> */}
             </div>
         </>
     );
 };
 
-export default Navbar;
+export default NavbarEmployer;

@@ -19,3 +19,11 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.custom-card-bg {
+  @apply bg-white text-gray-900 shadow-lg rounded-lg p-6;
+}
+
+.for-idle-status {
+  @apply text-[#FFC107]; 
+}
