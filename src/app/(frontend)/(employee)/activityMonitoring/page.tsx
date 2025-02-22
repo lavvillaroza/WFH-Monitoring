@@ -7,9 +7,11 @@ import * as faceapi from "face-api.js";
 const ActivityMonitoring = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [drowsinessStatus, setDrowsinessStatus] = useState("Analyzing...");
+  const [previousStatus, setPreviousStatus] = useState("Analyzing...");
   const [alertLog, setAlertLog] = useState<{ timestamp: string; activity: string }[]>([]);
   const [drowsyCount, setDrowsyCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const drowsyTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -35,32 +37,57 @@ const ActivityMonitoring = () => {
         const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions())
           .withFaceLandmarks();
 
-        if (detections.length > 0) {
+        let newStatus = "Analyzing...";
+        let detect = detections.map(d => d.detection.score);
+        console.log(detect);
+
+        if (detect.length > 0 && detect.some(score => score > 0.5)) {
           const landmarks = detections[0].landmarks;
           const leftEye = landmarks.getLeftEye();
           const rightEye = landmarks.getRightEye();
-          const eyeClosed = isEyeClosed(leftEye) && isEyeClosed(rightEye);
-
-          if (eyeClosed) {
-            setDrowsinessStatus("Sleeping");
-            setDrowsyCount(prev => prev + 1);
-            addLog("Eyes closed detected");
+          const leftEAR = calculateEAR(leftEye);
+          const rightEAR = calculateEAR(rightEye);
+          const avgEAR = (leftEAR + rightEAR) / 2;
+            console.log(avgEAR);
+          if (avgEAR < 0.30) {
+            newStatus = "Sleeping";
           } else {
-            setDrowsinessStatus("Awake");
-            setDrowsyCount(0);
-            addLog("User is alert");
+            newStatus = "Awake";
           }
         } else {
-          setDrowsinessStatus("Out of frame");
-          addLog("User out of camera view");
+          newStatus = "Out of frame";
+        }
+
+        if (newStatus !== previousStatus) {
+          setPreviousStatus(newStatus);
+          setDrowsinessStatus(newStatus);
+          addLog(newStatus);
+        }
+
+        if (newStatus === "Sleeping" || newStatus === "Out of frame") {
+          setDrowsyCount((prev) => prev + 1);
+          if (!drowsyTimer.current) {
+            drowsyTimer.current = setTimeout(() => {
+              setShowModal(true);
+              setDrowsyCount(0);
+              drowsyTimer.current = null;
+            }, 300000); // 5 minutes
+          }
+        } else {
+          setDrowsyCount(0);
+          if (drowsyTimer.current) {
+            clearTimeout(drowsyTimer.current);
+            drowsyTimer.current = null;
+          }
         }
       }
     };
 
-    const isEyeClosed = (eye: faceapi.Point[]) => {
-      const verticalDistance = Math.abs(eye[1].y - eye[5].y);
-      const horizontalDistance = Math.abs(eye[0].x - eye[3].x);
-      return verticalDistance / horizontalDistance < 0.2;
+    const calculateEAR = (eye: faceapi.Point[]) => {
+      const a = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+      const b = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+      const c = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+      return (a + b) / (2.0 * c);
     };
 
     const addLog = (activity: string) => {
@@ -68,22 +95,15 @@ const ActivityMonitoring = () => {
         timestamp: new Date().toLocaleTimeString(),
         activity,
       };
-      setAlertLog(prevLogs => [newLog, ...prevLogs.slice(0, 1000)]);
+      setAlertLog((prevLogs) => [newLog, ...prevLogs.slice(0, 1000)]);
     };
 
     const faceTrackingInterval = setInterval(detectFace, 500);
-
     return () => {
       clearInterval(faceTrackingInterval);
     };
-  }, []);
+  }, [previousStatus]);
 
-  useEffect(() => {
-    if (drowsyCount >= 5) {
-      setShowModal(true);
-      setDrowsyCount(0);
-    }
-  }, [drowsyCount]);
   const getStatusColor = () => {
     switch (drowsinessStatus) {
       case "Awake": return "text-green-500";
@@ -92,10 +112,10 @@ const ActivityMonitoring = () => {
       default: return "text-blue-500";
     }
   };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-
       <div className="container mx-auto p-2 mt-2">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -115,11 +135,9 @@ const ActivityMonitoring = () => {
             <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
               <h2 className="text-xl font-semibold">WAKEFULNESS DETECTION</h2>
               <p className="mt-2 text-sm text-gray-300">Live monitoring for drowsiness detection.</p>
-
               <div className="mt-4 flex justify-center relative">
                 <video ref={videoRef} autoPlay playsInline className="w-80 h-80 border rounded-md shadow-md" />
               </div>
-
               <p className="mt-4 text-lg font-semibold text-center">
                 Status: <span className={`${getStatusColor()}`}>{drowsinessStatus}</span>
               </p>
