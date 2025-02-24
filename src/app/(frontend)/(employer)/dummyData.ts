@@ -11,6 +11,7 @@ export type Employee = {
   };
   activityLog: { date: string; log: string; status: string }[];
   attendance: { date: string; loginTime: string; logoutTime: string; hoursWorked: string }[];
+  productivity: { productive: number; idle: number };
 };
 
 export const employees: Employee[] = [
@@ -33,6 +34,7 @@ export const employees: Employee[] = [
       { date: "2024-02-18", loginTime: "07:00 AM", logoutTime: "04:00 PM", hoursWorked: "9 hours" },
       { date: "2024-02-19", loginTime: "08:00 AM", logoutTime: "05:00 PM", hoursWorked: "9 hours" },
     ],
+    productivity: { productive: 70, idle: 30 },
   },
   {
     id: 2,
@@ -52,6 +54,7 @@ export const employees: Employee[] = [
       { date: "2024-02-18", loginTime: "08:00 AM", logoutTime: "05:00 PM", hoursWorked: "9 hours" },
       { date: "2024-02-19", loginTime: "09:00 AM", logoutTime: "06:00 PM", hoursWorked: "9 hours" },
     ],
+    productivity: { productive: 80, idle: 20 },
   },
   {
     id: 3,
@@ -71,5 +74,6 @@ export const employees: Employee[] = [
       { date: "2024-02-18", loginTime: "08:30 AM", logoutTime: "04:30 PM", hoursWorked: "8 hours" },
       { date: "2024-02-19", loginTime: "09:00 AM", logoutTime: "05:00 PM", hoursWorked: "8 hours" },
     ],
+    productivity: { productive: 60, idle: 40 },
   },
 ];

@@ -1,53 +1,65 @@
 "use client";
 
-import { useState } from "react";
-import { employees, Employee } from "../dummyData";
-import CustomPieChart from "../PieChartComponent";
-import NavbarEmployer from "@/app/navbarEmployer/page";
 
+import { employees, Employee } from "../dummyData";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+import NavbarEmployer from "@/app/navbarEmployer/page";
+import { useState, useEffect } from "react";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [sortStatus, setSortStatus] = useState<string>("All");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // Modal Filters
-  const [filterStatus, setFilterStatus] = useState<string>("All");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
+  const [todayDate, setTodayDate] = useState("");
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Idle":
-        return "text-[#FFC107]";
-      case "Active":
-        return "text-green-500";
-      case "On Meeting":
-        return "text-blue-500";
-      default:
-        return "text-gray-500";
-    }
+  useEffect(() => {
+    const date = new Date().toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "Asia/Manila", // Set to PH timezone
+    });
+    setTodayDate(date);
+  }, []);
+
+ 
+
+  const calculateAverageProductivity = () => {
+    const totalEmployees = employees.length;
+    const totalProductive = employees.reduce((sum, emp) => sum + (emp.productivity?.productive || 0), 0);
+    const totalIdle = employees.reduce((sum, emp) => sum + (emp.productivity?.idle || 0), 0);
+    
+    return {
+      productive: totalEmployees ? totalProductive / totalEmployees : 0,
+      idle: totalEmployees ? totalIdle / totalEmployees : 0,
+    };
   };
 
-  // Filter Employees by Status
-  const filteredEmployees = sortStatus === "All"
-    ? employees
-    : employees.filter(emp => emp.status === sortStatus);
-
-  // Filter Activity Log based on status and date range
-  const filteredActivityLog = selectedEmployee?.activityLog.filter((log) => {
-    const matchesStatus = filterStatus === "All" || log.status === filterStatus;
-    
-    const logDate = new Date(log.date);
-    const fromDate = dateFrom ? new Date(dateFrom) : null;
-    const toDate = dateTo ? new Date(dateTo) : null;
-
-    const matchesDate =
-      (!fromDate || logDate >= fromDate) &&
-      (!toDate || logDate <= toDate);
-
-    return matchesStatus && matchesDate;
-  }) || [];
+  const getDonutData = (employee: Employee | null) => {
+    if (!employee) {
+      const avg = calculateAverageProductivity();
+      return {
+        labels: ["Productive Tasks", "Idle Time"],
+        datasets: [{
+          data: [avg.productive, avg.idle],
+          backgroundColor: ["#4CAF50", "#FFC107"],
+          hoverBackgroundColor: ["#45a049", "#ffca2c"],
+        }],
+      };
+    }
+    return {
+      labels: ["Productive Tasks", "Idle Time"],
+      datasets: [{
+        data: [employee.productivity?.productive || 0, employee.productivity?.idle || 0],
+        backgroundColor: ["#4CAF50", "#FFC107"],
+        hoverBackgroundColor: ["#45a049", "#ffca2c"],
+      }],
+    };
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -55,11 +67,10 @@ const Dashboard = () => {
       <div className="container mx-auto p-4 mt-4">
         <div className="space-y-6">
           <div className="flex gap-4">
-            {/* Employee List + Filter */}
-            <div className="w-[30%] bg-white shadow-lg p-6 rounded-lg h-screen">
+            
+           {/* Employee list */}
+            {/* <div className="w-[30%] bg-white shadow-lg p-6 rounded-lg h-screen">
               <h2 className="text-xl font-semibold text-gray-700">Employee List</h2>
-
-              {/* Dropdown Filter */}
               <select
                 className="mt-3 w-full p-2 border bg-white rounded-md text-gray-700"
                 value={sortStatus}
@@ -70,117 +81,56 @@ const Dashboard = () => {
                 <option value="Idle">Idle</option>
                 <option value="On Meeting">On Meeting</option>
               </select>
-
-              {/* Employee List */}
               <div className="mt-4 space-y-3">
-                {filteredEmployees.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200"
-                    onClick={() => setSelectedEmployee(employee)}
-                  >
-                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
-                    <p className={`mt-1 text-sm font-medium ${getStatusColor(employee.status)}`}>
-                      {employee.status}
-                    </p>
-                  </div>
+                {employees.filter(emp => sortStatus === "All" || emp.status === sortStatus)
+                  .map((employee) => (
+                    <div key={employee.id} className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200" onClick={() => setSelectedEmployee(employee)}>
+                      <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
+                      <p className={`mt-1 text-sm font-medium ${getStatusColor(employee.status)}`}>{employee.status}</p>
+                    </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
-            {/* Right Section: Pie Chart + Activity Logs */}
-            <div className="w-[70%] flex flex-col gap-4">
-              {/* Dynamic Pie Chart */}
-              <div className="w-full bg-white shadow-lg p-6 rounded-lg">
-                <h2 className="text-xl font-semibold pb-3 text-gray-700"> Employee Activity Chart {selectedEmployee ? selectedEmployee.name : ""}</h2>
-                <CustomPieChart employee={selectedEmployee} />
+
+        {/* Employee List */}
+          <div className="w-[50%] h-[50vh] overflow-y-auto p-4 bg-white shadow-lg rounded-lg flex flex-col items-start justify-start text-left">
+            <p className="text-md text-gray-500 mb-2">{todayDate}</p>
+            <h2 className="text-lg font-semibold pb-3 text-gray-700">Employee Activity Chart</h2>
+            <p className="text-md text-gray-600 mb-2">
+              Total Employees: <span className="font-bold">{employees.length}</span>
+            </p>
+
+            {/* Doughnut Chart & Labels */}
+            <div className="flex items-center w-full">
+              {/* Doughnut Chart */}
+              <div className="w-[280px] h-[280px]"> 
+                <Doughnut data={getDonutData(selectedEmployee)} options={{ maintainAspectRatio: false }} />
               </div>
 
-              {/* Activity Logs - Two Sections */}
-              <div className="flex gap-4">
-                {/* Activity Log */}
-                <div className="w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px] flex flex-col">
-                  <h2 className="text-xl font-semibold pb-3 text-gray-700">Activity Log</h2>
-
-                  {selectedEmployee ? (
-                    <ul className="mt-3 text-sm text-gray-500 list-disc list-inside flex-1">
-                      {selectedEmployee.activityLog.slice(0, 5).map((log, index) => (
-                        <li key={index}>{log.date} - {log.log} ({log.status})</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-400 flex-1">Click an employee to view activity.</p>
-                  )}
-
-                  {/* More Button Inside Card */}
-                  {selectedEmployee && (
-                    <button
-                      className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-600"
-                      onClick={() => setIsModalOpen(true)}
-                    >
-                      More in Activity Log
-                    </button>
-                  )}
-                </div>
-
-                {/* Wakefulness Detection */}
-                <div className="w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
-                  <h2 className="text-xl font-semibold pb-3 text-gray-700">Wakefulness Detection</h2>
-
-                  {selectedEmployee ? (
-                    <div className="space-y-2 text-gray-600 text-sm">
-                      <p><strong>Blink Rate:</strong> {selectedEmployee.activeness.blinkRate}</p>
-                      <p><strong>Active Duration:</strong> {selectedEmployee.activeness.duration}</p>
-                      <p><strong>Yawning Frequency:</strong> {selectedEmployee.activeness.yawningFrequency}</p>
-                      <p><strong>Nodding Motions:</strong> {selectedEmployee.activeness.nodMotions}</p>
-                      <p><strong>Drowsiness Detection:</strong> {selectedEmployee.activeness.drowsinessDetection}</p>
-                    </div>
-                  ) : (
-                    <p className="text-gray-400">Click an employee to view alertness details.</p>
-                  )}
-                </div>
+              {/* Labels for Total Time */}
+              <div className="ml-6 text-sm text-gray-700">
+                <p><span className="font-bold text-green-600">Productive Time:</span> 70 hrs</p>
+                <p><span className="font-bold text-yellow-500">Idle Time:</span> 30 hrs</p>
+                <p><span className="font-bold text-red-600">Inactive:</span> 2 </p>
+                <p><span className="font-bold text-orange-500">Active:</span> 1 </p>
               </div>
             </div>
           </div>
-        </div>
-      </div>  
 
-      {/* Modal for Full Activity Log */}
-      {isModalOpen && selectedEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-            <h2 className="text-xl font-semibold pb-3 text-gray-700">Full Activity Log</h2>
 
-            {/* Status Filter */}
-            <select
-              className="w-full p-2 border rounded-md bg-gray-300 text-gray-700 mb-3"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="All">All</option>
-              <option value="Active">Active</option>
-              <option value="Idle">Idle</option>
-              <option value="On Meeting">On Meeting</option>
-            </select>
-
-            {/* Date Range Filter */}
-            <input type="date" className="p-2 border rounded-md w-full  bg-gray-300 text-gray-700 mb-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-            <input type="date" className="p-2 border rounded-md w-full  bg-gray-300 text-gray-700 mb-3" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-
-            <ul className="text-sm text-gray-600 max-h-60 overflow-y-auto">
-              {filteredActivityLog.map((log, index) => (
-                <li key={index} className="py-1 border-b">{log.date} - {log.log} ({log.status})</li>
-              ))}
-            </ul>
-
-            <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-600" onClick={() => setIsModalOpen(false)}>
-              Close
-            </button>
+            <div className="w-[50%] h-[50vh] overflow-y-auto p-3 bg-white shadow-lg rounded-lg">
+              <h2 className="text-xl font-semibold pb-3 text-gray-700">Employee Activity Chart</h2>
+              <Doughnut data={getDonutData(selectedEmployee)} />
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
 export default Dashboard;
+
+
+
