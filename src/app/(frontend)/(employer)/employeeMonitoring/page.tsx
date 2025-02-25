@@ -9,6 +9,8 @@ const EmployeeMonitoring = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [sortStatus, setSortStatus] = useState<string>("All");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Modal Filters
   const [filterStatus, setFilterStatus] = useState<string>("All");
@@ -163,14 +165,29 @@ const EmployeeMonitoring = () => {
             </select>
 
             {/* Date Range Filter */}
-            <input type="date" className="p-2 border rounded-md w-full  bg-gray-300 text-gray-700 mb-2" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-            <input type="date" className="p-2 border rounded-md w-full  bg-gray-300 text-gray-700 mb-3" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              {/* Start Date */}
+              <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                    className="mt-1 block w-full p-2 border rounded-md"
+                  />
+                </div>
 
-            <ul className="text-sm text-gray-600 max-h-60 overflow-y-auto">
-              {filteredActivityLog.map((log, index) => (
-                <li key={index} className="py-1 border-b">{log.date} - {log.log} ({log.status})</li>
-              ))}
-            </ul>
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    required
+                    className="mt-1 block w-full p-2 border rounded-md"
+                  />
+                </div>
 
             <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-600" onClick={() => setIsModalOpen(false)}>
               Close
