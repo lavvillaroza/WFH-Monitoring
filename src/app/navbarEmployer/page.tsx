@@ -83,7 +83,7 @@ const NavbarEmployer = () => {
                     </div>
 
                     <div className="relative">
-                        <button className="flex items-center space-x-2 text-white" onClick={() => setProfileOpen(!profileOpen)}>
+                        <button className="flex items-center space-x-2 text-black" onClick={() => setProfileOpen(!profileOpen)}>
                             <UserCircle className="w-6 h-6" />
                             <span>Jaykko Takahashi</span>
                         </button>
