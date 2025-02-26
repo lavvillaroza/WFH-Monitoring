@@ -8,32 +8,64 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [showPassword, setshowPassword] = useState(false);
   const router = useRouter();
+  
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    if (authToken) {
+      router.push("/dashboard");
+      return;
+    }
+    });
+
+const handleRegister = async() => {
+router.push("/register");
+}
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setMessage("Username and password cannot be empty!");
+      setMessage("Email and password cannot be empty!");
       setMessageType("error");
-    } else {
-      setMessage("Logging in...");
+      return;
+    }
+  
+    try {
+      const response = await fetch(`/employeeAPI/user?email=${email}&password=${password}`, { 
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+      setMessage("Login successful!");
       setMessageType("success");
-
+    localStorage.setItem("user", JSON.stringify({ 
+         id: data.user.id,
+         name: data.user.name, 
+         email: data.user.email
+       }));
+    localStorage.setItem("authToken", data.token);
+    
       setTimeout(() => {
         setMessage("");
-        router.push("/dashboard"); // Redirect after login
-
-        // ✅ Send login event to Electron (Express server)
-        fetch("http://localhost:5000/login-success", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        })
-          .then((res) => res.json())
-          .then((data) => console.log("✅ Login event sent successfully:", data))
-          .catch((err) => console.error("❌ Error sending event:", err));
+        router.push("/dashboard");
       }, 2000);
+    } catch (error: any) {
+      setMessage(error.message);
+      setMessageType("error");
     }
   };
+  
+
+  const handleShowPassword = async() =>{
+    setshowPassword((prev) => !prev);
+  }
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white">
       {message && (
@@ -41,27 +73,33 @@ const LoginPage = () => {
           {message}
         </div>
       )}
-      <div className="card w-96 bg-gray-600 shadow-xl border border-[#2C6975] text-white">
+      <div className="card w-96 bg-white-600 shadow-xl border border-[#2C6975] text-black">
         <div className="card-body">
-          <h2 className="card-title">Welcome to Next.js App with DaisyUI!</h2>
-          <p>Please login to continue</p>
+          <h2>LOGIN</h2>
           <input
             type="email"
             placeholder="Email"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
+            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
+            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <p><input
+            type="checkbox"
+            placeholder="Password"
+            className=" mt-2 bg-white-100 text-black border-[#2C6975]"
+            onClick={handleShowPassword}
+          /> Show Password</p>
           <div className="card-actions justify-end">
-            <button className="btn bg-[#2C6975] hover:bg-gray-600 text-white" onClick={handleLogin}>Login</button>
+            <button className="btn bg-[#2C6975] hover:bg-gray-600 bg-black text-white" onClick={handleLogin}>Login</button>
           </div>
+          <a onClick={handleRegister}>Click here to register.</a>
         </div>
       </div>
     </div>

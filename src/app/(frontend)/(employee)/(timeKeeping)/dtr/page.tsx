@@ -1,15 +1,27 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText } from "lucide-react"; // Importing the icon for export to PDF
+import { useRouter } from "next/navigation";
 
 const DailyTimeRecord = () => {
   const [currentPage, setCurrentPage] = useState(1); // Track the current page
   const [startDate, setStartDate] = useState(""); // Start date for filter
   const [endDate, setEndDate] = useState(""); // End date for filter
   const totalPages = 3; // Total number of pages (for simplicity)
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+      setLoading(false); // User is authenticated, stop loading
+    }
+  }, []);
   // Handle page change
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -37,7 +49,7 @@ const DailyTimeRecord = () => {
         <div className="space-y-6">
           {/* Row 1 - Filter and Export Button */}
           <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 "> 
             <h1>Filter By:</h1>
               {/* Date Range Filter */}
               <input
@@ -76,9 +88,10 @@ const DailyTimeRecord = () => {
               <h2 className="text-xl font-semibold mb-4">DAILY TIME RECORD</h2>
 
               {/* Table */}
-              <table className="min-w-full table-auto bg-white">
+              <div className="overflow-x-auto">
+                <table className="table table-xs">
                 <thead>
-                  <tr>
+                  <tr className="bg-gray-200">
                     <th className="px-4 py-2 border-b text-black text-center">Date</th>
                     <th className="px-4 py-2 border-b text-black text-center">Day</th>
                     <th className="px-4 py-2 border-b text-black text-center">Check In</th>
@@ -106,7 +119,7 @@ const DailyTimeRecord = () => {
                   </tr>
                 </tbody>
               </table>
-
+            </div>
               {/* Pagination */}
               <div className="flex justify-between items-center mt-4">
                 <button

@@ -3,6 +3,8 @@
 import Navbar from "@/app/navbar/page";
 import { useState, useEffect, useRef } from "react";
 import * as faceapi from "face-api.js";
+import { useRouter } from "next/navigation";
+
 
 const ActivityMonitoring = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -12,14 +14,24 @@ const ActivityMonitoring = () => {
   const [drowsyCount, setDrowsyCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const drowsyTimer = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
+  
   useEffect(() => {
     const loadModels = async () => {
       await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
       await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
       await faceapi.nets.faceRecognitionNet.loadFromUri("/models");
     };
-
+      const authToken = localStorage.getItem("authToken");
+  
+      if (!authToken) {
+        router.push("/"); // Redirect if not logged in
+      } else {
+        setLoading(false); // User is authenticated, stop loading
+      }
+    
     loadModels();
 
     const startCamera = async () => {
@@ -39,16 +51,13 @@ const ActivityMonitoring = () => {
 
         let newStatus = "Analyzing...";
         let detect = detections.map(d => d.detection.score);
-        console.log(detect);
-
-        if (detect.length > 0 && detect.some(score => score > 0.5)) {
+        if (detect.length > 0 && detect.some(score => score > 0.7)) {
           const landmarks = detections[0].landmarks;
           const leftEye = landmarks.getLeftEye();
           const rightEye = landmarks.getRightEye();
           const leftEAR = calculateEAR(leftEye);
           const rightEAR = calculateEAR(rightEye);
           const avgEAR = (leftEAR + rightEAR) / 2;
-            console.log(avgEAR);
           if (avgEAR < 0.30) {
             newStatus = "Sleeping";
           } else {
@@ -143,6 +152,22 @@ const ActivityMonitoring = () => {
               </p>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
+              <h2 className="text-xl font-semibold">BROWSER ACTIVITY LOGS</h2>
+              <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
+                <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
+               
+              </div>
+            </div>
+            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
+              <h2 className="text-xl font-semibold">APPLICATIONS ACTIVITY LOGS</h2>
+              <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
+                <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
+               
+              </div>
+            </div>
+            </div>
         </div>
       </div>
 

@@ -12,10 +12,11 @@ const Navbar = () => {
     const [currentTime, setCurrentTime] = useState("");
     const [timezone, setTimezone] = useState("");
     const [timekeepingOpen, setTimekeepingOpen] = useState(false);
-    const [formsDropdownOpen, setFormsDropdownOpen] = useState(false); // New state for the "Forms" dropdown
+    const [formsDropdownOpen, setFormsDropdownOpen] = useState(false); 
     const router = useRouter();
     const pathname = usePathname();
-
+    const [user, setUser] = useState<{ name: string; email: string } | null>(null); 
+    
     const pageTitles: { [key: string]: string } = {
         "/dashboard": "Dashboard",
         "/activityMonitoring": "Activity Monitoring",
@@ -27,6 +28,13 @@ const Navbar = () => {
 
     // Get the active page name
     const activePage = pageTitles[pathname] || "Dashboard";
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
 
     // Update time every second
     useEffect(() => {
@@ -57,16 +65,17 @@ const Navbar = () => {
 
         setTimeout(() => {
             setLogoutMessage(false);
-            router.push("/");
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("user"); 
+            router.push("/"); 
         }, 2000);
     };
 
-    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (!(event.target as HTMLElement).closest(".dropdown-container")) {
                 setTimekeepingOpen(false);
-                setFormsDropdownOpen(false); // Close the "Forms" dropdown when clicking outside
+                setFormsDropdownOpen(false); 
             }
         };
 
@@ -145,13 +154,12 @@ const Navbar = () => {
                     <div className="relative">
                         <button className="flex items-center space-x-2 text-gray-600" onClick={() => setProfileOpen(!profileOpen)}>
                             <UserCircle className="w-6 h-6" />
-                            <span>Jaykko Takahashi</span>
+                            <span>{user?.name || "Guest"}</span>
                         </button>
                         {profileOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg">
                                 <div className="p-2 border-b">
-                                    <p className="text-sm font-semibold">Jaykko Takahashi</p>
-                                    <p className="text-xs text-gray-500">jaykkotakahashi1104@gmail.com</p>
+                                    <p className="text-xs text-gray-500">{user ? user.email : "Guest"}</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}

@@ -1,129 +1,198 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
-import { useState } from "react";
-import { FileText, MoreVertical, Plus } from "lucide-react";
+import { MoreVertical, Plus, Edit, Trash } from "lucide-react";
 import DTRPModal from "../modals/dtrp-form/page";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const DailyTimeRecord = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [filterType, setFilterType] = useState("");
+  const [status, setStatus] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const totalPages = 3;
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const router = useRouter();
+  const [records, setRecords] = useState([]); 
 
-  const records = [
-    { date: "2025-02-15", time: "08:00 AM", type: "Time in", remarks: "Forgot to time in", status: "Pending" },
-    { date: "2025-02-16", time: "05:10 PM", type: "Time out", remarks: "Forgot to time out", status: "Approved" },
-  ];
 
-  const handlePageChange = (pageNumber:any) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
+  useEffect(() => {
+    fetchRecords();
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        Object.values(dropdownRefs.current).some(
+          (ref) => ref && ref.contains(event.target as Node)
+        )
+      ) {
+        return;
+      }
+      setDropdownOpen(null);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [currentPage, rowsPerPage, message]);
+
+  const fetchRecords = async () => {
+    setLoading(true);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const userID = storedUser?.id;
+      const response = await fetch(`/employeeAPI/dtrp?userID=${userID}`);
+      if (!response.ok) {
+        // 🚀 Handle different error types
+        if (response.status === 400) throw new Error("User ID is required");
+        if (response.status === 404) throw new Error("No records found for this user");
+        throw new Error("Failed to fetch records");
+      }
+      const data = await response.json();
+      console.log("Fetched Data:", data); 
+      setRecords(data);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error("Error fetching records:", error);
     }
+    setLoading(false);
   };
 
-  const handleDateRangeChange = () => {
-    console.log(`Filtering from ${startDate} to ${endDate}`);
+  const handleAddEditRecord = async (record) => {
+    try {
+      const method = record.id ? "PUT" : "POST";
+      await fetch(`/employeeAPI/dtrp${record.id ? `/${record.id}` : ""}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record),
+      });
+      setMessage(record.id ? "Record updated successfully" : "Record added successfully");
+      setMessageType("success");
+      fetchRecords();
+    } catch (error) {
+      setMessage("Error saving record");
+      setMessageType("error");
+    }
+    setIsModalOpen(false);
   };
 
-  const handleExportToPDF = () => {
-    console.log("Exporting to PDF...");
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this record?")) return;
+    try {
+      await fetch(`/employeeAPI/dtrp/${id}`, { method: "DELETE" });
+      setMessage("Record deleted successfully");
+      setMessageType("success");
+      fetchRecords();
+    } catch (error) {
+      setMessage("Error deleting record");
+      setMessageType("error");
+    }
   };
 
   return (
     <div className="min-h-screen shadow-md bg-white">
       <Navbar />
-
+      {message && (
+        <div className={`fixed top-4 right-4 p-3 rounded-lg shadow-lg border ${messageType === "error" ? "bg-red-600 border-red-800" : "bg-green-600 border-green-800"} text-white z-50`}>
+          {message}
+        </div>
+      )}
       <div className="container mx-auto p-2 mt-2">
-        <div className="space-y-6">
-          {/* Row 1 - Filter, Export, and Add Button */}
-          <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-4">
               <h1>Filter By:</h1>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-2 border rounded-md"
-              />
-              <span>to</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-2 border rounded-md"
-              />
-              <button
-                onClick={handleDateRangeChange}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md"
-              >
-                Filter
-              </button>
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-4 py-2 border rounded-md">
+                <option value="">Select Filter</option>
+                <option value="type">Type</option>
+                <option value="dateRange">Date Range</option>
+                <option value="status">Status</option>
+              </select>
+              {filterType === "dateRange" && (
+                <>
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-4 py-2 border rounded-md" />
+                  <span>to</span>
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-4 py-2 border rounded-md" />
+                </>
+              )}
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-md">Filter</button>
             </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md"
-              >
-                <Plus className="w-5 h-5 mr-2" /> Add
-              </button>
-            </div>
+            <button onClick={() => setIsModalOpen(true)} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md">
+              <Plus className="w-5 h-5 mr-2" /> Add
+            </button>
           </div>
 
-          {/* Table */}
-          <div className="grid grid-cols-1">
-            <div className="card bg-white shadow-xl text-black p-10">
-              <h2 className="text-xl font-semibold mb-4">DAILY TIME RECORD PROBLEM</h2>
-              <table className="min-w-full table-auto bg-white border">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="px-4 py-2 border text-black text-center">Date</th>
-                    <th className="px-4 py-2 border text-black text-center">Time</th>
-                    <th className="px-4 py-2 border text-black text-center">Type</th>
-                    <th className="px-4 py-2 border text-black text-center">Remarks</th>
-                    <th className="px-4 py-2 border text-black text-center">Status</th>
-                    <th className="px-4 py-2 border text-black text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {records.map((record, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="px-4 py-2 text-black text-center">{record.date}</td>
-                      <td className="px-4 py-2 text-black text-center">{record.time}</td>
-                      <td className="px-4 py-2 text-black text-center">{record.type}</td>
-                      <td className="px-4 py-2 text-black text-center">{record.remarks}</td>
-                      <td
-                        className={`px-4 py-2 text-center ${
-                          record.status === "Pending" ? "text-yellow-600" : "text-green-600"
-                        }`}
-                      >
-                        {record.status}
-                      </td>
-                      <td className="px-4 py-2 text-center">
-                        {record.status === "Pending" && (
-                          <div className="relative group inline-block">
-                            <button className="p-2 rounded-md hover:bg-gray-200">
-                              <MoreVertical className="w-5 h-5" />
-                            </button>
-                            <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <button className="block px-4 py-2 w-full text-left hover:bg-gray-100">Edit</button>
-                              <button className="block px-4 py-2 w-full text-left hover:bg-gray-100">Delete</button>
+        <div className="overflow-x-auto h-[420px]">
+          <table className="table table-xs w-full">
+            <thead>
+              <tr className="bg-gray-200 sticky top-0">
+                <th>Date Time</th>
+                <th>Type</th>
+                <th>Remarks</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {records?.length > 0 ? (
+                records.map((record) => (
+                  <tr key={record.id}>
+                    <td>{new Date(record.date).toLocaleDateString()}</td>
+                    <td>{record.type}</td>
+                    <td>{record.remarks}</td>
+                    <td>{record.status || "Pending"}</td>
+                    <td className="relative">
+                      {record.status === "PENDING" && (
+                        <div
+                          className="relative"
+                          ref={(el) => (dropdownRefs.current[record.id] = el)}
+                        >
+                          <button
+                            onClick={() =>
+                              setDropdownOpen(dropdownOpen === record.id ? null : record.id)
+                            }
+                          >
+                            <MoreVertical />
+                          </button>
+
+                          {dropdownOpen === record.id && (
+                            <div className="absolute left-0 mt-2 bg-white shadow-lg rounded-md border w-32 z-50">
+                              <button
+                                className="block w-full text-left px-4 py-2 hover:bg-gray-200"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(record.id)}
+                                className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200"
+                              >
+                                Delete
+                              </button>
                             </div>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center py-4">No records found</td>
+                </tr>
+              )}
+            </tbody>
+
+
+          </table>
         </div>
       </div>
-
-      {/* Modal Component */}
-      <DTRPModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <DTRPModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedRecord(null); }} onSave={handleAddEditRecord} record={selectedRecord} />
     </div>
   );
 };

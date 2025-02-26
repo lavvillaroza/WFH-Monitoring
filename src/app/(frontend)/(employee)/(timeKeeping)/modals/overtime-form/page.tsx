@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from "react";
 
-const OvertimeModal = ({ isOpen, onClose }) => {
+type OvertimeModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null; // Ensure modal only renders when isOpen is true
 
-  const [dateTimeFrom, setDateTimeFrom] = useState("");
-  const [dateTimeTo, setDateTimeTo] = useState("");
-  const [overtimeHours, setOvertimeHours] = useState("0");
-  const [reason, setReason] = useState("");
+  const [dateTimeFrom, setDateTimeFrom] = useState<string>("");
+  const [dateTimeTo, setDateTimeTo] = useState<string>("");
+  const [overtimeHours, setOvertimeHours] = useState<string>("0");
+  const [reason, setReason] = useState<string>("");
 
   // Function to calculate overtime hours automatically
   useEffect(() => {
     if (dateTimeFrom && dateTimeTo) {
       const fromTime = new Date(dateTimeFrom);
       const toTime = new Date(dateTimeTo);
-      
+
       if (toTime > fromTime) {
         const diffMs = toTime.getTime() - fromTime.getTime(); // Get difference in milliseconds
         const diffHours = diffMs / (1000 * 60 * 60); // Convert to hours
@@ -26,7 +31,7 @@ const OvertimeModal = ({ isOpen, onClose }) => {
     }
   }, [dateTimeFrom, dateTimeTo]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log({
       dateTimeFrom,

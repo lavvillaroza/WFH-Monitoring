@@ -1,6 +1,13 @@
 "use client";
 
-const DTRPModal = ({ isOpen, onClose }) => {
+import React from "react";
+
+type DTRPModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
@@ -23,22 +30,16 @@ const DTRPModal = ({ isOpen, onClose }) => {
         <label className="block mb-2 font-medium">Remarks</label>
         <textarea
           className="w-full px-4 py-2 border rounded-md mb-4"
-          rows="3"
+          rows={3}
           placeholder="Enter remarks..."
         ></textarea>
 
-        {/* Buttons with spacing */}
+        {/* Buttons */}
         <div className="flex justify-end gap-2 mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-red-500 text-white rounded-md"
-          >
+          <button onClick={onClose} className="px-4 py-2 bg-red-500 text-white rounded-md">
             Close
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-green-500 text-white rounded-md"
-          >
+          <button onClick={onClose} className="px-4 py-2 bg-green-500 text-white rounded-md">
             Submit
           </button>
         </div>

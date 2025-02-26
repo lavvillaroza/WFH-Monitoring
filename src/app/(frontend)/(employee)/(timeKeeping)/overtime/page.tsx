@@ -1,9 +1,10 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText, MoreVertical, Plus } from "lucide-react";
 import OvertimeModal from "../modals/overtime-form/page";
+import { useRouter } from "next/navigation";
 
 const Overtime = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -11,7 +12,18 @@ const Overtime = () => {
   const [endDate, setEndDate] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const totalPages = 3;
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+      setLoading(false); // User is authenticated, stop loading
+    }
+  }, []);
   const records = [
     { dateFrom: "2025-02-15 08:00 AM ", dateTo: "2025-02-15 10:00 AM", overtime: "2 hours", status: "Pending" },
     { dateFrom: "2025-02-16 05:00 PM  ", dateTo: "2025-02-16 07:00 PM", overtime: "2 hours", status: "Approved" },
@@ -71,7 +83,8 @@ const Overtime = () => {
           <div className="grid grid-cols-1">
             <div className="card bg-white shadow-xl text-black p-10">
               <h2 className="text-xl font-semibold mb-4">OVERTIME</h2>
-              <table className="min-w-full table-auto bg-white border">
+              <div className="overflow-x-auto">
+                <table className="table table-xs">
                 <thead>
                   <tr className="bg-gray-200">
                     <th className="px-4 py-2 border text-black text-center">Date From</th>
@@ -111,6 +124,7 @@ const Overtime = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </div>

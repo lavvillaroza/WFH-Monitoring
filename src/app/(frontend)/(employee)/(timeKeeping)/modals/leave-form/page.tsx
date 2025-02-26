@@ -1,34 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const LeaveModal = ({ isOpen, onClose }) => {
-  const [leaveType, setLeaveType] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [reason, setReason] = useState("");
+type LeaveModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  leave?: any;
+  refresh: () => void;
+  setMessage: (message: string) => void; // Add this prop to update the parent message
+};
+
+const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh, setMessage }) => {
+  const [leaveType, setLeaveType] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [reason, setReason] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    if (leave) {
+      setLeaveType(leave.leaveType || "");
+      setStartDate(leave.startDate ? new Date(leave.startDate).toISOString().slice(0, 10) : "");
+      setEndDate(leave.endDate ? new Date(leave.endDate).toISOString().slice(0, 10) : "");
+      setReason(leave.reason || "");
+    } else {
+      setLeaveType("");
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+    }
+  }, [leave]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isFutureDateNotAllowed = (leaveType === "Sick Leave" || leaveType === "Emergency Leave") && (startDate > today || endDate > today);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({
-      leaveType,
-      startDate,
-      endDate,
-      reason,
-    });
-    alert("Leave application submitted!");
-    onClose(); // Close modal after submission
+    if (isFutureDateNotAllowed) {
+      setError("Future dates are not allowed for Sick Leave and Emergency Leave.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    const authToken = localStorage.getItem("authToken");
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const userID = storedUser?.id;
+    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { userID, leaveType, startDate, endDate, reason };
+
+    try {
+      const res = await fetch(`/employeeAPI/leave`, {
+        method: leave ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(leave ? { ...payload, id: leave.id } : payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to submit leave");
+      if(payload.id != undefined){
+        setMessage("Leave Updated Successfully!"); 
+      }
+      else{
+        setMessage("Leave Added Successfully!"); 
+      }
+      refresh();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting leave:", error);
+      setMessage("Failed to submit leave."); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-        <h2 className="text-xl font-semibold mb-4">File a Leave</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          {leave ? "Edit Leave" : "File a Leave"}
+        </h2>
+
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Leave Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Leave Type</label>
             <select
@@ -44,31 +103,30 @@ const LeaveModal = ({ isOpen, onClose }) => {
             </select>
           </div>
 
-          {/* Start Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Date</label>
             <input
-              type="datetime-local"
+              type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               required
               className="mt-1 block w-full p-2 border rounded-md"
+              max={(leaveType === "Sick Leave" || leaveType === "Emergency Leave") ? today : undefined}
             />
           </div>
 
-          {/* End Date */}
           <div>
             <label className="block text-sm font-medium text-gray-700">End Date</label>
             <input
-              type="datetime-local"
+              type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               required
               className="mt-1 block w-full p-2 border rounded-md"
+              max={(leaveType === "Sick Leave" || leaveType === "Emergency Leave") ? today : undefined}
             />
           </div>
 
-          {/* Reason */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Reason</label>
             <textarea
@@ -76,24 +134,25 @@ const LeaveModal = ({ isOpen, onClose }) => {
               onChange={(e) => setReason(e.target.value)}
               required
               className="mt-1 block w-full p-2 border rounded-md resize-none"
-              rows="3"
+              rows={3}
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end space-x-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { onClose(); }} // Close modal and reset inputs
               className="px-4 py-2 bg-red-400 text-white rounded-md hover:bg-gray-500"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-blue-700"
+              disabled={loading || isFutureDateNotAllowed}
             >
-              Submit
+              {loading ? "Submitting..." : leave ? "Update" : "Submit"}
             </button>
           </div>
         </form>
