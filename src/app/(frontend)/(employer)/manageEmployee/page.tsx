@@ -1,40 +1,83 @@
 "use client";
 
 import NavbarEmployer from "@/app/navbarEmployer/page";
-import { useState } from "react";
-import { employees as initialEmployees } from "../dummyData";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const ManageEmployees = () => {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [newEmployee, setNewEmployee] = useState({ name: "", job: "", status: "Active" });
+  const router = useRouter();
+
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+      fetchEmployees(); // Fetch employees when component mounts
+    }
+  }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const response = await fetch("/employeeAPI/employee"); // Call API route
+      if (!response.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      const data = await response.json();
+      setEmployees(data); // Update state with API data
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
   const handleEdit = (employee) => {
     setSelectedEmployee(employee);
     setIsEditing(true);
   };
 
-  const handleDelete = (id) => {
-    setEmployees(employees.filter((emp) => emp.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await fetch(`/api/employees/${id}`, { method: "DELETE" }); // Call API to delete
+      setEmployees(employees.filter((emp) => emp.id !== id)); // Update state
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+    }
   };
 
-  const handleSave = () => {
-    setEmployees(
-      employees.map((emp) => (emp.id === selectedEmployee.id ? selectedEmployee : emp))
-    );
-    setIsEditing(false);
-    setSelectedEmployee(null);
+  const handleSave = async () => {
+    try {
+      await fetch(`/api/employees`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectedEmployee),
+      });
+      setIsEditing(false);
+      setSelectedEmployee(null);
+      fetchEmployees(); // Refresh employees after update
+    } catch (error) {
+      console.error("Error updating employee:", error);
+    }
   };
 
-  const handleAdd = () => {
-    const newEmp = { ...newEmployee, id: employees.length + 1 };
-    setEmployees([...employees, newEmp]);
-    setIsAdding(false);
-    setNewEmployee({ name: "", job: "", status: "Active" });
+  const handleAdd = async () => {
+    try {
+      await fetch(`/api/employees`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEmployee),
+      });
+      setIsAdding(false);
+      setNewEmployee({ name: "", job: "", status: "Active" });
+      fetchEmployees(); // Refresh employees after adding
+    } catch (error) {
+      console.error("Error adding employee:", error);
+    }
   };
 
   const toggleDropdown = (id) => {
@@ -51,7 +94,6 @@ const ManageEmployees = () => {
     <div className="min-h-screen bg-white">
       <NavbarEmployer />
       <div className="container mx-auto p-4">
-        {/* Search Bar */}
         <div className="flex justify-between mb-4">
           <input
             type="text"
@@ -60,15 +102,11 @@ const ManageEmployees = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => setIsAdding(true)}
-          >
+          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setIsAdding(true)}>
             Add Employee
           </button>
         </div>
 
-        {/* Employee Table Card */}
         <div className="bg-white shadow-md rounded-lg p-4 border">
           <table className="w-full border-collapse border text-gray-700 border-gray-300">
             <thead>
@@ -85,14 +123,11 @@ const ManageEmployees = () => {
                 filteredEmployees.map((emp) => (
                   <tr key={emp.id}>
                     <td className="border p-2 text-center">{emp.name}</td>
-                    <td className="border p-2 text-center">123</td>
+                    <td className="border p-2 text-center">{emp.id}</td>
                     <td className="border p-2 text-center">{emp.job}</td>
                     <td className="border p-2 text-center">{emp.status}</td>
                     <td className="px-4 py-2 border-b text-black text-center relative">
-                      <button
-                        className="text-gray-600 hover:text-gray-900"
-                        onClick={() => toggleDropdown(emp.id)}
-                      >
+                      <button className="text-gray-600 hover:text-gray-900" onClick={() => toggleDropdown(emp.id)}>
                         <span className="text-xl">⋮</span>
                       </button>
                       {dropdownOpen === emp.id && (
@@ -116,7 +151,9 @@ const ManageEmployees = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center p-4 text-gray-500">No employees found.</td>
+                  <td colSpan="5" className="text-center p-4 text-gray-500">
+                    No employees found.
+                  </td>
                 </tr>
               )}
             </tbody>

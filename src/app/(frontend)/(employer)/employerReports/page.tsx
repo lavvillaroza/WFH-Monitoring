@@ -1,12 +1,13 @@
 "use client";
 
 import NavbarEmployer from "@/app/navbarEmployer/page";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { employees } from "../dummyData";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { useRouter } from "next/navigation";
 
 import {
   Chart,
@@ -32,6 +33,18 @@ const Reports = () => {
   const totalPages = Math.ceil(employees.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const displayedEmployees = employees.slice(startIndex, startIndex + itemsPerPage);
+  const router = useRouter();
+
+
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+    }
+  }, []);
+
 
   const toggleSelectAll = () => {
     if (selectAll) {
@@ -72,7 +85,7 @@ const Reports = () => {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   required
-                  className="mt-1 block w-full p-2 border bg-red-700 rounded-md bg-white text-black appearance-auto"
+                  className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
                 />
 
               </div>
@@ -83,9 +96,9 @@ const Reports = () => {
                 <input
                   type="datetime-local"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => setStartDate(e.target.value)}
                   required
-                  className="mt-1 block w-full p-2 border rounded-md bg-white text-black"
+                  className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
                 />
               </div>
 

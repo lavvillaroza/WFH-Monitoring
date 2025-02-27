@@ -5,14 +5,17 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import NavbarEmployer from "@/app/navbarEmployer/page";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [todayDate, setTodayDate] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
     const date = new Date().toLocaleDateString("en-PH", {
       year: "numeric",
       month: "long",
@@ -20,6 +23,11 @@ const Dashboard = () => {
       timeZone: "Asia/Manila",
     });
     setTodayDate(date);
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+    }
   }, []);
 
   const calculateAverageProductivity = () => {

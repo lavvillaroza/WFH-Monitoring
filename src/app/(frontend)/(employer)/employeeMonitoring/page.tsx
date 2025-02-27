@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NavbarEmployer from "@/app/navbarEmployer/page";
 import { employees, Employee } from "../dummyData";
 import CustomPieChart from "../PieChartComponent";
+import { useRouter } from "next/navigation";
+
 
 const EmployeeMonitoring = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -11,11 +13,21 @@ const EmployeeMonitoring = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const router = useRouter();
 
   // Modal Filters
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+    }
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -154,7 +166,7 @@ const EmployeeMonitoring = () => {
 
             {/* Status Filter */}
             <select
-              className="w-full p-2 border rounded-md bg-gray-300 text-gray-700 mb-3"
+              className="w-full p-2 border rounded-md bg-white text-gray-700 mb-3"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -173,7 +185,7 @@ const EmployeeMonitoring = () => {
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     required
-                    className="mt-1 block w-full p-2 border rounded-md"
+                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
 
@@ -185,7 +197,7 @@ const EmployeeMonitoring = () => {
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     required
-                    className="mt-1 block w-full p-2 border rounded-md"
+                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
 
