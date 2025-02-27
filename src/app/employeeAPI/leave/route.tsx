@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Import the singleton Prisma client
 
-// ✅ GET: Fetch all leave requests for a specific employee (userID) with optional filters
+// ✅ GET: Fetch all leave requests for a specific user with optional filters
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -21,18 +21,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // 🔍 Find employee by userID
-    const employee = await prisma.employee.findFirst({
-      where: { userId },
-    });
-
-    if (!employee) {
-      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
-    }
-
     // 📌 Construct filter conditions
     const whereClause = {
-      employeeId: employee.id,
+      userId,
       ...(leaveType && { leaveType }),
       ...(status && { status }),
       ...(startDate && endDate && {
@@ -69,25 +60,16 @@ export async function GET(req: NextRequest) {
 // ✅ POST: Create a new leave request
 export async function POST(req: NextRequest) {
   try {
-    const { userID, leaveType, startDate, endDate, reason } = await req.json();
+    const { userId, leaveType, startDate, endDate, reason } = await req.json();
 
-    if (!userID || !leaveType || !startDate || !endDate || !reason) {
+    if (!userId || !leaveType || !startDate || !endDate || !reason) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-    }
-
-    // 🔍 Find employee using userID
-    const employee = await prisma.employee.findFirst({
-      where: { userId: userID },
-    });
-
-    if (!employee) {
-      return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
 
     // 📌 Create a new leave request
     const newLeave = await prisma.leave.create({
       data: {
-        employeeId: employee.id,
+        userId,
         leaveType,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
@@ -163,4 +145,3 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
-

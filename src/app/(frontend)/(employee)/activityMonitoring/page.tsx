@@ -1,9 +1,10 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import * as faceapi from "face-api.js";
 import { useRouter } from "next/navigation";
+import { CameraContext } from "../context/CameraContext";
 
 
 const ActivityMonitoring = () => {
@@ -16,7 +17,7 @@ const ActivityMonitoring = () => {
   const drowsyTimer = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-
+  const cameraContext = useContext(CameraContext);
   
   useEffect(() => {
     const loadModels = async () => {
@@ -34,15 +35,6 @@ const ActivityMonitoring = () => {
     
     loadModels();
 
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-      }
-    };
-    startCamera();
 
     const detectFace = async () => {
       if (videoRef.current) {
@@ -141,33 +133,18 @@ const ActivityMonitoring = () => {
               </div>
             </div>
 
-            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
+            {/* <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
               <h2 className="text-xl font-semibold">WAKEFULNESS DETECTION</h2>
               <p className="mt-2 text-sm text-gray-300">Live monitoring for drowsiness detection.</p>
               <div className="mt-4 flex justify-center relative">
-                <video ref={videoRef} autoPlay playsInline className="w-80 h-80 border rounded-md shadow-md" />
+                <video  ref={cameraContext?.videoRef} autoPlay playsInline className="w-80 h-80 border rounded-md shadow-md" />
+             
               </div>
               <p className="mt-4 text-lg font-semibold text-center">
                 Status: <span className={`${getStatusColor()}`}>{drowsinessStatus}</span>
               </p>
-            </div>
+            </div> */}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
-              <h2 className="text-xl font-semibold">BROWSER ACTIVITY LOGS</h2>
-              <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
-                <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
-               
-              </div>
-            </div>
-            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
-              <h2 className="text-xl font-semibold">APPLICATIONS ACTIVITY LOGS</h2>
-              <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
-                <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
-               
-              </div>
-            </div>
-            </div>
         </div>
       </div>
 

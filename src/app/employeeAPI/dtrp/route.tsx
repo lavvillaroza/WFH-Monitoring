@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     
 
     if (!dtrProblems.length) {
-      return NextResponse.json({ error: "No records found" }, { status: 404 });
+      return NextResponse.json({ error: "No records found" }, { status: 200 });
     }
 
     return NextResponse.json(dtrProblems, { status: 200 });

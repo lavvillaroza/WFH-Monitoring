@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -16,48 +17,61 @@ const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = useState<{ name: string; email: string } | null>(null); 
-    
+    const cameraContext = useContext(CameraContext);
+    const [selectedAction, setSelectedAction] = useState("Time In"); // Default option
+    const [DropdownOpen, setDropdownOpen] = useState(false); 
+    const [isCameraOn, setIsCameraOn] = useState(false);
+
     const pageTitles: { [key: string]: string } = {
         "/dashboard": "Dashboard",
         "/activityMonitoring": "Activity Monitoring",
         "/dtr": "Daily Time Record",
         "/leaves": "Leaves",
         "/dtr-problem": "Daily Time Record Problem",
-        "/overtime": "Overtime"
+        "/overtime": "Overtime",
     };
-
-    // Get the active page name
-    const activePage = pageTitles[pathname] || "Dashboard";
-
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
     }, []);
-
-    // Update time every second
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            setCurrentTime(now.toLocaleTimeString("en-US", { hour12: false }));
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Get real-time timezone dynamically
-    useEffect(() => {
-        const getTimezone = () => {
-            const now = new Date();
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const offset = -now.getTimezoneOffset() / 60;
-            const gmtString = `GMT ${offset >= 0 ? "+" : ""}${offset}:00`;
-            setTimezone(`${gmtString} ${timeZone}`);
-        };
-
-        getTimezone();
-    }, []);
+    const handlePlayPause = async () => {
+        const storedUser = localStorage.getItem("user");
+        const employeeId = storedUser;
+        const action = isCameraOn ? "Pause" : "Start"; 
+    
+        try {
+            const response = await fetch("/employeeAPI/timekeeping", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ employeeId, action }),
+            });
+    
+            if (response.ok) {
+                console.log(`Logged action: ${action}`);
+            } else {
+                console.error("Failed to log action");
+            }
+        } catch (error) {
+            console.error("Error logging action:", error);
+        }
+    
+        // Toggle Camera
+        if (cameraContext) {
+            if (isCameraOn) {
+                cameraContext.stopCamera();
+                console.log("Camera is stopped");
+                setIsCameraOn(false);
+            } else {
+                cameraContext.startCamera();
+                console.log("Camera is started");
+                setIsCameraOn(true);
+            }
+        }
+    };
+    
+    
 
     const handleLogout = () => {
         setProfileOpen(false);
@@ -66,22 +80,47 @@ const Navbar = () => {
         setTimeout(() => {
             setLogoutMessage(false);
             localStorage.removeItem("authToken");
-            localStorage.removeItem("user"); 
-            router.push("/"); 
+            localStorage.removeItem("user");
+
+            if (cameraContext) {
+                cameraContext.stopCamera();
+            }
+
+            router.push("/");
         }, 2000);
     };
+
+ 
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date().toLocaleTimeString("en-US", { hour12: false }));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const now = new Date();
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const offset = -now.getTimezoneOffset() / 60;
+        setTimezone(`GMT ${offset >= 0 ? "+" : ""}${offset}:00 ${timeZone}`);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (!(event.target as HTMLElement).closest(".dropdown-container")) {
                 setTimekeepingOpen(false);
-                setFormsDropdownOpen(false); 
+                setFormsDropdownOpen(false);
+                setDropdownOpen(false);
             }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const activePage = pageTitles[pathname] || "Dashboard";
 
     return (
         <>
@@ -221,9 +260,30 @@ const Navbar = () => {
                 <h1 className="text-xl font-semibold text-white">{activePage}</h1>
                 <div className="flex items-center space-x-4 text-sm">
                     <span className="text-gray-300">{timezone}</span>
-                    <button className="bg-purple-600 text-white px-4 py-1 rounded-full flex items-center">
-                        <Play className="w-4 h-4 mr-1" /> Play
+                   
+                    <div className="relative">
+                        <select
+                            value={selectedAction}
+                            onChange={(e) => setSelectedAction(e.target.value)}
+                            className="px-4 py-2 bg-white text-black border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            {["Time In", "Break", "Time Out"].map((action) => (
+                                <option key={action} value={action}>
+                                    {action}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <button
+                        onClick={handlePlayPause}
+                        className={`${
+                            isCameraOn ? "bg-red-600" : "bg-purple-600"
+                        } text-white px-4 py-1 rounded-full flex items-center`}
+                    >
+                        {isCameraOn ? "Pause" : "Start"}
                     </button>
+                    <video ref={cameraContext?.videoRef} autoPlay className="hidden" />
                     <span className="text-gray-300">{currentTime}</span>
                 </div>
             </div>
