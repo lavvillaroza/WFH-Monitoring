@@ -30,73 +30,154 @@ const Navbar = () => {
         "/dtr-problem": "Daily Time Record Problem",
         "/overtime": "Overtime",
     };
+
+    const storedUser = localStorage.getItem("user");
+
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
-    }, []);
-    const handlePlayPause = async () => {
-        try { 
-            const storedUser = localStorage.getItem("user");
-            const employeeId = storedUser;
-            const action = isCameraOn ? "Pause" : "Start"; 
-        
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === "videoinput");
+        const fetchLastDTR = async () => {
+            try {
+              
+                if (!storedUser) {
+                    console.error("User not found in localStorage.");
+                    return;
+                }
     
-            if (videoDevices.length === 0) {
-                alert("No camera found. Please connect a camera to proceed.");
+                const user = JSON.parse(storedUser);
+                const userId = user.id;
+    
+                const response = await fetch(`/employeeAPI/dtr?userId=${userId}`);
+    
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+    
+                const lastDTR = await response.json();
+    
+                console.log("Fetched last DTR:", lastDTR);
+    
+                if (lastDTR && lastDTR.timeOut === null) {
+                    setSelectedAction("Time Out");
+                } else {
+                    setSelectedAction("Time In");
+                }
+            } catch (error) {
+                console.error("Error fetching last DTR:", error);
+            }
+        };
+    
+        fetchLastDTR();
+    }, []);
+    useEffect(() => {
+        const handleBeforeUnload = async () => {
+            if (selectedAction === "Time Out" && storedUser) { 
+                const user = JSON.parse(storedUser);
+                const userId = user.id;
+                const timestamp = new Date();
+    
+                await fetch("/employeeAPI/dtr", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId,
+                        timeOut: timestamp,
+                        remarks: "Auto clock-out due to page close",
+                    }),
+                });
+            }
+        };
+    
+        window.addEventListener("beforeunload", handleBeforeUnload);
+    
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [selectedAction, storedUser]);
+    
+
+    const handlePlayPause = async () => {
+        try {
+            if (!storedUser) {
+                router.push("/");
                 return;
             }
     
-            const response = await fetch("/employeeAPI/timekeeping", {
+            const user = JSON.parse(storedUser);
+            const userId = user.id;  
+            const timestamp = new Date();
+    
+            let requestBody;
+            if (selectedAction === "Time In") {
+                requestBody = {
+                    userId,
+                    timeIn: timestamp,
+                    timeOut: null,
+                    remarks: "",
+                };
+            } else {
+                requestBody = {
+                    userId,
+                    timeOut: timestamp,
+                    remarks: "Clocked out",
+                };
+            }
+    
+            const response = await fetch("/employeeAPI/dtr", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ employeeId, action }),
+                body: JSON.stringify(requestBody),
             });
     
             if (response.ok) {
-                console.log(`Logged action: ${action}`);
+                setSelectedAction(selectedAction === "Time In" ? "Time Out" : "Time In"); 
             } else {
                 console.error("Failed to log action");
             }
         } catch (error) {
             console.error("Error logging action:", error);
         }
-    
-        // Toggle Camera
-        if (cameraContext) {
-            if (isCameraOn) {
-                cameraContext.stopCamera();
-                console.log("Camera is stopped");
-                setIsCameraOn(false);
-            } else {
-                cameraContext.startCamera();
-                console.log("Camera is started");
-                setIsCameraOn(true);
-            }
-        }
     };
     
     
+    
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setProfileOpen(false);
         setLogoutMessage(true);
-
+    
+        if (selectedAction === "Time Out" && storedUser) {
+            const user = JSON.parse(storedUser);
+            const userId = user.id;
+            const timestamp = new Date();
+    
+            await fetch("/employeeAPI/dtr", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    timeOut: timestamp,
+                    remarks: "Auto clock-out due to logout",
+                }),
+            });
+    
+            setSelectedAction("Time In"); // Reset button after logout
+        }
+    
         setTimeout(() => {
             setLogoutMessage(false);
             localStorage.removeItem("authToken");
             localStorage.removeItem("user");
-
+    
             if (cameraContext) {
                 cameraContext.stopCamera();
             }
-
+    
             router.push("/");
         }, 2000);
     };
+    
 
  
 
@@ -268,29 +349,15 @@ const Navbar = () => {
                 <h1 className="text-xl font-semibold text-white">{activePage}</h1>
                 <div className="flex items-center space-x-4 text-sm">
                     <span className="text-gray-300">{timezone}</span>
-                   
-                    <div className="relative">
-                        <select
-                            value={selectedAction}
-                            onChange={(e) => setSelectedAction(e.target.value)}
-                            className="px-4 py-2 bg-white text-black border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            {["Time In", "Break", "Time Out"].map((action) => (
-                                <option key={action} value={action}>
-                                    {action}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
                     <button
                         onClick={handlePlayPause}
                         className={`${
-                            isCameraOn ? "bg-red-600" : "bg-purple-600"
+                            selectedAction === "Time Out" ? "bg-red-600" : "bg-purple-600"
                         } text-white px-4 py-1 rounded-full flex items-center`}
                     >
-                        {isCameraOn ? "Pause" : "Start"}
+                        {selectedAction}
                     </button>
+
                     <video ref={cameraContext?.videoRef} autoPlay className="hidden" />
                     <span className="text-gray-300">{currentTime}</span>
                 </div>

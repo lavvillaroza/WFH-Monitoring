@@ -41,12 +41,16 @@ model User {
 model DailyTimeRecord {
   id        String   @id @default(uuid())
   userId    String
-  date      DateTime
-  action    String
-  timestamp DateTime
+  date      DateTime @default(now())
+  timeIn    DateTime
+  timeOut   DateTime?  // Nullable field for timeout
+  remarks   String?    // Nullable field for remarks
+  createdAt DateTime @default(now())  
+  updatedAt DateTime @updatedAt  // Automatically updates on changes
 
   user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 
 model DailyTimeRecordProblem {
   id        String          @id @default(uuid())
