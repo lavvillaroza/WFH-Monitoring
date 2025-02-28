@@ -1,44 +1,45 @@
 "use client";
-import { createContext, useState, useEffect, useRef, ReactNode } from "react";
+import { createContext, useState, useRef, useEffect, ReactNode } from "react";
 
 interface CameraContextType {
   videoRef: React.RefObject<HTMLVideoElement>;
   startCamera: () => void;
   stopCamera: () => void;
+  stream: MediaStream | null;
 }
 
 export const CameraContext = createContext<CameraContextType | null>(null);
 
 export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      if (!stream) {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setStream(newStream);
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
     }
   };
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => {
-            console.log(`Stopping track: ${track.kind}`); // Debugging log
-            track.stop();
-        });
-        videoRef.current.srcObject = null;
-        console.log("Camera stopped.");
-    } else {
-        console.log("No active camera stream found.");
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
     }
-};
+  }, [stream]);
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+  };
 
   return (
-    <CameraContext.Provider value={{ videoRef, startCamera, stopCamera }}>
+    <CameraContext.Provider value={{ videoRef, startCamera, stopCamera, stream }}>
       {children}
     </CameraContext.Provider>
   );

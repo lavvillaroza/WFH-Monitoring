@@ -31,9 +31,10 @@ const Navbar = () => {
         "/overtime": "Overtime",
     };
 
-    const storedUser = localStorage.getItem("user");
 
     useEffect(() => {
+        
+    const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
@@ -71,6 +72,7 @@ const Navbar = () => {
         fetchLastDTR();
     }, []);
     useEffect(() => {
+        const storedUser = localStorage.getItem("user");
         const handleBeforeUnload = async () => {
             if (selectedAction === "Time Out" && storedUser) { 
                 const user = JSON.parse(storedUser);
@@ -94,11 +96,12 @@ const Navbar = () => {
         return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
         };
-    }, [selectedAction, storedUser]);
+    }, [selectedAction]);
     
 
     const handlePlayPause = async () => {
         try {
+            const storedUser = localStorage.getItem("user");
             if (!storedUser) {
                 router.push("/");
                 return;
@@ -116,12 +119,22 @@ const Navbar = () => {
                     timeOut: null,
                     remarks: "",
                 };
+                if (cameraContext) {
+                    await cameraContext.startCamera(); // ✅ Start camera when clocking in
+                    setIsCameraOn(true);
+                }
+
             } else {
                 requestBody = {
                     userId,
                     timeOut: timestamp,
                     remarks: "Clocked out",
                 };
+
+                if (cameraContext) {
+                    await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
+                    setIsCameraOn(false);
+                }
             }
     
             const response = await fetch("/employeeAPI/dtr", {
@@ -144,6 +157,7 @@ const Navbar = () => {
     
 
     const handleLogout = async () => {
+        const storedUser = localStorage.getItem("user");
         setProfileOpen(false);
         setLogoutMessage(true);
     
@@ -358,7 +372,7 @@ const Navbar = () => {
                         {selectedAction}
                     </button>
 
-                    <video ref={cameraContext?.videoRef} autoPlay className="hidden" />
+                    {/* <video ref={cameraContext?.videoRef} autoPlay className="hidden" /> */}
                     <span className="text-gray-300">{currentTime}</span>
                 </div>
             </div>

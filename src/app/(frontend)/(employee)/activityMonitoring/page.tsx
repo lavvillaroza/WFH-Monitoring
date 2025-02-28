@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from "@/app/navbar/page";
-import { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef, useContext, use } from "react";
 import * as faceapi from "face-api.js";
 import { useRouter } from "next/navigation";
 import { CameraContext } from "../context/CameraContext";
@@ -18,8 +18,13 @@ const ActivityMonitoring = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const cameraContext = useContext(CameraContext);
-  
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
+    if (cameraContext?.stream && localVideoRef.current) {
+      console.log("Attaching existing camera feed...");
+      localVideoRef.current.srcObject = cameraContext.stream;
+    }
     const loadModels = async () => {
       await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
       await faceapi.nets.faceLandmark68Net.loadFromUri("/models");
@@ -103,7 +108,7 @@ const ActivityMonitoring = () => {
     return () => {
       clearInterval(faceTrackingInterval);
     };
-  }, [previousStatus]);
+  }, [previousStatus,cameraContext?.stream]);
 
   const getStatusColor = () => {
     switch (drowsinessStatus) {
@@ -133,17 +138,16 @@ const ActivityMonitoring = () => {
               </div>
             </div>
 
-            {/* <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
+            <div className="bg-white-900 shadow-xl text-black p-6 rounded-lg">
               <h2 className="text-xl font-semibold">WAKEFULNESS DETECTION</h2>
               <p className="mt-2 text-sm text-gray-300">Live monitoring for drowsiness detection.</p>
               <div className="mt-4 flex justify-center relative">
-                <video  ref={cameraContext?.videoRef} autoPlay playsInline className="w-80 h-80 border rounded-md shadow-md" />
-             
+                <video ref={localVideoRef} autoPlay playsInline className="w-80 h-80 border rounded-md shadow-md" />
               </div>
               <p className="mt-4 text-lg font-semibold text-center">
                 Status: <span className={`${getStatusColor()}`}>{drowsinessStatus}</span>
               </p>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>
