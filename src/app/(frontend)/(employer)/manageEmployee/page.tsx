@@ -124,8 +124,8 @@ const ManageEmployees = () => {
                   <tr key={emp.id}>
                     <td className="border p-2 text-center">{emp.name}</td>
                     <td className="border p-2 text-center">{emp.id}</td>
-                    <td className="border p-2 text-center">{emp.job}</td>
-                    <td className="border p-2 text-center">{emp.status}</td>
+                    <td className="border p-2 text-center">{emp.department}</td>
+                    <td className="border p-2 text-center">Active</td>
                     <td className="px-4 py-2 border-b text-black text-center relative">
                       <button className="text-gray-600 hover:text-gray-900" onClick={() => toggleDropdown(emp.id)}>
                         <span className="text-xl">⋮</span>

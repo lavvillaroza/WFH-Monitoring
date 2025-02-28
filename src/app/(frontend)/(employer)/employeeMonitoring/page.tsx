@@ -11,6 +11,7 @@ const EmployeeMonitoring = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [sortStatus, setSortStatus] = useState<string>("All");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const router = useRouter();
@@ -42,7 +43,14 @@ const EmployeeMonitoring = () => {
     }
   };
 
+    // Filter Employees by Status and Search Query
+    const filteredEmployees1 = employees.filter(emp => 
+      (sortStatus === "All" || emp.status === sortStatus) &&
+      emp.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   // Filter Employees by Status
+  
   const filteredEmployees = sortStatus === "All"
     ? employees
     : employees.filter(emp => emp.status === sortStatus);
@@ -72,6 +80,15 @@ const EmployeeMonitoring = () => {
             <div className="w-[30%] bg-white shadow-lg p-6 rounded-lg h-screen">
               <h2 className="text-xl font-semibold text-gray-700">Employee List</h2>
 
+                {/* Search Bar */}
+                <input
+                  type="text"
+                  placeholder="Search employee..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mt-3 w-full p-2 border bg-white rounded-md text-gray-700"
+                />
+
               {/* Dropdown Filter */}
               <select
                 className="mt-3 w-full p-2 border bg-white rounded-md text-gray-700"
@@ -86,7 +103,7 @@ const EmployeeMonitoring = () => {
 
               {/* Employee List */}
               <div className="mt-4 space-y-3">
-                {filteredEmployees.map((employee) => (
+                {filteredEmployees1.map((employee) => (
                   <div
                     key={employee.id}
                     className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200"
