@@ -60,15 +60,15 @@ const Leaves = () => {
       }
 
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userID = storedUser?.id;
+      const userId = storedUser?.id;
 
-      if (!userID) {
+      if (!userId) {
         setMessage("User ID not found");
         setMessageType("error");
         return;
       }
 
-      const queryParams = new URLSearchParams({ userID, page: String(currentPage), pageSize: String(rowsPerPage) });
+      const queryParams = new URLSearchParams({ userId, page: String(currentPage), pageSize: String(rowsPerPage) });
 
       if (leaveType) queryParams.append("leaveType", leaveType);
       if (status) queryParams.append("status", status);
@@ -152,7 +152,7 @@ const Leaves = () => {
           {message}
         </div>
       )}
-      <div className="container mx-auto p-2 mt-2">
+      <div className="container mx-auto p-2 mt-2  text-black">
         <div className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-4">
@@ -160,7 +160,7 @@ const Leaves = () => {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-4 py-2 border rounded-md"
+                className="px-4 py-2 border rounded-md bg-white"
               >
                 <option value="">Select Filter</option>
                 <option value="leaveType">Leave Type</option>
@@ -172,7 +172,7 @@ const Leaves = () => {
                 <select
                   value={leaveType}
                   onChange={(e) => setLeaveType(e.target.value)}
-                  className="px-4 py-2 border rounded-md"
+                  className="px-4 py-2 border rounded-md bg-white"
                 >
                   <option value="">Select Leave Type</option>
                   <option value="Sick Leave">Sick Leave</option>
@@ -187,14 +187,14 @@ const Leaves = () => {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="px-4 py-2 border rounded-md"
+                    className="px-4 py-2 border rounded-md bg-white"
                   />
                   <span>to</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="px-4 py-2 border rounded-md"
+                    className="px-4 py-2 border rounded-md bg-white"
                   />
                 </>
               )}
@@ -203,7 +203,7 @@ const Leaves = () => {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="px-4 py-2 border rounded-md"
+                  className="px-4 py-2 border rounded-md bg-white"
                 >
                   <option value="">Select Status</option>
                   <option value="Approved">Approved</option>
@@ -234,7 +234,7 @@ const Leaves = () => {
               <select
                 value={rowsPerPage}
                 onChange={(e) => setRowsPerPage(Number(e.target.value))}
-                className="px-4 py-2 border rounded-md"
+                className="px-4 py-2 border rounded-md bg-white"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>

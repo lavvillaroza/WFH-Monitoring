@@ -54,7 +54,12 @@ router.push("/register");
     
       setTimeout(() => {
         setMessage("");
+       if(data.user.role ==="ADMIN"){
+        router.push("/admin-dashboard");
+       }
+       else if (data.user.role==="EMPLOYEE"){
         router.push("/dashboard");
+       }
       }, 2000);
     } catch (error: any) {
       setMessage(error.message);

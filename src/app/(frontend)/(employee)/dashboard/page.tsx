@@ -193,7 +193,7 @@ const Dashboard = () => {
             {/* Productivity vs Idle Time Card */}
             <div className="card bg-white shadow-md text-black p-10">
               <h2 className="text-xl font-bold mb-4">Productivity vs Idle Time</h2>
-              <div className="w-80 h-80">
+              <div className="w-80 h-80 ">
                 <Doughnut data={donutData} />
               </div>
             </div>

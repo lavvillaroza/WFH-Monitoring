@@ -104,11 +104,11 @@ const DailyTimeRecord = () => {
           {message}
         </div>
       )}
-      <div className="container mx-auto p-2 mt-2">
+      <div className="container mx-auto p-2 mt-2 text-black">
       <div className="flex justify-between items-center mb-4">
             <div className="flex items-center space-x-4">
               <h1>Filter By:</h1>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-4 py-2 border rounded-md">
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-4 py-2 border rounded-md bg-white">
                 <option value="">Select Filter</option>
                 <option value="type">Type</option>
                 <option value="dateRange">Date Range</option>
@@ -116,9 +116,9 @@ const DailyTimeRecord = () => {
               </select>
               {filterType === "dateRange" && (
                 <>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-4 py-2 border rounded-md" />
+                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-4 py-2 border rounded-md bg-white" />
                   <span>to</span>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-4 py-2 border rounded-md" />
+                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-4 py-2 border rounded-md bg-white" />
                 </>
               )}
               <button className="bg-blue-600 text-white px-4 py-2 rounded-md">Filter</button>

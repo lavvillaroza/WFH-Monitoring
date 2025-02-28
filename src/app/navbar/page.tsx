@@ -37,11 +37,19 @@ const Navbar = () => {
         }
     }, []);
     const handlePlayPause = async () => {
-        const storedUser = localStorage.getItem("user");
-        const employeeId = storedUser;
-        const action = isCameraOn ? "Pause" : "Start"; 
+        try { 
+            const storedUser = localStorage.getItem("user");
+            const employeeId = storedUser;
+            const action = isCameraOn ? "Pause" : "Start"; 
+        
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === "videoinput");
     
-        try {
+            if (videoDevices.length === 0) {
+                alert("No camera found. Please connect a camera to proceed.");
+                return;
+            }
+    
             const response = await fetch("/employeeAPI/timekeeping", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

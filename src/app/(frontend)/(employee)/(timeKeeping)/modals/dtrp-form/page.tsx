@@ -11,25 +11,25 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-black">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
         <h2 className="text-xl font-semibold mb-4">Daily Time Record Problem</h2>
 
         {/* Combo Box for Time In / Time Out */}
         <label className="block mb-2 font-medium">Select Action</label>
-        <select className="w-full px-4 py-2 border rounded-md mb-4">
+        <select className="w-full px-4 py-2 border rounded-md mb-4  bg-white">
           <option value="time-in">Time In</option>
           <option value="time-out">Time Out</option>
         </select>
 
         {/* Date and Time Input */}
         <label className="block mb-2 font-medium">Date & Time</label>
-        <input type="datetime-local" className="w-full px-4 py-2 border rounded-md mb-4" />
+        <input type="datetime-local" className="w-full px-4 py-2 border rounded-md mb-4 bg-white" />
 
         {/* Remarks Text Area */}
         <label className="block mb-2 font-medium">Remarks</label>
         <textarea
-          className="w-full px-4 py-2 border rounded-md mb-4"
+          className="w-full px-4 py-2 border rounded-md mb-4 bg-white"
           rows={3}
           placeholder="Enter remarks..."
         ></textarea>

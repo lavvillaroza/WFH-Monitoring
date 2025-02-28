@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma"; // Import the singleton Prisma client
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userID");
+    const userId = searchParams.get("userId");
     const leaveType = searchParams.get("leaveType");
     const status = searchParams.get("status");
     const startDate = searchParams.get("startDate");

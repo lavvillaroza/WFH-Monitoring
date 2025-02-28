@@ -48,8 +48,8 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
 
     const authToken = localStorage.getItem("authToken");
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-    const userID = storedUser?.id;
-    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { userID, leaveType, startDate, endDate, reason };
+    const userId = storedUser?.id;
+    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { userId, leaveType, startDate, endDate, reason };
 
     try {
       const res = await fetch(`/employeeAPI/leave`, {
@@ -79,7 +79,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-black">
       <div className="bg-white p-6 rounded-lg shadow-xl w-96">
         <h2 className="text-xl font-semibold mb-4">
           {leave ? "Edit Leave" : "File a Leave"}
@@ -94,7 +94,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
               value={leaveType}
               onChange={(e) => setLeaveType(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border rounded-md"
+              className="mt-1 block w-full p-2 border rounded-md  bg-white"
             >
               <option value="">Select Leave Type</option>
               <option value="Sick Leave">Sick Leave</option>
@@ -110,7 +110,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border rounded-md"
+              className="mt-1 block w-full p-2 border rounded-md bg-white"
               max={(leaveType === "Sick Leave" || leaveType === "Emergency Leave") ? today : undefined}
             />
           </div>
@@ -122,7 +122,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border rounded-md"
+              className="mt-1 block w-full p-2 border rounded-md bg-white"
               max={(leaveType === "Sick Leave" || leaveType === "Emergency Leave") ? today : undefined}
             />
           </div>
@@ -133,7 +133,7 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
-              className="mt-1 block w-full p-2 border rounded-md resize-none"
+              className="mt-1 block w-full p-2 border rounded-md resize-none  bg-white"
               rows={3}
             />
           </div>
