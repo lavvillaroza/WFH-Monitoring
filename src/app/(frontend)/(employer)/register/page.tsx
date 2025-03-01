@@ -7,6 +7,7 @@ const RegistrationPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role,setRole] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const router = useRouter();
@@ -19,7 +20,7 @@ const RegistrationPage = () => {
     }
 
     try {
-      const response = await fetch("/employeeAPI/user", {
+      const response = await fetch("/employerAPI/user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

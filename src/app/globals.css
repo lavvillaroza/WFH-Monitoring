@@ -28,3 +28,7 @@ body {
   @apply text-[#FFC107]; 
 }
 
+.custom-input-bg{
+  @apply bg-white text-gray-900;
+}
+

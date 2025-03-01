@@ -1,94 +1,249 @@
 "use client";
 
 import NavbarEmployer from "@/app/navbarEmployer/page";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { MoreVertical } from "lucide-react";
+import ViewAttendanceModal from "@/app/components/viewAttendanceModal";
+import EditEmployeeModal from "@/app/components/editEmployeeModal"; // Import the modal
+
+
 
 const ManageEmployees = () => {
   const [employees, setEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [dropdownOpen, setDropdownOpen] = useState(null);
-  const [newEmployee, setNewEmployee] = useState({ name: "", job: "", status: "Active" });
+  const itemsPerPage = 5; // Limit to 2 employees per page
+  const [isModalOpen, setIsModalOpen] = useState(false); // Manage modal state
+  const dropdownRef = useRef(null);
+  const [editingEmployee, setEditingEmployee] = useState(null);  // Track employee to edit
+  const [isEditing, setIsEditing] = useState(false); // Flag to check if the modal is in editing mode
+
+  
+  
+
+  const handleMouseLeave = () => {
+    setDropdownOpen(null); // Close dropdown when mouse leaves
+  };
+
+  const openModal = (employee) => {
+    setSelectedEmployee(employee); // Set the selected employee
+    setIsModalOpen(true);  // Open the modal
+  };
+  
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+  };
+
+  const [newEmployee, setNewEmployee] = useState({
+    name: "",
+    email: "",
+    position: "",
+    department: "",
+    contactNumber: "",
+    address: "",
+  });
+
+  const [newUser, setNewUser] = useState({
+    password: "",
+    status: "Active",
+    name: "",
+    email: "",
+    role: "",
+  });
+
   const router = useRouter();
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
     if (!authToken) {
-      router.push("/"); // Redirect if not logged in
+      router.push("/");
     } else {
-      fetchEmployees(); // Fetch employees when component mounts
+      fetchEmployees();
     }
   }, []);
 
+ 
+  const handleEdit = (employee) => {
+    setEditingEmployee(employee);
+    setIsEditing(true); // Open the edit modal
+  };
+
+  const handleUpdate = () => {
+    fetchEmployees();
+    setEditingEmployee(null); // Close modal after update
+  };
+  
+
+
+ 
+
   const fetchEmployees = async () => {
     try {
-      const response = await fetch("/employeeAPI/employee"); // Call API route
-      if (!response.ok) {
+      // Fetch employee data
+      const employeeResponse = await fetch("/employerAPI/employee");
+      if (!employeeResponse.ok) {
         throw new Error("Failed to fetch employees");
       }
-      const data = await response.json();
-      setEmployees(data); // Update state with API data
-    } catch (error) {
-      console.error("Error fetching employees:", error);
-    }
-  };
-
-  const handleEdit = (employee) => {
-    setSelectedEmployee(employee);
-    setIsEditing(true);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await fetch(`/api/employees/${id}`, { method: "DELETE" }); // Call API to delete
-      setEmployees(employees.filter((emp) => emp.id !== id)); // Update state
-    } catch (error) {
-      console.error("Error deleting employee:", error);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      await fetch(`/api/employees`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedEmployee),
+      const employeesData = await employeeResponse.json();
+  
+      // Fetch user data (using the same API or a separate one)
+      const userResponse = await fetch("/employerAPI/user");
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const usersData = await userResponse.json();
+  
+      // Map employee data with user status based on email matching
+      const employeesWithStatus = employeesData.map((employee) => {
+        const user = usersData.find((user) => user.email === employee.email);
+        if (user) {
+          // Ensure 'status' is added
+          return {
+            ...employee,
+            status: user.status, // Add status to employee data
+          };
+        }
+        return employee; // If no matching user found, return employee data as is
       });
-      setIsEditing(false);
-      setSelectedEmployee(null);
-      fetchEmployees(); // Refresh employees after update
+  
+      // Set the state with employees and their status
+      setEmployees(employeesWithStatus);
     } catch (error) {
-      console.error("Error updating employee:", error);
+      console.error("Error fetching employees or users:", error);
     }
+  };
+  
+
+
+  const handleDropdownToggle = (id) => {
+    setDropdownOpen(dropdownOpen === id ? null : id); // Toggle dropdown
   };
 
   const handleAdd = async () => {
     try {
-      await fetch(`/api/employees`, {
+      // Step 1: Fetch the new employee ID from the server-side API
+      const response = await fetch('/employerAPI/register');
+      if (!response.ok) {
+        throw new Error('Failed to fetch employee ID');
+      }
+      const data = await response.json();
+      const employeeId = data.employeeId; // Use the generated employee ID
+  
+      // Step 2: Validate required fields
+      if (
+        !newEmployee.name ||
+        !newEmployee.email ||
+        !newEmployee.position ||
+        !newUser.password ||
+        !newUser.role
+      ) {
+        setAlertMessage(
+          "⚠️ Please fill in all required fields (Name, Email, Position, Password, Role)."
+        );
+        return;
+      }
+  
+      // Step 3: Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmployee.email)) {
+        setAlertMessage("⚠️ Warning: Invalid email address!");
+        return;
+      }
+  
+      setAlertMessage(""); // Clear alert if validation passes
+  
+      // Step 4: Prepare user data with the generated employeeId
+      const userData = {
+        ...newUser,
+        employeeId: employeeId, // Use the generated employeeId here
+        name: newEmployee.name,
+        email: newEmployee.email,
+        status: "Active",
+      };
+  
+      // Step 5: Create the user in the database
+      const userResponse = await fetch("/employerAPI/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newEmployee),
+        body: JSON.stringify(userData),
       });
+  
+      if (!userResponse.ok) {
+        throw new Error("Failed to create user");
+      }
+  
+      const createdUser = await userResponse.json(); // Get the created user data
+  
+      // Step 6: Prepare employee data with the generated employeeId
+      const employeeData = {
+        ...newEmployee,
+        email: newEmployee.email,
+        employeeId: employeeId, // Include the employeeId here
+      };
+  
+      // Step 7: Create the employee in the database
+      const employeeResponse = await fetch("/employerAPI/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employeeData),
+      });
+  
+      if (!employeeResponse.ok) {
+        const errorData = await employeeResponse.json();
+        throw new Error(errorData.error || "Failed to register employee");
+      }
+  
+      // Step 8: Success message and reset form
       setIsAdding(false);
-      setNewEmployee({ name: "", job: "", status: "Active" });
-      fetchEmployees(); // Refresh employees after adding
+      setNewEmployee({
+        name: "",
+        email: "",
+        position: "",
+        department: "",
+        contactNumber: "",
+        address: "",
+      });
+      setNewUser({ password: "", status: "Active", name: "", email: "", role: "" });
+  
+      // Step 9: Fetch employees to refresh the list
+      fetchEmployees();
     } catch (error) {
-      console.error("Error adding employee:", error);
+      console.error("❌ Error adding employee:", error);
+      setAlertMessage(`❌ Error: ${error.message}`);
     }
   };
+  
+  
+  
 
-  const toggleDropdown = (id) => {
-    setDropdownOpen(dropdownOpen === id ? null : id);
-  };
-
+  // Filter employees based on search query
   const filteredEmployees = employees.filter(
     (emp) =>
-      (emp.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-      (emp.job?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+      emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      emp.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Calculate total pages dynamically
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+
+  // Slice the data for current page
+  const indexOfLastEmployee = currentPage * itemsPerPage;
+  const indexOfFirstEmployee = indexOfLastEmployee - itemsPerPage;
+  const currentEmployees = filteredEmployees.slice(indexOfFirstEmployee, indexOfLastEmployee);
+
+  const handlePageChange = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -100,66 +255,237 @@ const ManageEmployees = () => {
             placeholder="Search employees..."
             className="border p-2 rounded w-1/3 bg-white text-black"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              // Reset to first page when filtering
+              setCurrentPage(1);
+            }}
           />
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => setIsAdding(true)}>
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={() => setIsAdding(true)}
+          >
             Add Employee
           </button>
         </div>
 
-        <div className="bg-white shadow-md rounded-lg p-4 border">
-          <table className="w-full border-collapse border text-gray-700 border-gray-300">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2 text-center">Name</th>
-                <th className="border p-2 text-center">Employee ID</th>
-                <th className="border p-2 text-center">Job</th>
-                <th className="border p-2 text-center">Status</th>
-                <th className="border p-2 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((emp) => (
-                  <tr key={emp.id}>
-                    <td className="border p-2 text-center">{emp.name}</td>
-                    <td className="border p-2 text-center">{emp.id}</td>
-                    <td className="border p-2 text-center">{emp.department}</td>
-                    <td className="border p-2 text-center">Active</td>
-                    <td className="px-4 py-2 border-b text-black text-center relative">
-                      <button className="text-gray-600 hover:text-gray-900" onClick={() => toggleDropdown(emp.id)}>
-                        <span className="text-xl">⋮</span>
-                      </button>
-                      {dropdownOpen === emp.id && (
-                        <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg">
-                          <button
-                            className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                            onClick={() => handleEdit(emp)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
-                            onClick={() => handleDelete(emp.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
+        <div className="grid grid-cols-1">
+          <div className="card bg-white shadow-xl text-black p-10 ">
+            <h2 className="text-xl font-semibold mb-4">Employee List</h2>
+            <div className="overflow-x-auto min-h-[300px]">
+              <table className="table table-xs">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="px-4 py-2 border-b text-black text-center">Name</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Employee ID</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Email</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Position</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Status</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Department</th>
+                    <th className="px-4 py-2 border-b text-black text-center">Actions</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center p-4 text-gray-500">
-                    No employees found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {currentEmployees.length > 0 ? (
+                    currentEmployees.map((emp) => (
+                      <tr key={emp.id}>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.name}</td>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.employeeId}</td>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.email}</td>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.position}</td>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.status}</td>
+                        <td className="px-4 py-2 border-b text-black text-center">{emp.department}</td>
+                        <td className="px-4 py-2 border-b text-black text-center relative">
+                        <div className="relative inline-block" ref={dropdownRef} onMouseLeave={handleMouseLeave}>
+                          <button
+                            className="p-2 rounded-md hover:bg-gray-200"
+                            onClick={() => handleDropdownToggle(emp.id)}
+                          >
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+                          {dropdownOpen === emp.id && (
+                            <div className="absolute right-0 w-32 bg-white border rounded-md shadow-md z-10">
+                              <button
+                                className="block px-4 py-2 w-full text-left hover:bg-gray-100"
+                                onClick={() => {
+                                  setEditingEmployee(emp);  // Set employee data to be edited
+                                  setIsEditing(true);  // Set editing mode to true
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button className="block px-4 py-2 w-full text-left hover:bg-gray-100">Delete</button>
+                              <button
+                              className="block px-4 py-2 w-full text-left hover:bg-gray-100"
+                              onClick={() => {
+                                openModal(emp);
+                              }}
+                            >
+                              View Attendance
+                            </button>
+                            </div>
+                          )}
+                        </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center p-4 text-gray-500">
+                        No employees found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <ViewAttendanceModal isModalOpen={isModalOpen} closeModal={closeModal} employee={selectedEmployee}  />
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-between items-center mt-4">
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+              <div className="text-center text-black">
+                Page {currentPage} of {totalPages}
+              </div>
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {isAdding && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h2 className="text-lg font-semibold mb-4">"Add Employee"</h2>
+              {alertMessage && (
+                <div
+                  role="alert"
+                  className="alert alert-warning flex items-center gap-2 p-3 rounded bg-yellow-100 text-yellow-700 border border-yellow-400"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 shrink-0 stroke-current"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <span>{alertMessage}</span>
+                </div>
+              )}
+
+              <select
+                className="border p-2 rounded w-full mb-2 mt-5 custom-input-bg"
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              >
+                <option value="">Select Role</option>
+                <option value="EMPLOYEE">Employee</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="Name"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.name}
+                onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.email}
+                onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Position"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.position }
+                onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Department"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.department }
+                onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Contact no."
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.contactNumber }
+                onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Address"
+                className="border p-2 rounded w-full mb-2 custom-input-bg"
+                value={newEmployee.address }
+                onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
+              />
+
+              <div className="flex justify-end">
+                <button
+                  className="bg-gray-400 text-white px-4 py-2 rounded mr-2"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setIsEditing(false); // Close the modal
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  onClick= {handleAdd} // Determine whether to add or edit
+                >
+                   "Add"
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+              <EditEmployeeModal
+                  isOpen={isEditing}
+                  onClose={() => setIsEditing(false)}
+                  employee={editingEmployee}
+                  onUpdate={handleUpdate}
+                  alertMessage={alertMessage}
+                  setAlertMessage={setAlertMessage}
+                  setNewEmployee={setNewEmployee}
+                  newEmployee={newEmployee}
+                  setNewUser={setNewUser}
+                  newUser={newUser}
+                />
+
     </div>
   );
 };

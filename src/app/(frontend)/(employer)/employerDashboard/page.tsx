@@ -76,7 +76,7 @@ const Dashboard = () => {
               Total Employees: <span className="font-bold">{employees.length}</span>
             </p>
             <div className="flex items-center w-full">
-              <div className="w-[280px] h-[280px]">
+            <div className="w-full sm:w-[250px] md:w-[280px] lg:w-[300px] max-w-full mx-auto">
                 <Doughnut data={getDonutData(selectedEmployee)} options={{ maintainAspectRatio: false }} />
               </div>
               <div className="ml-6 text-sm text-gray-700">

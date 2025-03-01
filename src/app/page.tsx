@@ -52,7 +52,7 @@ router.push("/register");
         
          // Redirect based on role
       if (data.user.role === "ADMIN") {
-        router.push("/admin-dashboard");
+        router.push("/employerDashboard");
       } else if (data.user.role === "EMPLOYEE") {
         router.push("/employee-dashboard");
       } else {

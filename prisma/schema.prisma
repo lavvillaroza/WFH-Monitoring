@@ -25,44 +25,44 @@ enum DTRProblemStatus {
 
 model User {
   id        String   @id @default(uuid())
-  name      String
   email     String   @unique
+  employeeId    String   @unique 
   password  String
+  name      String
   role      Role     @default(EMPLOYEE) 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  employees               Employee[]
+  status    String
+  dailyTimeRecords        DailyTimeRecord[]
   dailyTimeRecordProblems DailyTimeRecordProblem[]
+  overtimes               Overtime[]
+  leaves                  Leave[]
 }
 
-model Employee {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  position   String
-  department String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dtr       DailyTimeRecord[]
-  overtimes Overtime[]
-  leaves    Leave[]
+model EmployeeDetails {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique @map("email")  // Ensuring email maps to User's email
+  employeeId    String   @unique 
+  position      String
+  department    String
+  contactNumber String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model DailyTimeRecord {
-  id         Int      @id @default(autoincrement())
-  employeeId String
-  date       DateTime
-  day        String
-  checkIn    String?
-  breakOut   String?
-  breakIn    String?
-  checkOut   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @default(now())
+  timeIn    DateTime
+  timeOut   DateTime?  
+  remarks   String?    
+  createdAt DateTime @default(now())  
+  updatedAt DateTime @updatedAt  
 
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DailyTimeRecordProblem {
@@ -70,7 +70,7 @@ model DailyTimeRecordProblem {
   userId    String
   date      DateTime
   type      String
-  remarks     String
+  remarks   String
   status    DTRProblemStatus @default(PENDING)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,7 +80,7 @@ model DailyTimeRecordProblem {
 
 model Leave {
   id         String        @id @default(uuid())
-  employeeId String
+  userId     String
   leaveType  String
   startDate  DateTime
   endDate    DateTime
@@ -89,12 +89,12 @@ model Leave {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Overtime {
   id         String        @id @default(uuid())
-  employeeId String
+  userId     String
   date       DateTime
   startTime  DateTime
   endTime    DateTime
@@ -105,5 +105,5 @@ model Overtime {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
