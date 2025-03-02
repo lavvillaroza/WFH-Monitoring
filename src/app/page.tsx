@@ -1,7 +1,9 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import "./globals.css";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -83,14 +85,14 @@ router.push("/register");
           <input
             type="email"
             placeholder="Email"
-            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
+            className="input input-bordered w-full mt-2 input-field bg-white "
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
+            className="input input-bordered w-full mt-2 bg-white text-black "
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

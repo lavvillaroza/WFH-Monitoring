@@ -1,11 +1,12 @@
 "use client";
 
 import NavbarEmployer from "@/app/navbarEmployer/page";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { MoreVertical } from "lucide-react";
 import ViewAttendanceModal from "@/app/components/viewAttendanceModal";
 import EditEmployeeModal from "@/app/components/editEmployeeModal"; // Import the modal
+import DeleteEmployeeModal from "@/app/components/deleteEmployeeModal";
 
 
 
@@ -20,8 +21,10 @@ const ManageEmployees = () => {
   const itemsPerPage = 5; // Limit to 2 employees per page
   const [isModalOpen, setIsModalOpen] = useState(false); // Manage modal state
   const dropdownRef = useRef(null);
-  const [editingEmployee, setEditingEmployee] = useState(null);  // Track employee to edit
-  const [isEditing, setIsEditing] = useState(false); // Flag to check if the modal is in editing mode
+  const [editingEmployee, setEditingEmployee] = useState(null);  
+  const [isEditing, setIsEditing] = useState(false); 
+  const [isDeleting,setIsDeleting] = useState(false);
+  const [deletingEmployee,setDeleteEmployee] = useState(null);
 
   
   
@@ -69,10 +72,7 @@ const ManageEmployees = () => {
   }, []);
 
  
-  const handleEdit = (employee) => {
-    setEditingEmployee(employee);
-    setIsEditing(true); // Open the edit modal
-  };
+
 
   const handleUpdate = () => {
     fetchEmployees();
@@ -92,32 +92,32 @@ const ManageEmployees = () => {
       }
       const employeesData = await employeeResponse.json();
   
-      // Fetch user data (using the same API or a separate one)
+      // Fetch user data (including passwords)
       const userResponse = await fetch("/employerAPI/user");
       if (!userResponse.ok) {
         throw new Error("Failed to fetch users");
       }
       const usersData = await userResponse.json();
   
-      // Map employee data with user status based on email matching
+      // Map employee data with user status and password based on email matching
       const employeesWithStatus = employeesData.map((employee) => {
         const user = usersData.find((user) => user.email === employee.email);
         if (user) {
-          // Ensure 'status' is added
           return {
             ...employee,
-            status: user.status, // Add status to employee data
+            status: user.status,
+            password: user.password, // Ensure password is included
           };
         }
-        return employee; // If no matching user found, return employee data as is
+        return employee;
       });
   
-      // Set the state with employees and their status
       setEmployees(employeesWithStatus);
     } catch (error) {
       console.error("Error fetching employees or users:", error);
     }
   };
+  
   
 
 
@@ -272,7 +272,7 @@ const ManageEmployees = () => {
         <div className="grid grid-cols-1">
           <div className="card bg-white shadow-xl text-black p-10 ">
             <h2 className="text-xl font-semibold mb-4">Employee List</h2>
-            <div className="overflow-x-auto min-h-[300px]">
+            <div className="overflow-x-auto min-h-[350px]">
               <table className="table table-xs">
                 <thead>
                   <tr className="bg-gray-200">
@@ -308,13 +308,16 @@ const ManageEmployees = () => {
                               <button
                                 className="block px-4 py-2 w-full text-left hover:bg-gray-100"
                                 onClick={() => {
-                                  setEditingEmployee(emp);  // Set employee data to be edited
-                                  setIsEditing(true);  // Set editing mode to true
+                                  setEditingEmployee(emp);  
+                                  setIsEditing(true); 
                                 }}
                               >
                                 Edit
                               </button>
-                              <button className="block px-4 py-2 w-full text-left hover:bg-gray-100">Delete</button>
+                              <button className="block px-4 py-2 w-full text-left hover:bg-gray-100"  onClick={() => {
+                                  setDeleteEmployee(emp);  
+                                  setIsDeleting(true); 
+                                }}>Delete</button>
                               <button
                               className="block px-4 py-2 w-full text-left hover:bg-gray-100"
                               onClick={() => {
@@ -368,7 +371,7 @@ const ManageEmployees = () => {
       {isAdding && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-              <h2 className="text-lg font-semibold mb-4">"Add Employee"</h2>
+              <h2 className="text-lg font-semibold mb-4 text-gray-700">"Add Employee"</h2>
               {alertMessage && (
                 <div
                   role="alert"
@@ -392,7 +395,7 @@ const ManageEmployees = () => {
               )}
 
               <select
-                className="border p-2 rounded w-full mb-2 mt-5 custom-input-bg"
+                className="border p-2 rounded w-full mb-2 mt-5 bg-white text-gray-600"
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               >
@@ -405,49 +408,42 @@ const ManageEmployees = () => {
                 type="text"
                 placeholder="Name"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.name}
                 onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
               />
               <input
                 type="email"
                 placeholder="Email"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.email}
                 onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
               />
               <input
                 type="password"
                 placeholder="Password"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newUser.password}
                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Position"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.position }
                 onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Department"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.department }
                 onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Contact no."
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.contactNumber }
                 onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })}
               />
               <input
                 type="text"
                 placeholder="Address"
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
-                value={newEmployee.address }
                 onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
               />
 
@@ -475,7 +471,7 @@ const ManageEmployees = () => {
 
               <EditEmployeeModal
                   isOpen={isEditing}
-                  onClose={() => setIsEditing(false)}
+                  onClose={() =>{ setIsEditing(false); fetchEmployees(); }}
                   employee={editingEmployee}
                   onUpdate={handleUpdate}
                   alertMessage={alertMessage}
@@ -485,6 +481,13 @@ const ManageEmployees = () => {
                   setNewUser={setNewUser}
                   newUser={newUser}
                 />
+
+                <DeleteEmployeeModal 
+                      isOpen={isDeleting}
+                      onClose={() => {setIsDeleting(false); fetchEmployees();}}
+                      employee={deletingEmployee}
+                      alertMessage={alertMessage}
+                    />
 
     </div>
   );

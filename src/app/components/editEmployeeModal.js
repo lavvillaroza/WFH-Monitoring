@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ToastMessage from "./toastMessage";
 
 const EditEmployeeModal = ({
   isOpen,
@@ -13,10 +14,10 @@ const EditEmployeeModal = ({
   newUser,
 }) => {
   const [initialEmployeeData, setInitialEmployeeData] = useState(null); // Track initial employee data
-
+  const [showToast, setShowToast] = useState(false);
   useEffect(() => {
     if (employee) {
-      setInitialEmployeeData(employee); // Store the initial data
+      setInitialEmployeeData(employee);
       setNewEmployee({
         name: employee.name || "",
         email: employee.email || "",
@@ -26,15 +27,17 @@ const EditEmployeeModal = ({
         address: employee.address || "",
       });
       setNewUser({
-        password: "",
+        password:employee.password|| "",
         role: employee.role || "",
         status: employee.status || "",
         email: employee.email || "",
         name: employee.name || "",
-
       });
+  
+      setAlertMessage(""); 
+      setShowToast(false); 
     } else {
-      setInitialEmployeeData(null); // Reset initial data when no employee
+      setInitialEmployeeData(null);
       setNewEmployee({
         name: "",
         email: "",
@@ -47,8 +50,12 @@ const EditEmployeeModal = ({
         password: "",
         role: "",
       });
+  
+      setAlertMessage(""); // ✅ Reset alert when modal opens with no employee
+      setShowToast(false); // ✅ Hide toast when no employee is selected
     }
   }, [employee, setNewEmployee, setNewUser]);
+  
 
   const hasChanges = () => {
     // Check if there are any changes in the employee data
@@ -67,11 +74,10 @@ const EditEmployeeModal = ({
   const handleUpdate = async () => {
     try {
       if (!hasChanges()) {
-        // If no changes, don't show the alert and just return
         onClose();
         return;
       }
-
+  
       if (
         !newEmployee.name ||
         !newEmployee.email ||
@@ -82,54 +88,65 @@ const EditEmployeeModal = ({
         setAlertMessage("⚠️ Please fill in all required fields (Name, Email, Position, Password, Role).");
         return;
       }
-
+  
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(newEmployee.email)) {
         setAlertMessage("⚠️ Warning: Invalid email address!");
         return;
       }
-
+  
       setAlertMessage("");
-
+  
       const updatedUser = { ...newUser, name: newEmployee.name, email: newEmployee.email };
       setNewUser(updatedUser);
-
-      const userResponse = await fetch(`/employerAPI/editUser/${employee.employeeId}`, { 
+  
+      const userResponse = await fetch(`/employerAPI/editUser/${employee.employeeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedUser),
       });
-
+  
       if (!userResponse.ok) {
         throw new Error("Failed to update user");
       }
-
-      const updatedEmployeeData = { ...newEmployee, employeeId:newEmployee.employeeId,name: newEmployee.name, email: newEmployee.email ,position:newEmployee.position ,department:newEmployee.department,contactNumber:newEmployee.contactNumber,address:newEmployee.address}; // Use `id` instead of `userId`
-      setNewEmployee(updatedEmployeeData)
-      const employeeResponse = await fetch(`/employerAPI/editEmployee/${employee.employeeId}`, { 
+  
+      const updatedEmployeeData = { ...newEmployee };
+      setNewEmployee(updatedEmployeeData);
+  
+      const employeeResponse = await fetch(`/employerAPI/editEmployee/${employee.employeeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedEmployeeData),
       });
-
+  
       if (!employeeResponse.ok) {
         throw new Error("Failed to update employee");
       }
-
+  
       setAlertMessage("✅ Employee updated successfully!");
+      setShowToast(true); // Show toast first
+    
+  
+      setTimeout(() => {
+        setShowToast(false);
+        setAlertMessage("");
+        onClose();
+      }, 2000); // Delay closing by 2 seconds (adjust if needed)
+      
       onUpdate();
-      onClose();
     } catch (error) {
       console.error("❌ Error editing employee:", error);
       setAlertMessage(`❌ Error: ${error.message}`);
+      setShowToast(true); // Show toast for error messages as well
     }
   };
+  
 
   return (
     isOpen && (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
         <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-          <h2 className="text-lg font-semibold mb-4">Edit Employee</h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-700">Edit Employee</h2>
           {alertMessage && (
             <div
               role="alert"
@@ -151,67 +168,81 @@ const EditEmployeeModal = ({
               <span>{alertMessage}</span>
             </div>
           )}
+          
+            <label className="block text-gray-700">Role</label>
+            <select
+              className="border p-2 rounded w-full mb-2 mt-1 bg-white text-black"
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+            >
+              <option value="">Select Role</option>
+              <option value="EMPLOYEE">Employee</option>
+              <option value="ADMIN">Admin</option>
+            </select>
 
-          {/* Form fields here */}
-          <select
-            className="border p-2 rounded w-full mb-2 mt-5 custom-input-bg"
-            value={newUser.role}
-            onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-          >
-            <option value="">Select Role</option>
-            <option value="EMPLOYEE">Employee</option>
-            <option value="ADMIN">Admin</option>
-          </select>
+            <label className="block text-gray-700">Name</label>
+            <input
+              type="text"
+              placeholder="Name"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.name}
+              onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+            />
 
-          <input
-            type="text"
-            placeholder="Name"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.name}
-            onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.email}
-            onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Position"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.position}
-            onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Department"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.department}
-            onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Contact no."
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.contactNumber}
-            onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })}
-          />
-          <input
-            type="text"
-            placeholder="Address"
-            className="border p-2 rounded w-full mb-2 custom-input-bg"
-            value={newEmployee.address}
-            onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
-          />
+            <label className="block text-gray-700">Email</label>
+            <input
+              type="email"
+              placeholder="Email"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.email}
+              onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+            />
+
+            <label className="block text-gray-700">Password</label>
+            <input
+              type="password"
+              placeholder="Password"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            />
+
+            <label className="block text-gray-700">Position</label>
+            <input
+              type="text"
+              placeholder="Position"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.position}
+              onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })}
+            />
+
+            <label className="block text-gray-700">Department</label>
+            <input
+              type="text"
+              placeholder="Department"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.department}
+              onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })}
+            />
+
+            <label className="block text-gray-700">Contact no.</label>
+            <input
+              type="text"
+              placeholder="Contact no."
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.contactNumber}
+              onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })}
+            />
+
+            <label className="block text-gray-700">Address</label>
+            <input
+              type="text"
+              placeholder="Address"
+              className="border p-2 rounded w-full mb-2 custom-input-bg"
+              value={newEmployee.address}
+              onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
+            />
+
 
           <div className="flex justify-end">
             <button
@@ -228,6 +259,7 @@ const EditEmployeeModal = ({
             </button>
           </div>
         </div>
+   
       </div>
     )
   );

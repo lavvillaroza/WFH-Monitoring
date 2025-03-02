@@ -2,111 +2,139 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ToastMessage from "@/app/components/toastMessage";
 
-const RegistrationPage = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role,setRole] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+const RegisterEmployee = ( ) => {
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    
+    name: "",
+    email: "",
+    position: "",
+    department: "",
+    contactNumber: "",
+    address: "",
+  });
+
   const router = useRouter();
+  const [newUser, setNewUser] = useState({
+    password: "",
+    status: "Active",
+    name: "",
+    email: "",
+    role: "",
+  });
+
+  const handleCancel = async ()=>{
+    router.push("/")
+  }
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      setMessage("All fields are required!");
-      setMessageType("error");
-      return;
-    }
-
     try {
-      const response = await fetch("/employerAPI/user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role: "Employee",
-        }),
-      });
-
-      const data = await response.json();
+      const response = await fetch("/employerAPI/register");
       if (!response.ok) {
-        throw new Error(data.error);
+        throw new Error("Failed to fetch employee ID");
+      }
+      const data = await response.json();
+      const employeeId = data.employeeId;
+
+      if (!newEmployee.name || !newEmployee.email || !newEmployee.position || !newUser.password || !newUser.role) {
+        setAlertMessage("⚠️ Please fill in all required fields.");
+        return;
       }
 
-      setMessage("Registration successful! Redirecting...");
-      setMessageType("success");
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmployee.email)) {
+        setAlertMessage("⚠️ Invalid email address!");
+        return;
+      }
 
+      setAlertMessage("");
+
+      const userData = {
+        ...newUser,
+        employeeId,
+        name: newEmployee.name,
+        email: newEmployee.email,
+        status: "Active",
+      };
+
+      const userResponse = await fetch("/employerAPI/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      if (!userResponse.ok) {
+        throw new Error("Failed to create user");
+      }
+
+      const employeeData = {
+        ...newEmployee,
+        employeeId,
+      };
+
+      const employeeResponse = await fetch("/employerAPI/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employeeData),
+      });
+
+      if (!employeeResponse.ok) {
+        throw new Error("Failed to register employee");
+      }
+      setAlertMessage("Registered succesfully. Redirecting....")
+      setShowToast(true); // Show toast message
+      setNewEmployee({ name: "", email: "", position: "", department: "", contactNumber: "", address: "" });
+      setNewUser({ password: "", status: "Active", name: "", email: "", role: "" });
       setTimeout(() => {
-        setMessage("");
-        router.push("/"); // Redirect to login page after success
+        router.push("/"); 
       }, 2000);
-    } catch (error: any) {
-      setMessage(error.message);
-      setMessageType("error");
+
+    } catch (error) {
+      setAlertMessage(`❌ Error: ${error.message}`);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      {message && (
-        <div
-          className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${
-            messageType === "error"
-              ? "bg-red-600 border-red-800"
-              : "bg-green-600 border-green-800"
-          } text-white`}
+    
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Register Employee</h2>
+        {alertMessage && <div className="text-red-500 mb-2">{alertMessage}</div>}
+
+        <select
+          className="border p-2 rounded w-full mb-2 bg-white text-gray-700"
+          value={newUser.role}
+          onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
         >
-          {message}
-        </div>
-      )}
-      <div className="card w-96 bg-gray-600 shadow-xl border border-[#2C6975] text-white">
-        <div className="card-body">
-          <p>Registration</p>
-          <input
-            type="text"
-            placeholder="Name"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Role"
-            className="input input-bordered w-full mt-2 bg-gray-600 text-white border-[#2C6975]"
-            value="Employee"
-            disabled
-          />
-          <div className="card-actions justify-end">
-            <button
-              className="btn bg-[#2C6975] hover:bg-gray-600 text-white"
-              onClick={handleRegister}
-            >
-              Register
-            </button>
-          </div>
+          <option value="">Select Role</option>
+          <option value="EMPLOYEE">Employee</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+
+        <input type="text" placeholder="Name" className="border p-2 rounded w-full mb-2" value={newEmployee.name} onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })} />
+        <input type="email" placeholder="Email" className="border p-2 rounded w-full mb-2" value={newEmployee.email} onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })} />
+        <input type="password" placeholder="Password" className="border p-2 rounded w-full mb-2" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+        <input type="text" placeholder="Position" className="border p-2 rounded w-full mb-2" value={newEmployee.position} onChange={(e) => setNewEmployee({ ...newEmployee, position: e.target.value })} />
+        <input type="text" placeholder="Department" className="border p-2 rounded w-full mb-2" value={newEmployee.department} onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })} />
+        <input type="text" placeholder="Contact no." className="border p-2 rounded w-full mb-2" value={newEmployee.contactNumber} onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })} />
+        <input type="text" placeholder="Address" className="border p-2 rounded w-full mb-2" value={newEmployee.address} onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })} />
+
+        <div className="flex justify-end">
+          <button className="bg-gray-400 text-white px-4 py-2 rounded mr-2"  onClick={handleCancel}>Cancel</button>
+          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleRegister}>Register</button>
         </div>
       </div>
+      {showToast && (
+      <ToastMessage alertMessage={alertMessage}/>
+      )}
+      
+
     </div>
+    
   );
 };
 
-export default RegistrationPage;
+export default RegisterEmployee;
