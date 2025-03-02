@@ -94,3 +94,10 @@ model Overtime {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+model HumanActivityLog {
+  id          String   @id @default(uuid())  // Unique identifier
+  userId      String   // User who triggered the activity
+  activity    String   // Example: "User Yawning", "Eyes Closed", "User Out of Area"
+  timestamp   DateTime @default(now())  // Time of the event
+}
+

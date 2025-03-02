@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext,useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ const Navbar = () => {
     const [DropdownOpen, setDropdownOpen] = useState(false); 
     const [isCameraOn, setIsCameraOn] = useState(false);
 
+  
     const pageTitles: { [key: string]: string } = {
         "/dashboard": "Dashboard",
         "/activityMonitoring": "Activity Monitoring",
@@ -31,9 +32,16 @@ const Navbar = () => {
         "/overtime": "Overtime",
     };
 
+    
+    //   useEffect(() => {
+    //     if (videoRef?.current) {
+    //       videoRef.current.srcObject = cameraContext?.stream || null;
+    //     }
+    //   }, [cameraContext?.stream, videoRef]);
+    
 
     useEffect(() => {
-        
+       
     const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
@@ -61,8 +69,10 @@ const Navbar = () => {
     
                 if (lastDTR && lastDTR.timeOut === null) {
                     setSelectedAction("Time Out");
+                    setIsCameraOn(true);
                 } else {
                     setSelectedAction("Time In");
+                    setIsCameraOn(false);
                 }
             } catch (error) {
                 console.error("Error fetching last DTR:", error);
@@ -71,6 +81,8 @@ const Navbar = () => {
     
         fetchLastDTR();
     }, []);
+
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         const handleBeforeUnload = async () => {
@@ -371,8 +383,6 @@ const Navbar = () => {
                     >
                         {selectedAction}
                     </button>
-
-                    {/* <video ref={cameraContext?.videoRef} autoPlay className="hidden" /> */}
                     <span className="text-gray-300">{currentTime}</span>
                 </div>
             </div>
