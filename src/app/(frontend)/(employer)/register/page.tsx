@@ -38,6 +38,7 @@ const RegisterEmployee = ( ) => {
       }
       const data = await response.json();
       const employeeId = data.employeeId;
+      console.log(employeeId)
 
       if (!newEmployee.name || !newEmployee.email || !newEmployee.position || !newUser.password || !newUser.role) {
         setAlertMessage("⚠️ Please fill in all required fields.");

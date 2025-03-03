@@ -7,19 +7,14 @@ const prisma = new PrismaClient();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log("Request body:", body);
 
     if (!body.email) {
       return NextResponse.json({ error: "Missing Email" }, { status: 400 });
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: body.email },
-    });
 
-    if (existingUser) {
-      return NextResponse.json({ error: "User with this email already exists" }, { status: 400 });
-    }
 
     // Check if Employee already exists by email
     const existingEmployee = await prisma.employeeDetails.findUnique({
@@ -31,22 +26,22 @@ export async function POST(request: Request) {
     }
 
     // Ensure unique Employee ID generation
-    let newEmployeeId;
-    let isUnique = false;
+    // let newEmployeeId;
+    // let isUnique = false;
 
-    while (!isUnique) {
-      newEmployeeId = await generateEmployeeId();
-      const existingId = await prisma.employeeDetails.findUnique({
-        where: { employeeId: newEmployeeId },
-      });
+    // while (!isUnique) {
+    //   newEmployeeId = await generateEmployeeId();
+    //   const existingId = await prisma.employeeDetails.findUnique({
+    //     where: { employeeId: newEmployeeId },
+    //   });
 
-      if (!existingId) isUnique = true;
-    }
+    //   if (!existingId) isUnique = true;
+    // }
 
     // Create new EmployeeDetails entry
     const employee = await prisma.employeeDetails.create({
       data: {
-        employeeId: newEmployeeId,
+        employeeId: String(body.employeeId),
         name: body.name,
         email: body.email,
         position: body.position,
@@ -67,14 +62,14 @@ export async function POST(request: Request) {
 }
 
 const generateEmployeeId = async () => {
-  const lastEmployee = await prisma.employeeDetails.findFirst({
+  const lastEmployee = await prisma.user.findFirst({
     orderBy: { id: "desc" }, // Use the primary key (auto-incremented `id`) for correct ordering
   });
 
   let newIdNumber = 1;
 
   if (lastEmployee) {
-    const lastIdNumber = await prisma.employeeDetails.findMany({
+    const lastIdNumber = await prisma.user.findMany({
       select: { employeeId: true },
     });
 

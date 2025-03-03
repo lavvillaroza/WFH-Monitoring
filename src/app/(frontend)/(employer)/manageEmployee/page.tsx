@@ -7,6 +7,7 @@ import { MoreVertical } from "lucide-react";
 import ViewAttendanceModal from "@/app/components/viewAttendanceModal";
 import EditEmployeeModal from "@/app/components/editEmployeeModal"; // Import the modal
 import DeleteEmployeeModal from "@/app/components/deleteEmployeeModal";
+import ToastMessage from "@/app/components/toastMessage";
 
 
 
@@ -25,6 +26,9 @@ const ManageEmployees = () => {
   const [isEditing, setIsEditing] = useState(false); 
   const [isDeleting,setIsDeleting] = useState(false);
   const [deletingEmployee,setDeleteEmployee] = useState(null);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastStatus,setToastStatus] = useState("");
 
   
   
@@ -75,10 +79,20 @@ const ManageEmployees = () => {
 
 
   const handleUpdate = () => {
+    console.log("Toast should appear now!"); // Debugging
+    setToastMessage("User Update Successfully")
+    setToastStatus("alert-success");
+    
+    setShowToast(true); // Show toast message
+
     fetchEmployees();
-    setEditingEmployee(null); // Close modal after update
-  };
-  
+    setEditingEmployee(null); 
+
+    setTimeout(() => {
+        console.log("Hiding toast now...");
+        setShowToast(false);
+    }, 3000);
+};
 
 
  
@@ -106,7 +120,8 @@ const ManageEmployees = () => {
           return {
             ...employee,
             status: user.status,
-            password: user.password, // Ensure password is included
+            password: user.password, 
+            role:user.role,// Ensure password is included
           };
         }
         return employee;
@@ -175,7 +190,8 @@ const ManageEmployees = () => {
       });
   
       if (!userResponse.ok) {
-        throw new Error("Failed to create user");
+        const errorData = await userResponse.json();
+        throw new Error(errorData.error || "Failed to register employee");
       }
   
       const createdUser = await userResponse.json(); // Get the created user data
@@ -184,7 +200,7 @@ const ManageEmployees = () => {
       const employeeData = {
         ...newEmployee,
         email: newEmployee.email,
-        employeeId: employeeId, // Include the employeeId here
+        employeeId: employeeId, 
       };
   
       // Step 7: Create the employee in the database
@@ -198,6 +214,8 @@ const ManageEmployees = () => {
         const errorData = await employeeResponse.json();
         throw new Error(errorData.error || "Failed to register employee");
       }
+
+
   
       // Step 8: Success message and reset form
       setIsAdding(false);
@@ -210,13 +228,18 @@ const ManageEmployees = () => {
         address: "",
       });
       setNewUser({ password: "", status: "Active", name: "", email: "", role: "" });
-  
-      // Step 9: Fetch employees to refresh the list
+      setShowToast(true);
+      setToastMessage("User Registered Successfully")
+      setToastStatus("alert-success");
+      setTimeout(() => {
+        console.log("Hiding toast now...");
+        setShowToast(false);
+    }, 3000);
       fetchEmployees();
     } catch (error) {
-      console.error("❌ Error adding employee:", error);
       setAlertMessage(`❌ Error: ${error.message}`);
     }
+
   };
   
   
@@ -272,6 +295,9 @@ const ManageEmployees = () => {
         <div className="grid grid-cols-1">
           <div className="card bg-white shadow-xl text-black p-10 ">
             <h2 className="text-xl font-semibold mb-4">Employee List</h2>
+                {showToast && (
+                <ToastMessage toastMessage={toastMessage} toastStatus={toastStatus}/>
+                )}
             <div className="overflow-x-auto min-h-[350px]">
               <table className="table table-xs">
                 <thead>
@@ -465,22 +491,25 @@ const ManageEmployees = () => {
                 </button>
               </div>
             </div>
+        
+
           </div>
         )}
 
 
               <EditEmployeeModal
-                  isOpen={isEditing}
-                  onClose={() =>{ setIsEditing(false); fetchEmployees(); }}
-                  employee={editingEmployee}
-                  onUpdate={handleUpdate}
-                  alertMessage={alertMessage}
-                  setAlertMessage={setAlertMessage}
-                  setNewEmployee={setNewEmployee}
-                  newEmployee={newEmployee}
-                  setNewUser={setNewUser}
-                  newUser={newUser}
-                />
+                isOpen={isEditing}
+                onClose={() => { setIsEditing(false); fetchEmployees() }}
+                employee={editingEmployee}
+                onUpdate={handleUpdate}
+                alertMessage={alertMessage}
+                setAlertMessage={setAlertMessage}
+                setNewEmployee={setNewEmployee}
+                newEmployee={newEmployee}
+                setNewUser={setNewUser}
+                newUser={newUser}
+              />
+
 
                 <DeleteEmployeeModal 
                       isOpen={isDeleting}
@@ -488,6 +517,7 @@ const ManageEmployees = () => {
                       employee={deletingEmployee}
                       alertMessage={alertMessage}
                     />
+          
 
     </div>
   );

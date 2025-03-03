@@ -1,12 +1,12 @@
 import React from 'react'
 
-function ToastMessage({alertMessage}) {
+function ToastMessage({toastMessage,toastStatus}) {
   return (
-    <div className="toast toast-top toast-center">
-          <div className="alert alert-success">
-            <span>{alertMessage}</span>
-          </div>
-        </div>
+    <div className="toast">
+    <div className={`alert ${toastStatus}`}>
+      <span className='text-white'>{toastMessage}</span>
+    </div>
+  </div>
   )
 }
 

@@ -107,7 +107,8 @@ const EditEmployeeModal = ({
       });
   
       if (!userResponse.ok) {
-        throw new Error("Failed to update user");
+        const errorData = await userResponse.json();
+        throw new Error(errorData.error || "Failed to register employee");
       }
   
       const updatedEmployeeData = { ...newEmployee };
@@ -135,7 +136,6 @@ const EditEmployeeModal = ({
       
       onUpdate();
     } catch (error) {
-      console.error("❌ Error editing employee:", error);
       setAlertMessage(`❌ Error: ${error.message}`);
       setShowToast(true); // Show toast for error messages as well
     }
@@ -145,8 +145,8 @@ const EditEmployeeModal = ({
   return (
     isOpen && (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-        <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-          <h2 className="text-lg font-semibold mb-4 text-gray-700">Edit Employee</h2>
+        <div className="bg-white p-6 rounded-lg shadow-lg w-96 h-[70vh] overflow-y-auto">
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Edit Employee</h2>
           {alertMessage && (
             <div
               role="alert"
