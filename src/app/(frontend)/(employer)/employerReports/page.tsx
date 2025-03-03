@@ -1,12 +1,12 @@
 "use client";
 
 import NavbarEmployer from "@/app/navbarEmployer/page";
-import { useState } from "react";
-import { employees } from "../dummyData";
+import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { useRouter } from "next/navigation";
 
 import {
   Chart,
@@ -28,6 +28,8 @@ const Reports = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedEmployees, setSelectedEmployees] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [employees, setEmployees] = useState([]);
+    const router = useRouter();
 
   const itemsPerPage = 5;
   const totalPages = Math.ceil(employees.length / itemsPerPage);
@@ -42,6 +44,51 @@ const Reports = () => {
     }
     setSelectAll(!selectAll);
   };
+
+  const fetchEmployees = async () => {
+    try {
+      // Fetch employee data
+      const employeeResponse = await fetch("/employerAPI/employee");
+      if (!employeeResponse.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      const employeesData = await employeeResponse.json();
+  
+      // Fetch user data (including passwords)
+      const userResponse = await fetch("/employerAPI/user");
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const usersData = await userResponse.json();
+  
+      const employeesWithStatus = employeesData.map((employee) => {
+        const user = usersData.find((user) => user.email === employee.email);
+        if (user) {
+          return {
+            ...employee,
+            status: user.status,
+            password: user.password, 
+            role:user.role,// Ensure password is included
+          };
+        }
+        return employee;
+      });
+  
+      setEmployees(employeesWithStatus);
+    } catch (error) {
+      console.error("Error fetching employees or users:", error);
+    }
+  };
+
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      router.push("/"); // Redirect if not logged in
+    } else {
+      fetchEmployees();
+    }
+  }, []);
 
   const toggleSelectEmployee = (id: number) => {
     setSelectedEmployees((prevSelected) =>
@@ -173,56 +220,57 @@ const Reports = () => {
           <div className="custom-card-bg shadow-md text-white shadow-xl p-6 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">EMPLOYEE ATTENDANCE</h2>
             <div className="mb-4 flex gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                <input
-                  type="datetime-local"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                  className="mt-1 block w-full p-2 border bg-white text-black"
-                />
-              </div>
+            <div className="mb-4 flex gap-4 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">End Date</label>
-                <input
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                  className="mt-1 block w-full p-2 border bg-white text-black"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    required
+                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
+                <button className="btn btn-info text-white">Filter</button>
               </div>
-
-              <button className="bg-blue-500 text-white px-4 py-2 rounded">Filter</button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full bg-white text-black rounded-lg shadow-lg">
+            <div className="overflow-x-auto ">
+              <table className="table table-xs ">
                 <thead>
-                  <tr>
-                    <th className="p-3 text-center">
+                  <tr className="bg-gray-200 text-black">
+                    <th className="p-3 text-center ">
                       <input type="checkbox" checked={selectAll} onChange={toggleSelectAll} />
                     </th>
-                    <th className="p-3 text-left">Name</th>
-                    <th className="p-3 text-left">Job</th>
-                    <th className="p-3 text-left">Status</th>
+                    <th className="p-3 text-center">Name</th>
+                    <th className="p-3 text-center">Job</th>
+                    <th className="p-3 text-center">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {displayedEmployees.map((employee) => (
                     <tr key={employee.id} className="border-t">
-                      <td className="p-3 text-center">
+                      <td className="px-4 py-2 border-b text-black text-center">
                         <input
                           type="checkbox"
                           checked={selectedEmployees.includes(employee.id)}
                           onChange={() => toggleSelectEmployee(employee.id)}
                         />
                       </td>
-                      <td className="p-3">{employee.name}</td>
-                      <td className="p-3">{employee.job}</td>
-                      <td className="p-3">{employee.status}</td>
+                      <td className="px-4 py-2 border-b text-black text-center">{employee.name}</td>
+                      <td className="px-4 py-2 border-b text-black text-center">{employee.position}</td>
+                      <td className="px-4 py-2 border-b text-black text-center">{employee.status}</td>
                     </tr>
                   ))}
                 </tbody>

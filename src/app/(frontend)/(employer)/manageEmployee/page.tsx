@@ -113,7 +113,6 @@ const ManageEmployees = () => {
       }
       const usersData = await userResponse.json();
   
-      // Map employee data with user status and password based on email matching
       const employeesWithStatus = employeesData.map((employee) => {
         const user = usersData.find((user) => user.email === employee.email);
         if (user) {

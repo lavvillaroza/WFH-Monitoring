@@ -7,6 +7,8 @@ import ToastMessage from "@/app/components/toastMessage";
 const RegisterEmployee = ( ) => {
   const [alertMessage, setAlertMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage,setToastMessage] = useState("");
+  const [toastStatus,setToastStatus] = useState("");
   const [newEmployee, setNewEmployee] = useState({
     
     name: "",
@@ -85,7 +87,8 @@ const RegisterEmployee = ( ) => {
       if (!employeeResponse.ok) {
         throw new Error("Failed to register employee");
       }
-      setAlertMessage("Registered succesfully. Redirecting....")
+      setToastMessage("Registered Succesfully")
+      setToastStatus("alert-success")
       setShowToast(true); // Show toast message
       setNewEmployee({ name: "", email: "", position: "", department: "", contactNumber: "", address: "" });
       setNewUser({ password: "", status: "Active", name: "", email: "", role: "" });
@@ -129,7 +132,7 @@ const RegisterEmployee = ( ) => {
         </div>
       </div>
       {showToast && (
-      <ToastMessage alertMessage={alertMessage}/>
+      <ToastMessage toastMessage={toastMessage} toastStatus={toastStatus}/>
       )}
       
 

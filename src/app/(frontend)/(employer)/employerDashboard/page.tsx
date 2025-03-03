@@ -1,6 +1,5 @@
 "use client";
 
-import { employees, Employee } from "../dummyData";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import NavbarEmployer from "@/app/navbarEmployer/page";
@@ -12,6 +11,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const Dashboard = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [todayDate, setTodayDate] = useState("");
+  const [employees, setEmployees] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,8 +27,46 @@ const Dashboard = () => {
     if (!authToken) {
       router.push("/"); // Redirect if not logged in
     } else {
+      fetchEmployees();
     }
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      // Fetch employee data
+      const employeeResponse = await fetch("/employerAPI/employee");
+      if (!employeeResponse.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      const employeesData = await employeeResponse.json();
+  
+      // Fetch user data (including passwords)
+      const userResponse = await fetch("/employerAPI/user");
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const usersData = await userResponse.json();
+  
+      const employeesWithStatus = employeesData.map((employee) => {
+        const user = usersData.find((user) => user.email === employee.email);
+        if (user) {
+          return {
+            ...employee,
+            status: user.status,
+            password: user.password, 
+            role:user.role,// Ensure password is included
+          };
+        }
+        return employee;
+      });
+  
+      setEmployees(employeesWithStatus);
+    } catch (error) {
+      console.error("Error fetching employees or users:", error);
+    }
+  };
+
+  
 
   const calculateAverageProductivity = () => {
     const totalEmployees = employees.length;
