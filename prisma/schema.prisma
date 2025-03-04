@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DTRProblemStatus {
+  PENDING
+  RESOLVED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(EMPLOYEE) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dailyTimeRecords        DailyTimeRecord[]
+  dailyTimeRecordProblems DailyTimeRecordProblem[]
+  overtimes               Overtime[]
+  leaves                  Leave[]
+}
+
+model DailyTimeRecord {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @default(now())
+  timeIn    DateTime
+  timeOut   DateTime?  // Nullable field for timeout
+  remarks   String?    // Nullable field for remarks
+  createdAt DateTime @default(now())  
+  updatedAt DateTime @updatedAt  // Automatically updates on changes
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model DailyTimeRecordProblem {
+  id        String          @id @default(uuid())
+  userId    String
+  date      DateTime
+  type      String
+  remarks   String
+  status    DTRProblemStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Leave {
+  id         String        @id @default(uuid())
+  userId     String
+  leaveType  String
+  startDate  DateTime
+  endDate    DateTime
+  reason     String
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Overtime {
+  id         String        @id @default(uuid())
+  userId     String
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  duration   Int  
+  reason     String
+  status     RequestStatus @default(PENDING)
+  approvedBy String? 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model HumanActivityLog {
+  id          String   @id @default(uuid())  // Unique identifier
+  userId      String   // User who triggered the activity
+  activity    String   // Example: "User Yawning", "Eyes Closed", "User Out of Area"
+  timestamp   DateTime @default(now())  // Time of the event
+}
+
