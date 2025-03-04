@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import NavbarEmployer from "@/app/navbarEmployer/page";
 import { employees, Employee } from "../dummyData";
 import CustomPieChart from "../PieChartComponent";
+import { Doughnut } from "react-chartjs-2";
 import { useRouter } from "next/navigation";
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 
 const EmployeeMonitoring = () => {
@@ -14,6 +17,7 @@ const EmployeeMonitoring = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+   const [employees, setEmployees] = useState([]);
   const router = useRouter();
 
   // Modal Filters
@@ -21,20 +25,91 @@ const EmployeeMonitoring = () => {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
+  const fetchEmployees = async () => {
+    try {
+      // Fetch employee data
+      const employeeResponse = await fetch("/employerAPI/employee");
+      if (!employeeResponse.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      const employeesData = await employeeResponse.json();
+  
+      // Fetch user data (including passwords)
+      const userResponse = await fetch("/employerAPI/user");
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const usersData = await userResponse.json();
+  
+      const employeesWithStatus = employeesData.map((employee) => {
+        const user = usersData.find((user) => user.email === employee.email);
+        if (user) {
+          return {
+            ...employee,
+            status: user.status,
+            password: user.password, 
+            role:user.role,// Ensure password is included
+          };
+        }
+        return employee;
+      });
+  
+      setEmployees(employeesWithStatus);
+    } catch (error) {
+      console.error("Error fetching employees or users:", error);
+    }
+  };
+
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
 
     if (!authToken) {
       router.push("/"); // Redirect if not logged in
     } else {
+      fetchEmployees();
     }
   }, []);
 
+  const calculateAverageProductivity = () => {
+    const totalEmployees = employees.length;
+    const totalProductive = employees.reduce((sum, emp) => sum + (emp.productivity?.productive || 0), 0);
+    const totalIdle = employees.reduce((sum, emp) => sum + (emp.productivity?.idle || 0), 0);
+    
+    return {
+      productive: totalEmployees ? totalProductive / totalEmployees : 0,
+      idle: totalEmployees ? totalIdle / totalEmployees : 0,
+    };
+  };
+
+  const getDonutData = (employee: Employee | null) => {
+    if (!employee) {
+      const avg = calculateAverageProductivity();
+      return {
+        labels: ["Productive Tasks", "Idle Time"],
+        datasets: [{
+          data: [avg.productive, avg.idle],
+          backgroundColor: ["#4CAF50", "#FFC107"],
+          hoverBackgroundColor: ["#45a049", "#ffca2c"],
+        }],
+      };
+    }
+    return {
+      labels: ["Productive Tasks", "Idle Time"],
+      datasets: [{
+        data: [employee.productivity?.productive || 0, employee.productivity?.idle || 0],
+        backgroundColor: ["#4CAF50", "#FFC107"],
+        hoverBackgroundColor: ["#45a049", "#ffca2c"],
+      }],
+    };
+  };
+
+  
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Idle":
+      case "INACTIVE":
         return "text-[#FFC107]";
-      case "Active":
+      case "ACTIVE":
         return "text-green-500";
       case "On Meeting":
         return "text-blue-500";
@@ -56,17 +131,17 @@ const EmployeeMonitoring = () => {
     : employees.filter(emp => emp.status === sortStatus);
 
   // Filter Activity Log based on status and date range
-  const filteredActivityLog = selectedEmployee?.activityLog.filter((log) => {
+  const filteredActivityLog = selectedEmployee?.activityLog?.filter((log) => {
     const matchesStatus = filterStatus === "All" || log.status === filterStatus;
-    
+  
     const logDate = new Date(log.date);
     const fromDate = dateFrom ? new Date(dateFrom) : null;
     const toDate = dateTo ? new Date(dateTo) : null;
-
+  
     const matchesDate =
       (!fromDate || logDate >= fromDate) &&
       (!toDate || logDate <= toDate);
-
+  
     return matchesStatus && matchesDate;
   }) || [];
 
@@ -96,8 +171,8 @@ const EmployeeMonitoring = () => {
                 onChange={(e) => setSortStatus(e.target.value)}
               >
                 <option value="All">All</option>
-                <option value="Active">Active</option>
-                <option value="Idle">Idle</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Idle</option>
                 <option value="On Meeting">On Meeting</option>
               </select>
 
@@ -123,7 +198,6 @@ const EmployeeMonitoring = () => {
               {/* Dynamic Pie Chart */}
               <div className="w-full bg-white shadow-lg p-6 rounded-lg">
                 <h2 className="text-xl font-semibold pb-3 text-gray-700"> Employee Activity Chart {selectedEmployee ? selectedEmployee.name : ""}</h2>
-                <CustomPieChart employee={selectedEmployee} />
               </div>
 
               {/* Activity Logs - Two Sections */}
@@ -134,8 +208,9 @@ const EmployeeMonitoring = () => {
 
                   {selectedEmployee ? (
                     <ul className="mt-3 text-sm text-gray-500 list-disc list-inside flex-1">
-                      {selectedEmployee.activityLog.slice(0, 5).map((log, index) => (
-                        <li key={index}>{log.date} - {log.log} ({log.status})</li>
+                      {selectedEmployee?.activityLog?.slice(0, 5).map((log, index) => (
+                          <li key={index}>{log.date} - {log.log} ({log.status})</li>
+                        )) || <p className="text-gray-400">No activity logs available.</p>}
                       ))}
                     </ul>
                   ) : (
@@ -159,11 +234,11 @@ const EmployeeMonitoring = () => {
 
                   {selectedEmployee ? (
                     <div className="space-y-2 text-gray-600 text-sm">
-                      <p><strong>Blink Rate:</strong> {selectedEmployee.activeness.blinkRate}</p>
-                      <p><strong>Active Duration:</strong> {selectedEmployee.activeness.duration}</p>
-                      <p><strong>Yawning Frequency:</strong> {selectedEmployee.activeness.yawningFrequency}</p>
-                      <p><strong>Nodding Motions:</strong> {selectedEmployee.activeness.nodMotions}</p>
-                      <p><strong>Drowsiness Detection:</strong> {selectedEmployee.activeness.drowsinessDetection}</p>
+                      <p><strong>Blink Rate:</strong> {}</p>
+                      <p><strong>Active Duration:</strong> {}</p>
+                      <p><strong>Yawning Frequency:</strong> {}</p>
+                      <p><strong>Nodding Motions:</strong> {}</p>
+                      <p><strong>Drowsiness Detection:</strong> {}</p>
                     </div>
                   ) : (
                     <p className="text-gray-400">Click an employee to view alertness details.</p>

@@ -242,7 +242,7 @@ const Reports = () => {
                     className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
-                <button className="btn btn-info text-white">Filter</button>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded">Filter</button>
               </div>
             </div>
 
