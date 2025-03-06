@@ -10,7 +10,7 @@ const ActivityMonitoring = () => {
   const [activityLogs, setActivityLogs] = useState<{ activity: string; timestamp: string }[]>([]);
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = storedUser ? JSON.parse(storedUser) : null;
-  const userId = user?.id;
+  const employeeId = user?.employeeId;
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -22,10 +22,10 @@ const ActivityMonitoring = () => {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!employeeId) return;
 
     // Use SSE to listen for real-time updates
-    const eventSource = new EventSource(`/employeeAPI/humanActivityLog?userId=${userId}`);
+    const eventSource = new EventSource(`/employeeAPI/humanActivityLog?employeeId=${employeeId}`);
 
     eventSource.onmessage = (event) => {
       try {
@@ -44,7 +44,7 @@ const ActivityMonitoring = () => {
     return () => {
       eventSource.close();
     };
-  }, [userId]);
+  }, [employeeId]);
 
   return (
     <div className="min-h-screen bg-white">

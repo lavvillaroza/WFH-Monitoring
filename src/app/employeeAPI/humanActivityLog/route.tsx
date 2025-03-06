@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    const { userId, activity,employeeId } = await req.json();
+    const { activity,employeeId } = await req.json();
 
-    if (!userId || !activity) {
+    if (!employeeId || !activity) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const logEntry = await prisma.humanActivityLog.create({
-      data: { userId, activity,employeeId },
+      data: {  activity,employeeId },
     });
 
     return NextResponse.json(logEntry, { status: 201 });
@@ -31,9 +31,9 @@ export async function GET(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const userId = url.searchParams.get("userId");
+    const employeeId = url.searchParams.get("employeeId");
 
-    if (!userId) {
+    if (!employeeId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 
     async function sendUpdates() {
       const logs = await prisma.humanActivityLog.findMany({
-        where: { userId},
+        where: { employeeId},
         orderBy: { timestamp: "desc" },
       });
 
@@ -65,6 +65,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error("❌ Error fetching activity logs:", error);
-    return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
   }
 }
