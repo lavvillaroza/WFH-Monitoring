@@ -1,7 +1,9 @@
 "use client";
 
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import "./globals.css";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -11,13 +13,8 @@ const LoginPage = () => {
   const [showPassword, setshowPassword] = useState(false);
   const router = useRouter();
   
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    if (authToken) {
-      router.push("/dashboard");
-      return;
-    }
-    });
+
+
 
 const handleRegister = async() => {
 router.push("/register");
@@ -48,18 +45,24 @@ router.push("/register");
     localStorage.setItem("user", JSON.stringify({ 
          id: data.user.id,
          name: data.user.name, 
-         email: data.user.email
+         email: data.user.email,
+         role: data.user.role
        }));
     localStorage.setItem("authToken", data.token);
     
       setTimeout(() => {
         setMessage("");
-       if(data.user.role ==="ADMIN"){
-        router.push("/admin-dashboard");
-       }
-       else if (data.user.role==="EMPLOYEE"){
+        
+        console.log(data.user.role)
+         // Redirect based on role
+      if (data.user.role === "ADMIN") {
+        router.push("/employerDashboard");
+      } else if (data.user.role === "EMPLOYEE") {
         router.push("/dashboard");
-       }
+      } else {
+        router.push("/employerDashboard"); // Default fallback
+      }
+
       }, 2000);
     } catch (error: any) {
       setMessage(error.message);
@@ -84,14 +87,14 @@ router.push("/register");
           <input
             type="email"
             placeholder="Email"
-            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
+            className="input input-bordered w-full mt-2 input-field bg-white "
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
-            className="input input-bordered w-full mt-2 bg-white-100 text-black border-[#2C6975]"
+            className="input input-bordered w-full mt-2 bg-white text-black "
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
