@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
-    const { userId, activity } = await req.json();
+    const { userId, activity,employeeId } = await req.json();
 
     if (!userId || !activity) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const logEntry = await prisma.humanActivityLog.create({
-      data: { userId, activity },
+      data: { userId, activity,employeeId },
     });
 
     return NextResponse.json(logEntry, { status: 201 });

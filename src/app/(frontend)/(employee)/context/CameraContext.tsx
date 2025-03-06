@@ -33,6 +33,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const modalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const userResponseRef = useRef(false);
   const [modalTimer, setModalTimer] = useState(10);
+  const [employeeId,setEmployeeId] = useState("");
 
 
   const handleModalResponse = async (response: boolean) => {
@@ -120,6 +121,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
+        setEmployeeId(user.employeeId)
         setUserId(user?.id || null);
       } catch (error) {
         console.error("Error parsing user data:", error);
@@ -146,7 +148,7 @@ const logActivity = async (activity: string) => {
     const response = await fetch("/employeeAPI/humanActivityLog", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, activity, count: activityData.count + 1 }),
+      body: JSON.stringify({ userId, activity,employeeId, count: activityData.count + 1 }),
     });
 
     if (!response.ok) {

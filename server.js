@@ -22,6 +22,6 @@ app.prepare().then(() => {
     })
     .listen(3000, (err) => {
       if (err) throw err;
-      console.log('> Ready on https://10.170.0.108:3000');
+      console.log('> Ready on https://10.190.101.45:3000');
     });
 });

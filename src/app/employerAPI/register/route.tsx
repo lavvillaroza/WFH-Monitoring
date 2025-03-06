@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+
+
 // Register a new Employee
 export async function POST(request: Request) {
   try {
@@ -61,6 +63,18 @@ export async function POST(request: Request) {
   }
 }
 
+async function testConnection() {
+  try {
+    await prisma.$connect();
+    console.log("✅ Connected to the database successfully!");
+  } catch (error) {
+    console.error("❌ Database connection failed:", error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+
 const generateEmployeeId = async () => {
   const lastEmployee = await prisma.user.findFirst({
     orderBy: { id: "desc" }, // Use the primary key (auto-incremented `id`) for correct ordering
@@ -91,13 +105,18 @@ const generateEmployeeId = async () => {
 // GET method to fetch the latest employee ID
 export async function GET() {
   try {
+    await prisma.$connect(); // Ensure database is connected
+    console.log("✅ Database connection successful!");
     const generatedEmployeeId = await generateEmployeeId();
     return NextResponse.json({ employeeId: generatedEmployeeId }, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching latest employee ID:", error);
     return NextResponse.json(
-      { error: "Failed to fetch the latest employee ID" },
+      { error: "Failed to fetch the latest employee ID", details: error.message },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
-};
+}
+
