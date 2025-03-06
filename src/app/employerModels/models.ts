@@ -27,6 +27,7 @@ export interface User {
   email: string;
   status: Status;
   password: string;
+  employeeId: string;
   role: Role;
   createdAt: string;
   updatedAt: string;

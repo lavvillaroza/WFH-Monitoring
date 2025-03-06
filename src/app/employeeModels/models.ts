@@ -21,6 +21,7 @@ export enum Role {
     name: string;
     email: string;
     password: string;
+    employeeId: string;
     role: Role;
     createdAt: string;
     updatedAt: string;

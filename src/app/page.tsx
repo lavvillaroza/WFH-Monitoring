@@ -46,7 +46,8 @@ router.push("/register");
          id: data.user.id,
          name: data.user.name, 
          email: data.user.email,
-         role: data.user.role
+         role: data.user.role,
+         employeeId: data.user.employeeId
        }));
     localStorage.setItem("authToken", data.token);
     
