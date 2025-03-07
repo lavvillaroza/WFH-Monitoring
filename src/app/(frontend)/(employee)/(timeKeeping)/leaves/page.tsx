@@ -60,15 +60,15 @@ const Leaves = () => {
       }
 
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userId = storedUser?.id;
+      const employeeId = storedUser?.employeeId;
 
-      if (!userId) {
+      if (!employeeId) {
         setMessage("User ID not found");
         setMessageType("error");
         return;
       }
 
-      const queryParams = new URLSearchParams({ userId, page: String(currentPage), pageSize: String(rowsPerPage) });
+      const queryParams = new URLSearchParams({ employeeId, page: String(currentPage), pageSize: String(rowsPerPage) });
 
       if (leaveType) queryParams.append("leaveType", leaveType);
       if (status) queryParams.append("status", status);

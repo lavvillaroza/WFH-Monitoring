@@ -7,6 +7,107 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
+  employeeId              String                   @unique
+  password                String
+  name                    String
+  role                    Role                     @default(EMPLOYEE)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  status                  String
+  dailyTimeRecords        DailyTimeRecord[]
+  dailyTimeRecordProblems DailyTimeRecordProblem[]
+  leaves                  Leave[]
+  overtimes               Overtime[]
+}
+
+model EmployeeDetails {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique @map("email")
+  employeeId    String   @unique
+  position      String
+  department    String
+  contactNumber String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DailyTimeRecord {
+  id         String    @id @default(uuid())
+  userId     String
+  date       DateTime  @default(now())
+  timeIn     DateTime
+  timeOut    DateTime?
+  remarks    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  employeeId String    @unique
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "DailyTimeRecord_userId_fkey")
+}
+
+model DailyTimeRecordProblem {
+  id         String           @id @default(uuid())
+  userId     String
+  date       DateTime
+  type       String
+  remarks    String
+  status     DTRProblemStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  employeeId String           @unique
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "DailyTimeRecordProblem_userId_fkey")
+}
+
+model Leave {
+  id         String        @id @default(uuid())
+  userId     String
+  leaveType  String
+  startDate  DateTime
+  endDate    DateTime
+  reason     String
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  employeeId String        @unique
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Leave_userId_fkey")
+}
+
+model Overtime {
+  id         String        @id @default(uuid())
+  userId     String
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  duration   Int
+  reason     String
+  status     RequestStatus @default(PENDING)
+  approvedBy String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  employeeId String        @unique
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Overtime_userId_fkey")
+}
+
+model HumanActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  activity   String
+  employeeId String   @unique
+  timestamp  DateTime @default(now())
+}
+
 enum Role {
   ADMIN
   EMPLOYEE
@@ -25,79 +126,87 @@ enum DTRProblemStatus {
 
 model User {
   id        String   @id @default(uuid())
-  name      String
   email     String   @unique
+  employeeId String  @unique
   password  String
+  name      String
   role      Role     @default(EMPLOYEE) 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  status    String
+}
 
-  dailyTimeRecords        DailyTimeRecord[]
-  dailyTimeRecordProblems DailyTimeRecordProblem[]
-  overtimes               Overtime[]
-  leaves                  Leave[]
+model EmployeeDetails {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique @map("email")  
+  employeeId    String   @unique
+  position      String
+  department    String
+  contactNumber String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
 }
 
 model DailyTimeRecord {
-  id        String   @id @default(uuid())
-  userId    String
-  date      DateTime @default(now())
-  timeIn    DateTime
-  timeOut   DateTime?  // Nullable field for timeout
-  remarks   String?    // Nullable field for remarks
-  createdAt DateTime @default(now())  
-  updatedAt DateTime @updatedAt  // Automatically updates on changes
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  timeIn      DateTime
+  timeOut     DateTime?  
+  duration    Int?  
+  remarks     String?    
+  createdAt   DateTime @default(now())  
+  updatedAt   DateTime @updatedAt  
+  employeeId  String  
 
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model DailyTimeRecordProblem {
-  id        String          @id @default(uuid())
-  userId    String
-  date      DateTime
-  type      String
-  remarks   String
-  status    DTRProblemStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  date        DateTime
+  type        String
+  remarks     String
+  status      DTRProblemStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employeeId  String   
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Leave {
-  id         String        @id @default(uuid())
-  userId     String
-  leaveType  String
-  startDate  DateTime
-  endDate    DateTime
-  reason     String
-  status     RequestStatus @default(PENDING)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String        @id @default(uuid())
+  leaveType   String
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employeeId  String    
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Overtime {
-  id         String        @id @default(uuid())
-  userId     String
-  date       DateTime
-  startTime  DateTime
-  endTime    DateTime
-  duration   Int  
-  reason     String
-  status     RequestStatus @default(PENDING)
-  approvedBy String? 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String        @id @default(uuid())
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int  
+  reason      String
+  status      RequestStatus @default(PENDING)
+  approvedBy  String? 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employeeId  String 
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model HumanActivityLog {
-  id          String   @id @default(uuid())  // Unique identifier
-  userId      String   // User who triggered the activity
-  activity    String   // Example: "User Yawning", "Eyes Closed", "User Out of Area"
-  timestamp   DateTime @default(now())  // Time of the event
-}
+  id          String   @id @default(uuid())  
+  activity    String   
+  employeeId  String 
+  timestamp   DateTime @default(now())  
 
+}

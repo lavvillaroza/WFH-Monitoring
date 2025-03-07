@@ -6,17 +6,17 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { employeeId, timeIn, timeOut, remarks } = body;
+        const { userId, timeIn, timeOut, remarks } = body;
 
-        if (!employeeId) {
-            return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
+        if (!userId) {
+            return NextResponse.json({ error: "User ID is required" }, { status: 400 });
         }
 
         if (timeIn) {
             // Create a new record for "Time In"
             await prisma.dailyTimeRecord.create({
                 data: {
-                    employeeId,
+                    userId,
                     date: new Date(),
                     timeIn: new Date(timeIn),
                     timeOut: null, 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         } else if (timeOut) {
             // Find the latest record with a null timeOut
             const lastRecord = await prisma.dailyTimeRecord.findFirst({
-                where: { employeeId, timeOut: null },
+                where: { userId, timeOut: null },
                 orderBy: { date: "desc" }, // Get the latest record
             });
 
@@ -58,15 +58,15 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
-        const employeeId = searchParams.get("employeeId");
+        const userId = searchParams.get("userId");
 
-        if (!employeeId) {
-            return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
+        if (!userId) {
+            return NextResponse.json({ error: "User ID is required" }, { status: 400 });
         }
 
         // Fetch the last DTR entry for the user
         const lastRecord = await prisma.dailyTimeRecord.findFirst({
-            where: { employeeId },
+            where: { userId },
             orderBy: { date: "desc" },
         });
 

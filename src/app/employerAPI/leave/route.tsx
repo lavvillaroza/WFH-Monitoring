@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma"; // Import the singleton Prisma client
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const employeeId = searchParams.get("employeeId");
+    const userId = searchParams.get("userId");
     const leaveType = searchParams.get("leaveType");
     const status = searchParams.get("status");
     const startDate = searchParams.get("startDate");
@@ -17,13 +17,13 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * pageSize;
     const take = pageSize;
 
-    if (!employeeId) {
+    if (!userId) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
     // 📌 Construct filter conditions
     const whereClause = {
-      employeeId,
+      userId,
       ...(leaveType && { leaveType }),
       ...(status && { status }),
       ...(startDate && endDate && {
@@ -52,24 +52,24 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error fetching leaves:", error, error);
-    return NextResponse.json({ error: "Internal Server Error", details: error }, { status: 500 });
+    console.error("Error fetching leaves:", error.message, error);
+    return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
 
 // ✅ POST: Create a new leave request
 export async function POST(req: NextRequest) {
   try {
-    const { employeeId, leaveType, startDate, endDate, reason } = await req.json();
+    const { userId, leaveType, startDate, endDate, reason } = await req.json();
 
-    if (!employeeId || !leaveType || !startDate || !endDate || !reason) {
+    if (!userId || !leaveType || !startDate || !endDate || !reason) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     // 📌 Create a new leave request
     const newLeave = await prisma.leave.create({
       data: {
-        employeeId,
+        userId,
         leaveType,
         startDate: new Date(startDate),
         endDate: new Date(endDate),

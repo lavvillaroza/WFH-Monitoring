@@ -32,14 +32,6 @@ const Navbar = () => {
         "/overtime": "Overtime",
     };
 
-    
-    //   useEffect(() => {
-    //     if (videoRef?.current) {
-    //       videoRef.current.srcObject = cameraContext?.stream || null;
-    //     }
-    //   }, [cameraContext?.stream, videoRef]);
-    
-
     useEffect(() => {
        
     const storedUser = localStorage.getItem("user");
@@ -55,9 +47,9 @@ const Navbar = () => {
                 }
     
                 const user = JSON.parse(storedUser);
-                const userId = user.id;
+                const employeeId = user.employeeId;
     
-                const response = await fetch(`/employeeAPI/dtr?userId=${userId}`);
+                const response = await fetch(`/employeeAPI/dtr?employeeId=${employeeId}`);
     
                 if (!response.ok) {
                     throw new Error(`Server error: ${response.status} ${response.statusText}`);
@@ -88,14 +80,14 @@ const Navbar = () => {
         const handleBeforeUnload = async () => {
             if (selectedAction === "Time Out" && storedUser) { 
                 const user = JSON.parse(storedUser);
-                const userId = user.id;
+                const employeeId = user.employeeId;
                 const timestamp = new Date();
     
                 await fetch("/employeeAPI/dtr", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        userId,
+                        employeeId: employeeId,
                         timeOut: timestamp,
                         remarks: "Auto clock-out due to page close",
                     }),
@@ -120,33 +112,37 @@ const Navbar = () => {
             }
     
             const user = JSON.parse(storedUser);
-            const userId = user.id;  
+            const employeeId = user.employeeId;  
             const timestamp = new Date();
     
             let requestBody;
             if (selectedAction === "Time In") {
-                requestBody = {
-                    userId,
-                    timeIn: timestamp,
-                    timeOut: null,
-                    remarks: "",
-                };
+               
                 if (cameraContext) {
                     await cameraContext.startCamera(); // ✅ Start camera when clocking in
                     setIsCameraOn(true);
                 }
-
-            } else {
+                else{
+                    return;
+                }
                 requestBody = {
-                    userId,
-                    timeOut: timestamp,
-                    remarks: "Clocked out",
+                    employeeId: employeeId,
+                    timeIn: timestamp,
+                    timeOut: null,
+                    remarks: "",
                 };
+            } else {
+               
 
                 if (cameraContext) {
                     await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
                     setIsCameraOn(false);
                 }
+                requestBody = {
+                    employeeId: employeeId,
+                    timeOut: timestamp,
+                    remarks: "Clocked out",
+                };
             }
     
             const response = await fetch("/employeeAPI/dtr", {
@@ -175,14 +171,14 @@ const Navbar = () => {
     
         if (selectedAction === "Time Out" && storedUser) {
             const user = JSON.parse(storedUser);
-            const userId = user.id;
+            const employeeId = user.employeeId;
             const timestamp = new Date();
     
             await fetch("/employeeAPI/dtr", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    userId,
+                    employeeId: employeeId,
                     timeOut: timestamp,
                     remarks: "Auto clock-out due to logout",
                 }),

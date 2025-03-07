@@ -48,8 +48,8 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
 
     const authToken = localStorage.getItem("authToken");
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-    const userId = storedUser?.id;
-    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { userId, leaveType, startDate, endDate, reason };
+    const employeeId = storedUser?.employeeId;
+    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { employeeId, leaveType, startDate, endDate, reason };
 
     try {
       const res = await fetch(`/employeeAPI/leave`, {

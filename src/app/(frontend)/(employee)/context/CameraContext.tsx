@@ -16,7 +16,6 @@ export const CameraContext = createContext<CameraContextType | null>(null);
 export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [faceMatcher, setFaceMatcher] = useState<any>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [faceapi, setFaceApi] = useState<any>(null);
   const [dragging, setDragging] = useState(false);
@@ -26,13 +25,14 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const [isLarge, setIsLarge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [outOfAreaCount, setOutOfAreaCount] = useState(0);
-  const [userId, setUserId] = useState<string | null>(null);
   const loggedActivitiesMap = new Map<string, { count: number; lastLoggedTime: number }>(); // Track count & timestamp
   const logCooldown = 5000;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const userResponseRef = useRef(false);
   const [modalTimer, setModalTimer] = useState(10);
+  const [employeeId,setEmployeeId] = useState("");
+  const lastNoseYRef = useRef(0);
 
 
   const handleModalResponse = async (response: boolean) => {
@@ -48,7 +48,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   
       const timestamp = new Date().toISOString();
       const requestBody = {
-        userId,
+        employeeId,
         timeOut: timestamp,
         remarks: "User is out of area",
       };
@@ -120,7 +120,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        setUserId(user?.id || null);
+        setEmployeeId(user.employeeId)
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
@@ -129,8 +129,8 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
 }, []);
 
 const logActivity = async (activity: string) => {
-  if (!userId) {
-    console.warn("User ID not found. Skipping log.");
+  if (!employeeId) {
+    console.warn("Employee ID not found. Skipping log.");
     return;
   }
 
@@ -146,7 +146,7 @@ const logActivity = async (activity: string) => {
     const response = await fetch("/employeeAPI/humanActivityLog", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, activity, count: activityData.count + 1 }),
+      body: JSON.stringify({ activity,employeeId, count: activityData.count + 1 }),
     });
 
     if (!response.ok) {
@@ -233,8 +233,7 @@ useEffect(() => {
        // console.log("✅ TensorFlow.js initialized with WebGL backend");
 
         await loadModels(faceApiModule);
-        const matcher = await loadLabeledImages(faceApiModule);
-        if (matcher) setFaceMatcher(matcher);
+        
 
         setModelsLoaded(true);
       } catch (error) {
@@ -257,31 +256,7 @@ useEffect(() => {
     }
   };
 
-  const loadLabeledImages = async (faceApi: any) => {
-    try {
-      const label = "Jaykko Takahashi";
-      const img = await faceApi.fetchImage("/models/faces/jaykko.jpg");
-
-      const detection = await faceApi
-        .detectSingleFace(img, new faceApi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        console.warn("⚠️ Face not detected in reference image.");
-        logActivity("Face not detected in reference image.");
-        return null;
-      }
-
-      return new faceApi.FaceMatcher(
-        [new faceApi.LabeledFaceDescriptors(label, [detection.descriptor])],
-        0.6
-      );
-    } catch (error) {
-      console.error("❌ Error loading labeled images:", error);
-      return null;
-    }
-  };
+  
 
   // Camera Controls
   const startCamera = async () => {
@@ -297,7 +272,7 @@ useEffect(() => {
       }
   
       console.log("🎥 Starting camera...");
-      
+  
       // Ensure previous stream is stopped before starting a new one
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
@@ -305,20 +280,30 @@ useEffect(() => {
       }
   
       const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
-  
       setStream(newStream);
       cameraStartedRef.current = true;
   
-      // Assign stream to video element only if it's available
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
-      } else {
-        console.warn("⚠️ Video element is not yet mounted.");
-      }
+      // Wait until the video element is available
+      const waitForVideo = async () => {
+        return new Promise<void>((resolve) => {
+          const checkVideo = () => {
+            if (videoRef.current) {
+              videoRef.current.srcObject = newStream;
+              resolve();
+            } else {
+              requestAnimationFrame(checkVideo);
+            }
+          };
+          checkVideo();
+        });
+      };
+  
+      await waitForVideo();
     } catch (error) {
       console.error("❌ Error accessing camera:", error);
     }
   };
+  
   
 
   const stopCamera = () => {
@@ -342,81 +327,69 @@ useEffect(() => {
         clearInterval(interval);
       };
     }
-  }, [stream, faceMatcher]);
+  }, [stream]);
 
   const detectUserState = async () => {
-    if (!videoRef.current || !faceMatcher || !modelsLoaded || !faceapi || !canvasRef.current) return;
+    if (!videoRef.current || !modelsLoaded || !faceapi || !canvasRef.current) return;
   
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks();
   
-    const videoContainer = videoContainerRef.current;
-    if (videoContainer) {
-      canvas.width = videoContainer.clientWidth;
-      canvas.height = videoContainer.clientHeight;
+    if (!detection) {
+      setOutOfAreaCount((prev) => prev + 1);
+      return;
     }
   
-    ctx?.clearRect(0, 0, canvas.width, canvas.height);
-  
-    try {
-      const detection = await faceapi
-        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-  
-        if (!detection) {
-          setOutOfAreaCount((prev) => {
-            if (prev === 0) {
-              logActivity("User out of area!"); // Log only when transitioning from 0 to 1
-            }
-            return prev + 1;
-          });
-          return;
-        }
-        
-        if (outOfAreaCount > 0) {
-          setOutOfAreaCount(0);
-        }
-        
-  
-      const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-  
-      if (bestMatch.label === "Jaykko Takahashi") {
-        console.log("✅ Welcome, Jaykko!");
-      } else {
-        logActivity("Unrecognized user!");
-      }
-  
-      // Check if user is yawning
-      const landmarks = detection.landmarks;
-      const topLip = landmarks.getMouth()[13];
-      const bottomLip = landmarks.getMouth()[19];
-      const mouthHeight = bottomLip.y - topLip.y;
-  
-      if (mouthHeight > 20) {
-        logActivity("User is yawning!");
-      }
-  
-      // Check if eyes are closed
-      const leftEye = landmarks.getLeftEye();
-      const rightEye = landmarks.getRightEye();
-  
-      const leftEyeHeight = leftEye[1].y - leftEye[5].y;
-      const leftEyeWidth = leftEye[3].x - leftEye[0].x;
-      const leftEyeRatio = leftEyeHeight / leftEyeWidth;
-  
-      const rightEyeHeight = rightEye[1].y - rightEye[5].y;
-      const rightEyeWidth = rightEye[3].x - rightEye[0].x;
-      const rightEyeRatio = rightEyeHeight / rightEyeWidth;
-  
-      if (leftEyeRatio > -0.28 && rightEyeRatio > -0.28) {
-        logActivity("User eyes are closed.");
-      }
-    } catch (error) {
-      console.error("❌ Error detecting face:", error);
+    if (outOfAreaCount > 0) {
+      setOutOfAreaCount(0);
     }
+  
+    const landmarks = detection.landmarks;
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+    const nose = landmarks.getNose();
+    const topLip = landmarks.getMouth()[13];
+    const bottomLip = landmarks.getMouth()[19];
+  
+    // Calculate eye aspect ratio (EAR)
+    const calculateEAR = (eye: any) => {
+      const height = eye[1].y - eye[5].y;
+      const width = eye[3].x - eye[0].x;
+      return height / width;
+    };
+  
+    const leftEAR = calculateEAR(leftEye);
+    const rightEAR = calculateEAR(rightEye);
+  
+    if (leftEAR < 0.28 && rightEAR < 0.28) {
+      logActivity("User blinked");
+    }
+  
+    // Check for drowsiness (Eyes closed for prolonged duration)
+    if (leftEAR < 0.2 && rightEAR < 0.2) {
+      setTimeout(() => {
+        if (leftEAR < 0.2 && rightEAR < 0.2) {
+          logActivity("User is drowsy");
+        }
+      }, 2000);
+    }
+  
+    // Yawn detection
+    const mouthHeight = bottomLip.y - topLip.y;
+    if (mouthHeight > 20) {
+      logActivity("User is yawning");
+    }
+  
+    // Nodding detection (Track vertical nose movement)
+    const currentNoseY = nose[0].y;
+    if (Math.abs(currentNoseY - lastNoseYRef.current) > 10) {
+      logActivity("User nodded");
+    }
+    lastNoseYRef.current = currentNoseY;
   };
+  
   
   
   
