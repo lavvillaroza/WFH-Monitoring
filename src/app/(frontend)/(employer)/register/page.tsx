@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ToastMessage from "@/app/components/toastMessage";
+import html2canvas from "html2canvas-pro";
 
 const RegisterEmployee = ( ) => {
   const [alertMessage, setAlertMessage] = useState("");
@@ -31,6 +32,50 @@ const RegisterEmployee = ( ) => {
   const handleCancel = async ()=>{
     router.push("/")
   }
+
+
+  const captureAndSendScreenshot = async () => {
+    try {
+      // Temporarily override unsupported CSS colors
+      document.body.style.color = "#000"; // Ensure text is visible
+      document.body.style.backgroundColor = "#fff"; // Set a standard background
+  
+      const screenshotTarget = document.body; // Capture the entire webpage
+  
+      const canvas = await html2canvas(screenshotTarget, {
+        backgroundColor: null, // Prevent forced white backgrounds
+        useCORS: true, // Enable cross-origin images
+      });
+  
+      const screenshot = canvas.toDataURL("image/png"); // Convert to Base64
+  
+      // Send to API
+      const response = await fetch("/employerAPI/screenShot", { // Updated path
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeId: "some-employee-id",
+          screenCapture: screenshot,
+        }),
+      });
+  
+      const data = await response.json();
+      console.log(data.message);
+    } catch (error) {
+      console.error("Error capturing or sending screenshot:", error);
+    }
+  };
+
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("Capturing and sending screenshot...");
+      captureAndSendScreenshot();
+    }, 5000);
+  
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
+
 
   const handleRegister = async () => {
     try {
@@ -125,6 +170,19 @@ const RegisterEmployee = ( ) => {
         <input type="text" placeholder="Department" className="border p-2 rounded w-full mb-2" value={newEmployee.department} onChange={(e) => setNewEmployee({ ...newEmployee, department: e.target.value })} />
         <input type="text" placeholder="Contact no." className="border p-2 rounded w-full mb-2" value={newEmployee.contactNumber} onChange={(e) => setNewEmployee({ ...newEmployee, contactNumber: e.target.value })} />
         <input type="text" placeholder="Address" className="border p-2 rounded w-full mb-2" value={newEmployee.address} onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })} />
+        {/* <fieldset className="mb-2">
+          <legend className="text-gray-500 text-sm">Profile Picture</legend>
+          <label className="border p-2 rounded w-full flex items-center bg-white text-gray-700 cursor-pointer">
+            <span className="flex-1">{newEmployee.picture ? newEmployee.picture.name : "Choose a file"}</span>
+            <input
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => setNewEmployee({ ...newEmployee, picture: e.target.files[0] })}
+            />
+          </label>
+        </fieldset> */}
+
 
         <div className="flex justify-end">
           <button className="bg-gray-400 text-white px-4 py-2 rounded mr-2"  onClick={handleCancel}>Cancel</button>

@@ -39,9 +39,9 @@ model User {
   status    String
 }
 
-model ScreenShots{
+model ScreenShotModel{
   id        String   @id @default(uuid())
-  employeeId String  @unique
+  employeeId String  
   picture  Bytes?  // Store image as binary data
   date        DateTime
 }
