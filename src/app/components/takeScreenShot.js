@@ -40,6 +40,8 @@ export default function TakeScreenShot() {
   };
 
   const stopCapture = () => {
+    localStorage.removeItem("permissionToShare");
+
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -54,56 +56,62 @@ export default function TakeScreenShot() {
 
   useEffect(() => {
     const startCapture = async () => {
-      if (user && user.role === "EMPLOYEE") {
-        console.log("User role:", user.role);
+        if (user && user.role === "EMPLOYEE") {
+            console.log("User role:", user.role);
 
-        // Only request media stream if it's not already active
-        if (!mediaStream) {
-          try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({
-              video: { mediaSource: "screen" },
-            });
-            setMediaStream(stream);
+            // Only request media stream if it's not already active
+            if (!mediaStream) {
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { mediaSource: "screen" },
+                    });
+                    setMediaStream(stream);
+                    const track = stream.getVideoTracks()[0];
+                    console.log("User selected:", track.getSettings().displaySurface);
+                    track.addEventListener("ended", () => {
+                        console.log("User stopped screen sharing.");
+                        setMediaStream(null);
+                        stopCapture();
+                    });
+                } catch (error) {
+                    console.error("Error accessing display media:", error);
+                    console.log(mediaStream+"heqweqweqweqwew")
+                    localStorage.setItem("permissionToShare", "false");
+                }
+            }
+            if(mediaStream){
+              localStorage.setItem("permissionToShare", "true");
+            }
 
-            const track = stream.getVideoTracks()[0];
-            console.log("User selected:", track.getSettings().displaySurface);
-            track.addEventListener("ended", () => {
-              console.log("User stopped screen sharing.");
-              setMediaStream(null);
-              stopCapture();
-            });
-          } catch (error) {
-            console.error("Error accessing display media:", error);
-          }
-        }
-
-        // Start capturing every 10 seconds
-        intervalRef.current = setInterval(() => {
-          if (!localStorage.getItem("user")) {
+            // Start capturing every 10 seconds
+            intervalRef.current = setInterval(() => {
+                if (!localStorage.getItem("user")) {
+                    stopCapture();
+                } else {
+                    captureAndSendScreenshot(user.employeeId);
+                    
+                }
+            }, 10000);
+        } else {
             stopCapture();
-          } else {
-            captureAndSendScreenshot(user.employeeId);
-          }
-        }, 10000);
-      } else {
-        stopCapture();
-      }
+        }
     };
 
     startCapture();
 
     const handleStorageChange = () => {
-      const updatedUser = JSON.parse(localStorage.getItem("user") || "null");
-      setUser(updatedUser);
+        const updatedUser = JSON.parse(localStorage.getItem("user") || "null");
+        setUser(updatedUser);
     };
 
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
-      stopCapture();
-      window.removeEventListener("storage", handleStorageChange);
+        stopCapture();
+        window.removeEventListener("storage", handleStorageChange);
     };
-  }, [user, mediaStream]);
+}, [user, mediaStream]);
+
 
   return null;
 }

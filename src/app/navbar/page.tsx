@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
+import  TakeScreenShot from "@/app/components/takeScreenShot";
+
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +23,7 @@ const Navbar = () => {
     const [selectedAction, setSelectedAction] = useState("Time In"); // Default option
     const [DropdownOpen, setDropdownOpen] = useState(false); 
     const [isCameraOn, setIsCameraOn] = useState(false);
+    const [takeScreenshot,setTakeScreenshot] = useState(false)
 
   
     const pageTitles: { [key: string]: string } = {
@@ -32,8 +35,9 @@ const Navbar = () => {
         "/overtime": "Overtime",
     };
 
+   
+
     useEffect(() => {
-       
     const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
@@ -104,13 +108,20 @@ const Navbar = () => {
     
 
     const handlePlayPause = async () => {
+            setTakeScreenshot(false)
         try {
+            if(!takeScreenshot){
+                setTakeScreenshot(true);
+                }
+         
+            console.log(takeScreenshot+"here")
             const storedUser = localStorage.getItem("user");
+            const storedPermission = localStorage.getItem("permissionToShare");
             if (!storedUser) {
                 router.push("/");
                 return;
             }
-    
+                
             const user = JSON.parse(storedUser);
             const employeeId = user.employeeId;  
             const timestamp = new Date();
@@ -136,6 +147,7 @@ const Navbar = () => {
 
                 if (cameraContext) {
                     await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
+                    setTakeScreenshot(false);
                     setIsCameraOn(false);
                 }
                 requestBody = {
@@ -235,6 +247,7 @@ const Navbar = () => {
 
     return (
         <>
+          
             <nav className="bg-white shadow-md text-gray-600 relative z-50">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     <div className="flex items-center">
@@ -300,7 +313,7 @@ const Navbar = () => {
                             </div>
                         </div>
                     </div>
-
+    
                     <div className="relative">
                         <button className="flex items-center space-x-2 text-gray-600" onClick={() => setProfileOpen(!profileOpen)}>
                             <UserCircle className="w-6 h-6" />
@@ -365,6 +378,7 @@ const Navbar = () => {
                     </div>
                 )}
             </nav>
+        
 
             {/* Card Below Navbar */}
             <div className="container mx-auto mt-6 p-6 bg-gray-700 shadow-xl flex justify-between items-center">
@@ -382,8 +396,14 @@ const Navbar = () => {
                     <span className="text-gray-300">{currentTime}</span>
                 </div>
             </div>
+            {takeScreenshot && (
+                <TakeScreenShot />
+        
+            )}  
         </>
+     
     );
+           
 };
 
 export default Navbar;
