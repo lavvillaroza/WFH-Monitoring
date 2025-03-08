@@ -21,93 +21,59 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
-  const cameraStartedRef = useRef(false); // Ensures camera starts only once
+  const cameraStartedRef = useRef(false);
   const [isLarge, setIsLarge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [outOfAreaCount, setOutOfAreaCount] = useState(0);
-  const loggedActivitiesMap = new Map<string, { count: number; lastLoggedTime: number }>(); // Track count & timestamp
-  const logCooldown = 5000;
+  const loggedActivitiesSet = useRef(new Set<string>());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const userResponseRef = useRef(false);
-  const [modalTimer, setModalTimer] = useState(10);
-  const [employeeId,setEmployeeId] = useState("");
-  const lastNoseYRef = useRef(0);
+  // const [modalTimer, setModalTimer] = useState(10);
+  const [employeeId, setEmployeeId] = useState("");
+
+  const [sleepingTimer, setSleepingTimer] = useState(0);
+  const [idleTimer, setIdleTimer] = useState(0);
+  const [isAsleep, setIsAsleep] = useState(false);
+  const [isIdle, setIsIdle] = useState(false);
+  const lastLoggedTime = useRef<number | null>(null);
+  const [message, setMessage] = useState("");
+  const [currentActivity, setCurrentActivity] = useState("");
 
 
   const handleModalResponse = async (response: boolean) => {
     userResponseRef.current = response;
-    setIsModalOpen(false); // Close modal
+    setIsModalOpen(false);
 
     if (response) {
-      logActivity("User is back");
-      setOutOfAreaCount(0);
-      return;
-    } else {
-      stopCamera(); // Stop camera when user is out of area
-  
-      const timestamp = new Date().toISOString();
-      const requestBody = {
-        employeeId,
-        timeOut: timestamp,
-        remarks: "User is out of area",
-      };
-  
-      try {
-        const response = await fetch("/employeeAPI/dtr", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-        });
-  
-        if (!response.ok) {
-          throw new Error("Failed to log timeout");
-        }
-        logActivity("User out of area. Force to logout!");
-        window.location.reload();
-        console.log("✅ Timeout logged successfully");
-      } catch (error) {
-        console.error("❌ Error logging timeout:", error);
+      if(currentActivity==="Sleeping"){
+        updateActivity("User is sleeping", "Sleeping");
+        setSleepingTimer(0); 
+        setIsAsleep(false);
+        startCamera();
       }
-    }
+      else if(currentActivity==="Idle"){
+        updateActivity("User is out of area", "Idle");
+        setIdleTimer(0); 
+        setIsIdle(false);
+        startCamera();
+      }
+      loggedActivitiesSet.current.clear(); 
+      return;
+    } 
   };
+ 
   
-  
-  // Start countdown when modal opens
   useEffect(() => {
     if (isModalOpen) {
-      setModalTimer(10); // Reset timer to 60 seconds
-  
-      const interval = setInterval(() => {
-        setModalTimer((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            handleModalResponse(false); // Auto-close modal & stop camera if no response
-
-            
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-  
-      return () => clearInterval(interval);
+      if(currentActivity==="Idle"){
+        setMessage("Are you still there? Please confirm your presence");
+      }
+      else if(currentActivity==="Sleeping"){
+      setMessage("Are you asleep? Please confirm your presence");
+      }
+      stopCamera();
     }
-  }, [isModalOpen]);
-  
-  useEffect(() => {
-    if (outOfAreaCount >= 10 && !isModalOpen) { // 60 seconds threshold
-      setIsModalOpen(true);
-      userResponseRef.current = false;
-  
-      modalTimeoutRef.current = setTimeout(() => {
-        if (!userResponseRef.current) {
-          stopCamera();
-        }
-      }, 60000);
-    }
-  }, [outOfAreaCount]);
-
+  }, [isModalOpen,currentActivity]);
 
   const [position, setPosition] = useState(() => ({
     x: typeof window !== "undefined" ? window.innerWidth - 120 : 0,
@@ -115,64 +81,101 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   }));
 
   useEffect(() => {
-  if (typeof window !== "undefined") {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        setEmployeeId(user.employeeId)
+        setEmployeeId(user.employeeId);
       } catch (error) {
         console.error("Error parsing user data:", error);
       }
     }
-  }
-}, []);
+  }, []);
 
-const logActivity = async (activity: string) => {
-  if (!employeeId) {
-    console.warn("Employee ID not found. Skipping log.");
-    return;
-  }
-
-  const currentTime = Date.now();
-  const activityData = loggedActivitiesMap.get(activity) || { count: 0, lastLoggedTime: 0 };
-
-  if (currentTime - activityData.lastLoggedTime < logCooldown) {
-    console.log(`⏳ Skipping duplicate log for: ${activity}`);
-    return; // Skip logging if within cooldown
-  }
-
-  try {
-    const response = await fetch("/employeeAPI/humanActivityLog", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ activity,employeeId, count: activityData.count + 1 }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to log activity");
+  const updateActivity = async (remarks: string, activity: string) => {
+    if (!employeeId) {
+      console.warn("Employee ID not found. Skipping update.");
+      return;
     }
 
-    console.log(`✅ Activity logged: ${activity} (Count: ${activityData.count + 1})`);
-    loggedActivitiesMap.set(activity, { count: activityData.count + 1, lastLoggedTime: currentTime });
+    try {
+      const currentTime = new Date().toISOString();
+      const response = await fetch(`/employeeAPI/humanActivityLog?activity=${activity}&employeeId=${employeeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          end: currentTime,
+          remarks: remarks,
+        }),
+      });
 
-  } catch (error) {
-    console.error("❌ Error logging activity:", error);
-  }
-};
-  
+      loggedActivitiesSet.current.clear(); 
+
+      if (!response.ok) {
+        throw new Error("Failed to update activity");
+      }
+
+      const data = await response.json();
+      console.log("Activity updated successfully:", data);
+    } catch (error) {
+      console.error("❌ Error updating activity:", error);
+    }
+  };
+
+  const logActivity = async (activity: string) => {
+    if (!employeeId) {
+      console.warn("Employee ID not found. Skipping log.");
+      return;
+    }
+    if(activity!=="Yawning")
+    {
+        // Check if the activity has already been logged
+        if (loggedActivitiesSet.current.has(activity)) {
+          console.log(`Activity "${activity}" already logged. Skipping.`);
+          return; // Skip logging if the activity has already been logged
+        }
+
+        // Add activity to the set so it is marked as logged
+        loggedActivitiesSet.current.add(activity);
+    }
+
+    try {
+      const startTime = new Date().toISOString();
+      let end=null;
+      let userRemarks=null;
+      if(activity==="Yawning"){
+         end = new Date().toISOString();
+         userRemarks = "User is Yawning";
+      }
+      const response = await fetch("/employeeAPI/humanActivityLog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          activity,
+          employeeId,
+          start: startTime,
+          end: end,
+          remarks: userRemarks,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to log activity");
+      }
+    } catch (error) {
+      console.error("❌ Error logging activity:", error);
+    }
+  };
 
   const toggleSize = () => {
     setIsLarge((prev) => {
       const newSize = !prev;
       if (newSize) {
-        // Center the video when enlarged
         setPosition({
           x: (window.innerWidth - 200) / 2,
           y: (window.innerHeight - 200) / 2,
         });
-      }
-      else{
+      } else {
         setPosition((prev) => ({
           x: Math.min(prev.x, window.innerWidth - 150),
           y: Math.min(prev.y, window.innerHeight - 120),
@@ -182,20 +185,18 @@ const logActivity = async (activity: string) => {
     });
   };
 
-useEffect(() => {
-  const updatePosition = () => {
-    setPosition((prev) => ({
-      x: Math.min(prev.x, window.innerWidth - 150),
-      y: Math.min(prev.y, window.innerHeight - 120),
-    }));
-  };
+  useEffect(() => {
+    const updatePosition = () => {
+      setPosition((prev) => ({
+        x: Math.min(prev.x, window.innerWidth - 150),
+        y: Math.min(prev.y, window.innerHeight - 120),
+      }));
+    };
 
-  window.addEventListener("resize", updatePosition);
-  return () => window.removeEventListener("resize", updatePosition);
-}, []);
-  
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, []);
 
-  // Dragging functions
   const startDrag = (e: React.MouseEvent) => {
     setDragging(true);
     setOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
@@ -203,13 +204,13 @@ useEffect(() => {
 
   const onDrag = (e: MouseEvent) => {
     if (!dragging) return;
-  
+
     setPosition((prev) => ({
-      x: Math.max(0, Math.min(e.clientX - offset.x, window.innerWidth - 150)), // Prevents going outside horizontally
-      y: Math.max(0, Math.min(e.clientY - offset.y, window.innerHeight - 120)), // Prevents going outside vertically
+      x: Math.max(0, Math.min(e.clientX - offset.x, window.innerWidth - 150)),
+      y: Math.max(0, Math.min(e.clientY - offset.y, window.innerHeight - 120)),
     }));
   };
-  
+
   const stopDrag = () => setDragging(false);
 
   useEffect(() => {
@@ -221,7 +222,6 @@ useEffect(() => {
     };
   }, [dragging]);
 
-  // Load face-api models
   useEffect(() => {
     const initFaceApi = async () => {
       try {
@@ -230,10 +230,8 @@ useEffect(() => {
 
         await tf.setBackend("webgl");
         await tf.ready();
-       // console.log("✅ TensorFlow.js initialized with WebGL backend");
 
         await loadModels(faceApiModule);
-        
 
         setModelsLoaded(true);
       } catch (error) {
@@ -250,20 +248,15 @@ useEffect(() => {
       await faceApi.nets.faceLandmark68Net.loadFromUri("/models");
       await faceApi.nets.faceRecognitionNet.loadFromUri("/models");
       await faceApi.nets.ssdMobilenetv1.loadFromUri("/models");
-     // console.log("✅ Face API models loaded successfully");
     } catch (error) {
       console.error("❌ Error loading Face API models:", error);
     }
   };
 
-  
-
-  // Camera Controls
   const startCamera = async () => {
     try {
       if (cameraStartedRef.current) return; // Prevent multiple starts
   
-      console.log("🎥 Checking camera permissions...");
       const permissionStatus = await navigator.permissions.query({ name: "camera" as PermissionName });
   
       if (permissionStatus.state === "denied") {
@@ -271,9 +264,6 @@ useEffect(() => {
         return;
       }
   
-      console.log("🎥 Starting camera...");
-  
-      // Ensure previous stream is stopped before starting a new one
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
         setStream(null);
@@ -283,7 +273,6 @@ useEffect(() => {
       setStream(newStream);
       cameraStartedRef.current = true;
   
-      // Wait until the video element is available
       const waitForVideo = async () => {
         return new Promise<void>((resolve) => {
           const checkVideo = () => {
@@ -301,148 +290,165 @@ useEffect(() => {
       await waitForVideo();
     } catch (error) {
       console.error("❌ Error accessing camera:", error);
+      
     }
   };
-  
   
 
   const stopCamera = () => {
     if (stream) {
-      console.log("🛑 Stopping camera...");
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
       cameraStartedRef.current = false;
     }
   };
 
-  // Face detection logic
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-     // console.log("🎥 Camera stream set to video element.");
-
-      const interval = setInterval(detectUserState, 1000);
-      return () => {
-     //   console.log("🔄 Cleaning up interval...");
-        clearInterval(interval);
-      };
-    }
-  }, [stream]);
-
   const detectUserState = async () => {
     if (!videoRef.current || !modelsLoaded || !faceapi || !canvasRef.current) return;
-  
+
     const video = videoRef.current;
-    const detection = await faceapi
-      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks();
-  
-    if (!detection) {
-      setOutOfAreaCount((prev) => prev + 1);
-      return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    const videoContainer = videoContainerRef.current;
+    if (videoContainer) {
+      canvas.width = videoContainer.clientWidth;
+      canvas.height = videoContainer.clientHeight;
     }
-  
-    if (outOfAreaCount > 0) {
-      setOutOfAreaCount(0);
-    }
-  
-    const landmarks = detection.landmarks;
-    const leftEye = landmarks.getLeftEye();
-    const rightEye = landmarks.getRightEye();
-    const nose = landmarks.getNose();
-    const topLip = landmarks.getMouth()[13];
-    const bottomLip = landmarks.getMouth()[19];
-  
-    // Calculate eye aspect ratio (EAR)
-    const calculateEAR = (eye: any) => {
-      const height = eye[1].y - eye[5].y;
-      const width = eye[3].x - eye[0].x;
-      return height / width;
-    };
-  
-    const leftEAR = calculateEAR(leftEye);
-    const rightEAR = calculateEAR(rightEye);
-  
-    if (leftEAR < 0.28 && rightEAR < 0.28) {
-      logActivity("User blinked");
-    }
-  
-    // Check for drowsiness (Eyes closed for prolonged duration)
-    if (leftEAR < 0.2 && rightEAR < 0.2) {
-      setTimeout(() => {
-        if (leftEAR < 0.2 && rightEAR < 0.2) {
-          logActivity("User is drowsy");
+
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+
+    try {
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+        if (!detection || !detection.landmarks) {
+          console.log("No face detected");
+          setIdleTimer((prev) => {
+            const updatedTimer = prev + 1; // Increment the timer by 1
+            console.log(`Idle Timer: ${updatedTimer}`);
+    
+            if (updatedTimer >= 10 && !isIdle && !isModalOpen) {
+              console.log("User is out of area");
+              logActivity("Idle");
+              if (currentActivity !== "Idle") {
+                setCurrentActivity("Idle");
+              }
+              setIsIdle(true);
+              setIsModalOpen(true); // Open modal
+            }
+    
+            return updatedTimer; // Return the updated timer state
+          });
+          return; // Exit early if no face detected
+        } else {
+          if (isIdle && isModalOpen) {
+            setIdleTimer(0); // Reset timer if eyes are open
+            setIsIdle(false); // Mark user as awake if previously asleep
+          }
         }
-      }, 2000);
-    }
+      const landmarks = detection.landmarks;
+      const topLip = landmarks.getMouth()[13];
+      const bottomLip = landmarks.getMouth()[19];
+      const mouthHeight = bottomLip.y - topLip.y;
+
+      if (mouthHeight > 20) {
+        const currentTime = Date.now();
+        
+        if (!lastLoggedTime.current || currentTime - lastLoggedTime.current >= 5000) {
+          console.log("User is yawning");
+          logActivity("Yawning");  // Log activity if the condition is met and 5 seconds passed
   
-    // Yawn detection
-    const mouthHeight = bottomLip.y - topLip.y;
-    if (mouthHeight > 20) {
-      logActivity("User is yawning");
-    }
-  
-    // Nodding detection (Track vertical nose movement)
-    const currentNoseY = nose[0].y;
-    if (Math.abs(currentNoseY - lastNoseYRef.current) > 10) {
-      logActivity("User nodded");
-    }
-    lastNoseYRef.current = currentNoseY;
-  };
-  
-  
-  
-  
-  useEffect(() => {
-    const updateCanvasSize = () => {
-      if (canvasRef.current && videoContainerRef.current) {
-        canvasRef.current.width = videoContainerRef.current.clientWidth;
-        canvasRef.current.height = videoContainerRef.current.clientHeight;
+          // Update the last logged time
+          lastLoggedTime.current = currentTime;
+        }
       }
-    };
-  
-    window.addEventListener("resize", updateCanvasSize);
-    return () => window.removeEventListener("resize", updateCanvasSize);
-  }, []);
-  
+
+      const leftEye = landmarks.getLeftEye();
+      const rightEye = landmarks.getRightEye();
+      const leftEyeHeight = leftEye[1].y - leftEye[5].y;
+      const leftEyeWidth = leftEye[3].x - leftEye[0].x;
+      const leftEyeRatio = leftEyeHeight / leftEyeWidth;
+
+      const rightEyeHeight = rightEye[1].y - rightEye[5].y;
+      const rightEyeWidth = rightEye[3].x - rightEye[0].x;
+      const rightEyeRatio = rightEyeHeight / rightEyeWidth;
+
+      console.log("left eye: " + leftEyeRatio + " right eye: " + rightEyeRatio);
+
+      if (leftEyeRatio > -0.28 && rightEyeRatio > -0.28) {
+        setSleepingTimer((prev) => {
+          const updatedTimer = prev + 1; // Increment the timer by 1
+          console.log(`Sleeping Timer: ${updatedTimer}`);
+
+          if (updatedTimer >= 10 && !isAsleep && !isModalOpen) {
+            console.log("User is sleeping");
+            logActivity("Sleeping");
+            if (currentActivity !== "Sleeping") {
+              setCurrentActivity("Sleeping");
+            }
+            setIsAsleep(true);
+            setIsModalOpen(true); // Open modal
+          }
+
+          return updatedTimer; // Return the updated timer state
+        });
+      } else {
+        setSleepingTimer(0); // Reset timer if eyes are open
+        if (isAsleep && isModalOpen) {
+          setIsAsleep(false); // Mark user as awake if previously asleep
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error detecting face:", error);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      detectUserState();
+    }, 1000);
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
+  }, [modelsLoaded, faceapi]);
 
   return (
     <CameraContext.Provider value={{ videoRef, startCamera, stopCamera, stream }}>
       {children}
-
       {stream && (
-       <div
-       ref={videoContainerRef}
-       title="Drag me everywhere or double click me to view larger..."
-       className="fixed cursor-pointer"
-       style={{
-         left: `${position.x}px`,
-         top: `${position.y}px`,
-         width: isLarge ? "300px" : "100px",
-         height: isLarge ? "280px" : "80px",
-         zIndex: 1000,
-       }}
-       onMouseDown={startDrag}
-       onDoubleClick={toggleSize} // Double-click to resize
-     >
-       <video
-         ref={videoRef}
-         autoPlay
-         playsInline
-         muted
-         className="w-full h-full border rounded-md shadow-md bg-black"
-       />
-    <canvas ref={canvasRef} className="absolute top-0 left-0" />
-    <TrackerModal 
-        isOpen={isModalOpen} 
-        onClose={() => handleModalResponse(true)} 
-        refresh={() => {}} 
-        setMessage={() => {}} 
-        countdown={modalTimer} // Pass countdown timer
-      />
-     </div>
-     
+        <div
+          ref={videoContainerRef}
+          title="Drag me everywhere or double click me to view larger..."
+          className="fixed cursor-pointer"
+          style={{
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            width: isLarge ? "300px" : "100px",
+            height: isLarge ? "280px" : "80px",
+            zIndex: 1000,
+          }}
+          onMouseDown={startDrag}
+          onDoubleClick={toggleSize}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full border rounded-md shadow-md bg-black"
+          />
+          <canvas ref={canvasRef} className="absolute top-0 left-0" />
+          
+        </div>
       )}
+      <TrackerModal 
+            isOpen={isModalOpen} 
+            onClose={() => handleModalResponse(true)} 
+            refresh={() => {}} 
+            setMessage={message} 
+          />
     </CameraContext.Provider>
   );
 };

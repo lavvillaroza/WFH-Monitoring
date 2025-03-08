@@ -7,9 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
-
 enum Role {
   ADMIN
   EMPLOYEE
@@ -99,25 +96,14 @@ model Leave {
 
 }
 
-model Overtime {
-  id          String        @id @default(uuid())
-  date        DateTime
-  startTime   DateTime
-  endTime     DateTime
-  duration    Int  
-  reason      String
-  status      RequestStatus @default(PENDING)
-  approvedBy  String? 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  employeeId  String 
-
-}
 
 model HumanActivityLog {
   id          String   @id @default(uuid())  
   activity    String   
+  start       DateTime
+  end         DateTime?
+  duration    Int?
+  remarks     String?
   employeeId  String 
-  timestamp   DateTime @default(now())  
 
 }

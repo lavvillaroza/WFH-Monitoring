@@ -29,20 +29,29 @@ export async function POST(req: Request) {
                 where: { employeeId, timeOut: null },
                 orderBy: { date: "desc" }, // Get the latest record
             });
-
+        
             if (!lastRecord) {
                 return NextResponse.json({ error: "No active Time In record found" }, { status: 400 });
             }
-
-            // Update the found record with timeOut
+        
+            // Parse the timeOut and timeIn
+            const timeIn = new Date(lastRecord.timeIn);  // Assume timeIn is a Date object
+            const timeOutDate = new Date(timeOut);  // Convert string to Date object
+        
+            // Calculate duration in seconds
+            const durationInSeconds = Math.floor((timeOutDate.getTime() - timeIn.getTime()) / 1000);
+        
+            // Update the found record with timeOut, duration, and remarks
             await prisma.dailyTimeRecord.update({
                 where: { id: lastRecord.id },
                 data: {
-                    timeOut: new Date(timeOut), // Convert string to Date object
-                    remarks: remarks || "Clocked out",
+                    timeOut: timeOutDate,
+                    duration: durationInSeconds,
+                    remarks: remarks || "Clocked out",  // Use default remark if none is provided
                 },
             });
-        } else {
+            }
+        else {
             return NextResponse.json({ error: "Invalid request" }, { status: 400 });
         }
 
