@@ -54,6 +54,7 @@ model EmployeeDetails {
   address       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  picture  Bytes?  // Store image as binary data
 
 }
 
