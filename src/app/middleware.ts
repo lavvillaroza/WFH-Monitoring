@@ -8,6 +8,7 @@ export function middleware(request: Request) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  
   return NextResponse.next();
 }
 
