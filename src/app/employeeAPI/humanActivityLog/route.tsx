@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Fetch logs for a specific employee
+// fetch logs for a specific employee
 export async function GET(req: Request) {
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
@@ -46,26 +46,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    // Get today's date, ignoring the time part
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);  // Set time to midnight (start of today)
-
-    // End of today (midnight tomorrow)
-    const tomorrow = new Date(today);
-    tomorrow.setHours(24, 0, 0, 0);  // Set to midnight of the next day
-
     writer.write(encoder.encode("event: open\ndata: Connection established\n\n"));
 
     async function sendUpdates() {
-      // Fetch the logs for the employee only for today's date
+      // Fetch the logs for the employee with all necessary details
       const logs = await prisma.humanActivityLog.findMany({
-        where: {
-          employeeId,
-          start: {
-            gte: today, // Start time greater than or equal to midnight today
-            lt: tomorrow, // Less than midnight tomorrow (end of today)
-          },
-        },
+        where: { employeeId },
         orderBy: { start: "desc" },
       });
 
@@ -90,5 +76,62 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("❌ Error fetching activity logs:", error);
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });
+  }
+}
+
+// Update a log entry
+export async function PUT(req: Request) {
+  try {
+    // Extract data from the request body and URL query parameters
+    const { remarks, end } = await req.json();
+    const url = new URL(req.url);
+    const activity = url.searchParams.get("activity");
+    const employeeId = url.searchParams.get("employeeId");
+
+    // Validate required fields
+    if (!employeeId || !activity || !remarks || !end) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Log the request parameters for debugging
+    console.log("Received PUT request:", { activity, employeeId, remarks, end });
+
+    // Find the existing activity log for the employee and activity
+    const existingLog = await prisma.humanActivityLog.findFirst({
+      where: { 
+        employeeId, 
+        activity,
+        end:null,
+      },
+      orderBy: { start: 'desc' }, // Order by start date in descending order to get the latest one
+    });
+
+
+    if (!existingLog) {
+      console.log(`Activity log not found for employee ${employeeId} and activity ${activity}`);
+      return NextResponse.json({ error: "Activity log not found" }, { status: 404 });
+    }
+    const start = existingLog.start;
+    const endTimestamp = new Date(end).getTime(); // Convert the provided end to a timestamp
+    const startTimestamp = new Date(start).getTime(); // Convert the start timestamp to a timestamp
+
+    // Calculate the duration in seconds
+    const duration = (endTimestamp - startTimestamp) / 1000;
+
+    // Update the activity log entry with remarks, end, and duration
+    const updatedLog = await prisma.humanActivityLog.update({
+      where: { id: existingLog.id },
+      data: {
+        remarks,
+        end, // The end timestamp of the activity
+        duration, // The duration in seconds
+      },
+    });
+
+    // Return the updated log entry as a response
+    return NextResponse.json(updatedLog, { status: 200 });
+  } catch (error) {
+    console.error("❌ Error updating activity log:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

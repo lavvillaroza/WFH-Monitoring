@@ -17,13 +17,12 @@ CREATE TABLE `User` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ScreenShots` (
+CREATE TABLE `ScreenShotModel` (
     `id` VARCHAR(191) NOT NULL,
     `employeeId` VARCHAR(191) NOT NULL,
     `picture` LONGBLOB NULL,
     `date` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `ScreenShots_employeeId_key`(`employeeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -95,6 +94,7 @@ CREATE TABLE `HumanActivityLog` (
     `activity` VARCHAR(191) NOT NULL,
     `start` DATETIME(3) NOT NULL,
     `end` DATETIME(3) NULL,
+    `duration` INTEGER NULL,
     `remarks` VARCHAR(191) NULL,
     `employeeId` VARCHAR(191) NOT NULL,
 

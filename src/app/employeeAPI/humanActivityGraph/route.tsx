@@ -44,7 +44,6 @@ export async function GET(req: Request) {
       });
 
       // Log the fetched logs to the console
-      console.log("Fetched logs:", logs);
 
       // Send logs as SSE event
       writer.write(encoder.encode(`event: update\ndata: ${JSON.stringify(logs)}\n\n`));
