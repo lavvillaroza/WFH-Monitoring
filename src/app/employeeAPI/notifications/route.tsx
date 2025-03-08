@@ -11,11 +11,6 @@ export async function GET() {
       select: { id: true, createdAt: true, status: true },
     });
 
-    const latestOvertime = await prisma.overtime.findFirst({
-      orderBy: { createdAt: "desc" },
-      select: { id: true, createdAt: true, status: true },
-    });
-
     const latestLeave = await prisma.leave.findFirst({
       orderBy: { createdAt: "desc" },
       select: { id: true, createdAt: true, status: true },
@@ -23,11 +18,6 @@ export async function GET() {
 
     // Fetch all pending requests
     const pendingDTRP = await prisma.dailyTimeRecordProblem.findMany({
-      where: { status: "PENDING" },
-      select: { id: true, createdAt: true, status: true },
-    });
-
-    const pendingOvertime = await prisma.overtime.findMany({
       where: { status: "PENDING" },
       select: { id: true, createdAt: true, status: true },
     });
@@ -40,20 +30,18 @@ export async function GET() {
     return NextResponse.json({
       latest: [
         latestDTRP ? { type: "DTRP", ...latestDTRP } : null,
-        latestOvertime ? { type: "Overtime", ...latestOvertime } : null,
         latestLeave ? { type: "Leave", ...latestLeave } : null,
       ].filter(Boolean), // Remove null values
 
       pending: [
         ...pendingDTRP.map((req: any) => ({ type: "DTRP", ...req })),
-        ...pendingOvertime.map((req: any) => ({ type: "Overtime", ...req })),
         ...pendingLeave.map((req: any) => ({ type: "Leave", ...req })),
       ],
     });
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json(
-      { error: "Error fetching notifications", details: error.message },
+      { error: "Error fetching notifications", details: error },
       { status: 500 }
     );
   }

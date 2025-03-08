@@ -8,10 +8,22 @@ CREATE TABLE `User` (
     `role` ENUM('ADMIN', 'EMPLOYEE') NOT NULL DEFAULT 'EMPLOYEE',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `picture` LONGBLOB NULL,
     `status` VARCHAR(191) NOT NULL,
 
     UNIQUE INDEX `User_email_key`(`email`),
     UNIQUE INDEX `User_employeeId_key`(`employeeId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ScreenShots` (
+    `id` VARCHAR(191) NOT NULL,
+    `employeeId` VARCHAR(191) NOT NULL,
+    `picture` LONGBLOB NULL,
+    `date` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `ScreenShots_employeeId_key`(`employeeId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -78,28 +90,13 @@ CREATE TABLE `Leave` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Overtime` (
-    `id` VARCHAR(191) NOT NULL,
-    `date` DATETIME(3) NOT NULL,
-    `startTime` DATETIME(3) NOT NULL,
-    `endTime` DATETIME(3) NOT NULL,
-    `duration` INTEGER NOT NULL,
-    `reason` VARCHAR(191) NOT NULL,
-    `status` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
-    `approvedBy` VARCHAR(191) NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `employeeId` VARCHAR(191) NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `HumanActivityLog` (
     `id` VARCHAR(191) NOT NULL,
     `activity` VARCHAR(191) NOT NULL,
+    `start` DATETIME(3) NOT NULL,
+    `end` DATETIME(3) NULL,
+    `remarks` VARCHAR(191) NULL,
     `employeeId` VARCHAR(191) NOT NULL,
-    `timestamp` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
