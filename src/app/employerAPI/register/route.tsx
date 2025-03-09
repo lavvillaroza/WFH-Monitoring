@@ -50,6 +50,8 @@ export async function POST(request: Request) {
         department: body.department,
         contactNumber: body.contactNumber || null,
         address: body.address || null,
+        scheduleTimeIn: body.scheduleTimein || null,
+        scheduleTimeOut: body.scheduleTimeout || null,
       },
     });
 

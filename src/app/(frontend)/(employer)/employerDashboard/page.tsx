@@ -16,6 +16,8 @@ const Dashboard = () => {
   const [employees, setEmployees] = useState([]);
   const [humanActivityLog, setHumanActivityLog] = useState({ idle: 0, sleeping: 0 });
   const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string ,employeeId:string }[]>([]);
+  const [latestRequests, setLatestRequests] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const router = useRouter();
 
@@ -33,6 +35,7 @@ const Dashboard = () => {
       router.push("/"); // Redirect if not logged in
     } else {
       fetchEmployees();
+      fetchNotificationLogs();
     }
   }, []);
 
@@ -130,6 +133,19 @@ const Dashboard = () => {
     };
   };
   
+  const fetchNotificationLogs = async () => {
+    try {
+      const response = await fetch("/employeeAPI/notifications");
+      const data = await response.json();
+
+      setLatestRequests(data.latest || []);
+      setPendingRequests(data.pending || []);
+    } catch (error) {
+      console.error("Error fetching notification logs:", error);
+      setLatestRequests([]);
+      setPendingRequests([]);
+    }
+  };
 
   const getDonutData = (employee: Employee | null) => {
     if (!employee) {
@@ -151,8 +167,7 @@ const Dashboard = () => {
         hoverBackgroundColor: ["#45a049", "#ffca2c"],
       }],
     };
-  };
-
+  }
   return (
     <div className="min-h-screen bg-white">
       <NavbarEmployer />
@@ -166,39 +181,66 @@ const Dashboard = () => {
               Total Employees: <span className="font-bold">{employees.length}</span>
             </p>
             <div className="flex items-center w-full">
-            <div className="w-full sm:w-[250px] md:w-[280px] lg:w-[300px] max-w-full mx-auto">
-                <Doughnut data={getDonutData(selectedEmployee)} options={{ maintainAspectRatio: false }} />
+              <div className="w-full sm:w-[250px] md:w-[280px] lg:w-[300px] max-w-full mx-auto">
+                <Doughnut data={getDonutData()} options={{ maintainAspectRatio: false }} />
               </div>
               <div className="ml-6 text-sm text-gray-700">
                 <p><span className="font-bold text-orange-600">Sleeping Time:</span> {humanActivityLog.sleeping}</p>
                 <p><span className="font-bold text-yellow-500">Idle Time:</span> {humanActivityLog.idle}</p>
-                <p><span className="font-bold text-red-600">Inactive:</span> 2</p>
-                <p><span className="font-bold text-orange-500">Active:</span> 1</p>
               </div>
             </div>
           </div>
-
-         {/* Human Activity Recognition */}
+          
+         
+          
+          {/* Human Activity Recognition Card */}
           <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
             <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
             {activityLogs.length > 0 ? (
-            activityLogs.map((log, index) => {
-              const employee = employees.find(emp => emp.employeeId === (log.employeeId)); // Ensure type match
-            
-              const employeeName = employee ? employee.name : "Unknown"; 
-            
-              return (
-                <p key={index} className="text-gray-600">
-                  <span className="font-semibold">{new Date(log.start).toLocaleTimeString("en-PH")}: </span>
-                  {employeeName} is {log.activity.toLowerCase()}.
-                </p>
-              );
-            })
-            
+              activityLogs.map((log, index) => {
+                const employee = employees.find(emp => emp.employeeId === log.employeeId);
+                const employeeName = employee ? employee.name : "Unknown";
+                return (
+                  <p key={index} className="text-gray-600">
+                    <span className="font-semibold">{new Date(log.start).toLocaleTimeString("en-PH")}: </span>
+                    {employeeName} is {log.activity.toLowerCase()}.
+                  </p>
+                );
+              })
             ) : (
               <p className="text-gray-500">No recent activity logs.</p>
             )}
           </div>
+
+           {/* Notification Logs Card */}
+           <div className="card bg-white shadow-md text-black p-6">
+            <h1 className="text-xl font-bold mb-4">NOTIFICATION LOGS</h1>
+            <h2 className="font-semibold text-lg">Latest Requests</h2>
+            <hr className="my-2 border-gray-300" />
+            {latestRequests.length > 0 ? (
+              latestRequests.map((req, index) => (
+                <p key={index} className="text-blue-600 border-b py-2 cursor-pointer hover:text-blue-300 text-sm" onClick={() => handleNavigation(req.type)}>
+                  {req.type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-500">No recent requests</p>
+            )}
+
+            <h3 className="font-semibold text-lg mt-4">Pending Requests</h3>
+            <hr className="my-2 border-gray-300" />
+            {pendingRequests.length > 0 ? (
+              pendingRequests.map((req, index) => (
+                <p key={index} className="text-yellow-600 border-b py-2 cursor-pointer hover:text-yellow-400 text-sm" onClick={() => handleNavigation(req.type)}>
+                  {req.type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-500">No pending requests</p>
+            )}
+          </div>
+
+
         </div>
       </div>
     </div>

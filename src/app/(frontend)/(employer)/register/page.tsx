@@ -10,6 +10,8 @@ const RegisterEmployee = ( ) => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage,setToastMessage] = useState("");
   const [toastStatus,setToastStatus] = useState("");
+  const [scheduleTimein, setScheduleTimein] = useState("");
+  const [scheduleTimeout, setScheduleTimeout] = useState("");
   const [newEmployee, setNewEmployee] = useState({
     
     name: "",
@@ -18,6 +20,8 @@ const RegisterEmployee = ( ) => {
     department: "",
     contactNumber: "",
     address: "",
+    scheduleTimein:"",
+    scheduleTimeout:"",
   });
 
   const router = useRouter();
@@ -34,47 +38,47 @@ const RegisterEmployee = ( ) => {
   }
 
 
-  const captureAndSendScreenshot = async () => {
-    try {
-      // Temporarily override unsupported CSS colors
-      document.body.style.color = "#000"; // Ensure text is visible
-      document.body.style.backgroundColor = "#fff"; // Set a standard background
+  // const captureAndSendScreenshot = async () => {
+  //   try {
+  //     // Temporarily override unsupported CSS colors
+  //     document.body.style.color = "#000"; // Ensure text is visible
+  //     document.body.style.backgroundColor = "#fff"; // Set a standard background
   
-      const screenshotTarget = document.body; // Capture the entire webpage
+  //     const screenshotTarget = document.body; // Capture the entire webpage
   
-      const canvas = await html2canvas(screenshotTarget, {
-        backgroundColor: null, // Prevent forced white backgrounds
-        useCORS: true, // Enable cross-origin images
-      });
+  //     const canvas = await html2canvas(screenshotTarget, {
+  //       backgroundColor: null, // Prevent forced white backgrounds
+  //       useCORS: true, // Enable cross-origin images
+  //     });
   
-      const screenshot = canvas.toDataURL("image/png"); // Convert to Base64
+  //     const screenshot = canvas.toDataURL("image/png"); // Convert to Base64
   
-      // Send to API
-      const response = await fetch("/employerAPI/screenShot", { // Updated path
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: "some-employee-id",
-          screenCapture: screenshot,
-        }),
-      });
+  //     // Send to API
+  //     const response = await fetch("/employerAPI/screenShot", { // Updated path
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         employeeId: "some-employee-id",
+  //         screenCapture: screenshot,
+  //       }),
+  //     });
   
-      const data = await response.json();
-      console.log(data.message);
-    } catch (error) {
-      console.error("Error capturing or sending screenshot:", error);
-    }
-  };
+  //     const data = await response.json();
+  //     console.log(data.message);
+  //   } catch (error) {
+  //     console.error("Error capturing or sending screenshot:", error);
+  //   }
+  // };
 
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log("Capturing and sending screenshot...");
-      captureAndSendScreenshot();
-    }, 5000);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     console.log("Capturing and sending screenshot...");
+  //     captureAndSendScreenshot();
+  //   }, 5000);
   
-    return () => clearInterval(interval); // Cleanup on unmount
-  }, []);
+  //   return () => clearInterval(interval); // Cleanup on unmount
+  // }, []);
 
 
   const handleRegister = async () => {
@@ -135,7 +139,7 @@ const RegisterEmployee = ( ) => {
       setToastMessage("Registered Succesfully")
       setToastStatus("alert-success")
       setShowToast(true); // Show toast message
-      setNewEmployee({ name: "", email: "", position: "", department: "", contactNumber: "", address: "" });
+      setNewEmployee({ name: "", email: "", position: "", department: "", contactNumber: "", address: "" ,scheduleTimein:"",scheduleTimeout:""});
       setNewUser({ password: "", status: "Active", name: "", email: "", role: "" });
       setTimeout(() => {
         router.push("/"); 
@@ -182,7 +186,24 @@ const RegisterEmployee = ( ) => {
             />
           </label>
         </fieldset> */}
-
+       <div className="flex justify-between mb-2">
+          <div className="w-1/2 pr-1">
+            <label className="block text-sm font-medium text-gray-600">Schedule Check-in</label>
+            <input
+              className="border p-2 rounded w-full"
+              type="time"
+              value={newEmployee.scheduleTimein}
+              onChange={(e) => setNewEmployee({ ...newEmployee, scheduleTimein: e.target.value })} />
+          </div>
+          <div className="w-1/2 pl-1">
+            <label className="block text-sm font-medium text-gray-600">Schedule Timeout</label>
+            <input
+              className="border p-2 rounded w-full"
+              type="time"
+              value={newEmployee.scheduleTimeout}
+              onChange={(e) => setNewEmployee({ ...newEmployee, scheduleTimeout: e.target.value })} />
+          </div>
+        </div>
 
         <div className="flex justify-end">
           <button className="bg-gray-400 text-white px-4 py-2 rounded mr-2"  onClick={handleCancel}>Cancel</button>
