@@ -1,26 +1,37 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 
-const DeleteEmployeeModal = ({ isOpen, onClose, employee, alertMessage }) => {
+const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
   if (!isOpen) return null;
 
   const router = useRouter();
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`/employerAPI/deleteUser/${employee.employeeId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        alert("Authentication failed. Please log in again.");
+        router.push("/");
+        return;
+      }
+
+      const res = await fetch(`/employeeAPI/dtrp`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ id: record.id }), // ✅ Send ID in the request body
       });
 
-      if (!response.ok) {
+      if (!res.ok) {
         throw new Error("Failed to delete employee");
       }
 
       onClose(); 
-      router.push("/manageEmployee")
+      router.push("/dtr-problem")
     } catch (error) {
-      console.error("❌ Error deleting employee:", error);
+      console.error("❌ Error deleting record:", error);
       alert(`❌ Error: ${error.message}`);
     }
   };
@@ -51,7 +62,7 @@ const DeleteEmployeeModal = ({ isOpen, onClose, employee, alertMessage }) => {
         )}
 
         <p className="text-gray-600 mb-4">
-          Are you sure you want to delete <strong>{employee?.name}</strong>? This action cannot be undone.
+          Are you sure you want to delete <strong>{record?.date}</strong>? This action cannot be undone.
         </p>
 
         <div className="flex justify-end">
@@ -67,4 +78,4 @@ const DeleteEmployeeModal = ({ isOpen, onClose, employee, alertMessage }) => {
   );
 };
 
-export default DeleteEmployeeModal;
+export default DeleteDTRPModal;

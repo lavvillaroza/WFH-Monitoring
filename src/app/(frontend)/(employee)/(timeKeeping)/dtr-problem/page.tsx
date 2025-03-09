@@ -5,6 +5,7 @@ import { MoreVertical, Plus, Edit, Trash } from "lucide-react";
 import DTRPModal from "../modals/dtrp-form/page";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import DeleteDTRPModal from "@/app/components/deleteDTRP";
 
 const DailyTimeRecord = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,6 +24,9 @@ const DailyTimeRecord = () => {
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const router = useRouter();
   const [records, setRecords] = useState([]); 
+  const [isDeleting,setIsDeleting] = useState(false);
+  const [deletingRecord,setDeletingRecord] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
 
 
   useEffect(() => {
@@ -43,12 +47,20 @@ const DailyTimeRecord = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [currentPage, rowsPerPage, message]);
 
+  const handleMessageUpdate = (newMessage: string) => {
+    setMessage(newMessage);
+      // Automatically clear the message after 3 seconds
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+  };
+
   const fetchRecords = async () => {
     setLoading(true);
     try {
       const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const userID = storedUser?.id;
-      const response = await fetch(`/employeeAPI/dtrp?userID=${userID}`);
+      const employeeId = storedUser?.employeeId;
+      const response = await fetch(`/employeeAPI/dtrp?employeeId=${employeeId}`);
       if (!response.ok) {
         // 🚀 Handle different error types
         if (response.status === 400) throw new Error("User ID is required");
@@ -63,6 +75,12 @@ const DailyTimeRecord = () => {
       console.error("Error fetching records:", error);
     }
     setLoading(false);
+  };
+
+  const handleEdit = (record: any) => {
+    setSelectedRecord(record);
+    setIsModalOpen(true);
+    setDropdownOpen(null);
   };
 
   const handleAddEditRecord = async (record) => {
@@ -164,12 +182,15 @@ const DailyTimeRecord = () => {
                           {dropdownOpen === record.id && (
                             <div className="absolute left-0 mt-2 bg-white shadow-lg rounded-md border w-32 z-50">
                               <button
+                                onClick={() => handleEdit(record)}
                                 className="block w-full text-left px-4 py-2 hover:bg-gray-200"
                               >
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleDelete(record.id)}
+                               onClick={() => {
+                                setDeletingRecord(record);  
+                                setIsDeleting(true); }}
                                 className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200"
                               >
                                 Delete
@@ -192,7 +213,13 @@ const DailyTimeRecord = () => {
           </table>
         </div>
       </div>
-      <DTRPModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedRecord(null); }} onSave={handleAddEditRecord} record={selectedRecord} />
+      <DTRPModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedRecord(null); }}refresh={fetchRecords}  onSave={handleAddEditRecord} record={selectedRecord} setMessage={handleMessageUpdate}   />
+      <DeleteDTRPModal 
+                      isOpen={isDeleting}
+                      onClose={() => {setIsDeleting(false); fetchRecords();}}
+                      record={deletingRecord}
+                      alertMessage={alertMessage}
+                    />
     </div>
   );
 };

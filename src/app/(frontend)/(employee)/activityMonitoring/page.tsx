@@ -31,7 +31,7 @@ ChartJS.register(
 const ActivityMonitoring = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string }[]>([]);
+  const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
   const [activityChart, setActivityChart] = useState<{ activity: string; start: string; end: string }[]>([]);
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = storedUser ? JSON.parse(storedUser) : null;

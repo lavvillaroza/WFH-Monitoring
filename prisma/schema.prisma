@@ -54,6 +54,9 @@ model EmployeeDetails {
   address       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  picture  Bytes?  
+  scheduleTimeIn  String? 
+  scheduleTimeOut String? 
 
 }
 
@@ -106,3 +109,11 @@ model HumanActivityLog {
   employeeId  String 
 
 }
+
+model ConfigSettings {
+  id                 String @id @default(uuid())
+  name               String    
+  threshold          Int   
+     
+}
+

@@ -9,10 +9,13 @@ export async function GET() {
     const employees = await prisma.employeeDetails.findMany();
     return NextResponse.json(employees, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ error: "Error fetching employees" }, { status: 500 });
+    console.error("Error fetching employees:", error); // Logs full error details
+    return NextResponse.json(
+      { error: error.message || "An unknown error occurred" }, 
+      { status: 500 }
+    );
   }
 }
-
 // POST: Add a new employee
 export async function POST(req: Request) {
   try {

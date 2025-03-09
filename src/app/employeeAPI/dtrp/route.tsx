@@ -9,23 +9,23 @@ const prisma = new PrismaClient();
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const userID = searchParams.get("userID");
+    const employeeId = searchParams.get("employeeId");
 
-    if (!userID) {
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    if (!employeeId) {
+      return NextResponse.json({ error: "employeeId is required" }, { status: 400 });
     }
 
-    console.log("Received userID:", userID); // Debugging
-
+    console.log("Received userID:", employeeId); // Debugging
+    employeeId
     // ✅ Check if user exists before fetching records
-    const userExists = await prisma.user.findUnique({ where: { id: userID } });
+    const userExists = await prisma.user.findUnique({ where: { employeeId: employeeId } });
     if (!userExists) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // ✅ Ensure correct field names in Prisma query
     const dtrProblems = await prisma.dailyTimeRecordProblem.findMany({
-      where: { userId: userID }   });
+      where: { employeeId: employeeId }   });
     
 
     if (!dtrProblems.length) {
@@ -46,20 +46,35 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, dtrId, issueType, description,type } = body;
+    const { employeeId, dateTime, type, remarks } = body;
 
-    if (!userId || !dtrId || !issueType || !description || !type) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    // Validate required fields
+    if (!employeeId || !dateTime || !type || !remarks) {
+      return NextResponse.json({ error: "⚠️ All fields are required." }, { status: 400 });
     }
 
+    // Convert dateTime to proper Date object
+    const parsedDate = new Date(dateTime);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: "❌ Invalid date format." }, { status: 400 });
+    }
+
+    // Create DTR Problem record in the database
     const newDTRP = await prisma.dailyTimeRecordProblem.create({
-      data: { userId, dtrId, issueType, description,type },
+      data: {
+        employeeId,
+        date: parsedDate,
+        type,
+        remarks,
+        status: "PENDING", // Default status
+      },
     });
 
-    return NextResponse.json(newDTRP, { status: 201 });
+    return NextResponse.json({ success: "✅ Submitted successfully!", newDTRP }, { status: 201 });
+
   } catch (error) {
-    console.error("Error creating record:", error);
-    return NextResponse.json({ error: "Failed to create record" }, { status: 500 });
+    console.error("🚨 Error creating DTRP record:", error);
+    return NextResponse.json({ error: "❌ Failed to create record." }, { status: 500 });
   }
 }
 
@@ -102,8 +117,42 @@ export async function DELETE(req: NextRequest) {
     await prisma.dailyTimeRecordProblem.delete({ where: { id } });
 
     return NextResponse.json({ message: "Record deleted successfully" }, { status: 200 });
-  } catch (error) {
-    console.error("Error deleting record:", error);
-    return NextResponse.json({ error: "Failed to delete record" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Error updating Record request:", error.message, error);
+    return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id ,type, dateTime, remarks} = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Record ID is required" }, { status: 400 });
+    }
+
+    // 🔍 Check if leave exists
+    const existingRecord = await prisma.dailyTimeRecordProblem.findUnique({ where: { id } });
+
+    if (!existingRecord) {
+      return NextResponse.json({ error: "Leave not found" }, { status: 404 });
+    }
+
+    // 🔄 Update the leave request
+    const updatedRecord = await prisma.dailyTimeRecordProblem.update({
+      where: { id },
+      data: {
+        type: type || existingRecord.type,
+        date: dateTime ? new Date(dateTime) : existingRecord.date,
+        remarks: remarks || existingRecord.remarks,
+       
+      },
+    });
+
+    return NextResponse.json({ message: "Record request updated successfully", record: updatedRecord }, { status: 200 });
+  } catch (error: any) {
+    console.error("Error updating Record request:", error.message, error);
+    return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
+  }
+}
+
