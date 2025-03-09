@@ -36,10 +36,8 @@ export default function RootLayout({
       >
           {/* <TakeScreenShot/> */}
          <CameraProvider>
-<<<<<<< HEAD
+
           {/* <TakeScreenShot/> */}
-=======
->>>>>>> d5df1e6f9cdf7cffcb111c1583020a6cf1bdbb10
           {children}
         </CameraProvider>
       </body>
