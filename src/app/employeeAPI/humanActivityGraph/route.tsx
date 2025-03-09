@@ -24,14 +24,19 @@ export async function GET(req: Request) {
 
     // Function to send updates
     async function sendUpdates() {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); 
+  
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
       // Fetch logs for the specific employee, only for today's date
       const logs = await prisma.humanActivityLog.findMany({
         where: {
           employeeId,
           activity: { not: "Yawning" },
           start: {
-            gte: today, // Start time greater than or equal to midnight today
-            lt: new Date(today.getTime() + 86400000), // Less than midnight tomorrow
+            gte: today, 
+            lt: tomorrow, 
           },
         },
         select: {

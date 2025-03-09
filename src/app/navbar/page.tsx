@@ -121,16 +121,14 @@ const Navbar = () => {
                 if (cameraContext) {
                     await cameraContext.startCamera(); // ✅ Start camera when clocking in
                     setIsCameraOn(true);
+                    requestBody = {
+                        employeeId: employeeId,
+                        timeIn: timestamp,
+                        timeOut: null,
+                        remarks: "",
+                    };
                 }
-                else{
-                    return;
-                }
-                requestBody = {
-                    employeeId: employeeId,
-                    timeIn: timestamp,
-                    timeOut: null,
-                    remarks: "",
-                };
+                
             } else {
                
 

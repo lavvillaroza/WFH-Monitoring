@@ -160,6 +160,11 @@ const ActivityMonitoring = () => {
     };
   };
 
+  const formatDateToPHT = (dateString) => {
+    const options = { timeZone: "Asia/Manila", hour12: false };
+    return new Date(new Date(dateString).toLocaleString("en-US", options)).toLocaleString("en-US", options);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -217,12 +222,12 @@ const ActivityMonitoring = () => {
                   {activityLogs.length > 0 ? (
                     activityLogs.map((log, index) => (
                       <li key={index}>
-                      <span className="font-medium">{log.activity}</span>
-                      <span className="text-gray-500 text-xs ml-2">
-                        {new Date(log.start).toLocaleString()} -{" "}
-                        {log.end ? new Date(log.end).toLocaleString() : "Ongoing"}
-                      </span>
-                    </li>
+                        <span className="font-medium">{log.activity}</span>
+                        <span className="text-gray-500 text-xs ml-2">
+                          {formatDateToPHT(log.start)} -{" "}
+                          {log.end ? formatDateToPHT(log.end) : "Ongoing"}
+                        </span>
+                      </li>
                     ))
                   ) : (
                     <p className="text-gray-500">No logs available.</p>

@@ -35,7 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
          <CameraProvider>
-          <TakeScreenShot/>
+          {/* <TakeScreenShot/> */}
           {children}
         </CameraProvider>
       </body>

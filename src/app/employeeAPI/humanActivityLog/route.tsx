@@ -21,10 +21,20 @@ export async function POST(req: Request) {
         employeeId,
         start,
         end,
-        remarks,  // Adding remarks to the log entry
+        remarks,  
       },
     });
 
+    if (activity === "Sleeping" || activity === "Idle") {
+      
+        await prisma.user.update({
+          where: { employeeId: employeeId }, 
+          data: {
+            status: "INACTIVE", 
+          },
+        });
+    }
+    
     // Return the created log entry as a response
     return NextResponse.json(logEntry, { status: 201 });
   } catch (error) {
@@ -47,11 +57,19 @@ export async function GET(req: Request) {
     }
 
     writer.write(encoder.encode("event: open\ndata: Connection established\n\n"));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); 
 
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
     async function sendUpdates() {
       // Fetch the logs for the employee with all necessary details
       const logs = await prisma.humanActivityLog.findMany({
-        where: { employeeId },
+        where: { employeeId, 
+          start: {
+          gte: today, 
+          lt: tomorrow, 
+        }, },
         orderBy: { start: "desc" },
       });
 
@@ -127,7 +145,13 @@ export async function PUT(req: Request) {
         duration, // The duration in seconds
       },
     });
-
+      await prisma.user.update({
+        where: { employeeId: employeeId }, 
+        data: {
+          status: "ACTIVE", 
+        },
+      });
+     
     // Return the updated log entry as a response
     return NextResponse.json(updatedLog, { status: 200 });
   } catch (error) {
