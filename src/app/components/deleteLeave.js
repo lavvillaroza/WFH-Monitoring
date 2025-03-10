@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 
-const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
+const DeleteLeaveModal = ({ isOpen, onClose, leave, alertMessage }) => {
   if (!isOpen) return null;
 
   const router = useRouter();
@@ -15,23 +15,22 @@ const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
         return;
       }
 
-      const res = await fetch(`/employeeAPI/dtrp`, {
+      const res = await fetch(`/employeeAPI/leave`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ id: record.id }), // ✅ Send ID in the request body
+        body: JSON.stringify({ id: leave.id }), // ✅ Send ID in the request body
       });
 
       if (!res.ok) {
-        throw new Error("Failed to delete employee");
+        throw new Error("Failed to delete leave");
       }
 
       onClose(); 
-      router.push("/dtr-problem")
     } catch (error) {
-      console.error("❌ Error deleting record:", error);
+      console.error("❌ Error deleting leave:", error);
       alert(`❌ Error: ${error.message}`);
     }
   };
@@ -40,7 +39,7 @@ const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 className="text-lg font-semibold mb-4 text-gray-700">Delete {record.type} record?</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-700">Delete {leave.leaveType} record?</h2>
 
         {alertMessage && (
           <div className="alert alert-warning flex items-center gap-2 p-3 rounded bg-yellow-100 text-yellow-700 border border-yellow-400">
@@ -62,7 +61,10 @@ const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
         )}
 
         <p className="text-gray-600 mb-4">
-          Are you sure you want to delete <strong>{new Date(record.date).toLocaleDateString()} {new Date(record.date).toLocaleTimeString('en-GB', { hour12: true })}
+          Are you sure you want to delete <strong> <br></br>
+          Start Date: {new Date(leave.startDate).toLocaleDateString()} 
+          <br></br>
+          End Date: {new Date(leave.endDate).toLocaleDateString()} 
           </strong>? 
           <br></br>
           This action cannot be undone.
@@ -81,4 +83,4 @@ const DeleteDTRPModal = ({ isOpen, onClose, record, alertMessage }) => {
   );
 };
 
-export default DeleteDTRPModal;
+export default DeleteLeaveModal;

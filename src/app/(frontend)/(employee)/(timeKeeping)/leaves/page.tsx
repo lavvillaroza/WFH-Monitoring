@@ -5,6 +5,7 @@ import { MoreVertical, Plus } from "lucide-react";
 import LeaveModal from "../modals/leave-form/page";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import DeleteLeaveModal from "@/app/components/deleteLeave";
 
 const Leaves = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +25,9 @@ const Leaves = () => {
   const [messageType, setMessageType] = useState("");
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const router = useRouter();
+  const [isDeleting,setIsDeleting] = useState(false);
+  const [deletingLeave,setdeletingLeave] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
     fetchLeaves();
@@ -100,41 +104,41 @@ const Leaves = () => {
     setDropdownOpen(null);
   };
 
-  const handleDelete = async (leaveId: string) => {
-    if (!confirm("Are you sure you want to delete this leave request?")) return;
+  // const handleDelete = async (leaveId: string) => {
+  //   if (!confirm("Are you sure you want to delete this leave request?")) return;
 
-    try {
-      const authToken = localStorage.getItem("authToken");
-      if (!authToken) {
-        alert("Authentication failed. Please log in again.");
-        router.push("/");
-        return;
-      }
+  //   try {
+  //     const authToken = localStorage.getItem("authToken");
+  //     if (!authToken) {
+  //       alert("Authentication failed. Please log in again.");
+  //       router.push("/");
+  //       return;
+  //     }
 
-      const res = await fetch(`/employeeAPI/leave`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ id: leaveId }), // ✅ Send ID in the request body
-      });
+  //     const res = await fetch(`/employeeAPI/leave`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${authToken}`,
+  //       },
+  //       body: JSON.stringify({ id: leaveId }), // ✅ Send ID in the request body
+  //     });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to delete leave");
-      }
-      setMessage("Leave request deleted successfully.");
-      setMessageType("success");
-      fetchLeaves(); // Refresh the list after successful deletion
-    } catch (error) {
-      console.error("Error deleting leave:", error);
-      setMessage("An error occurred while deleting the leave request.");
-      setMessageType("error");
-    }
+  //     if (!res.ok) {
+  //       const errorData = await res.json();
+  //       throw new Error(errorData.error || "Failed to delete leave");
+  //     }
+  //     setMessage("Leave request deleted successfully.");
+  //     setMessageType("success");
+  //     fetchLeaves(); // Refresh the list after successful deletion
+  //   } catch (error) {
+  //     console.error("Error deleting leave:", error);
+  //     setMessage("An error occurred while deleting the leave request.");
+  //     setMessageType("error");
+  //   }
 
-    setDropdownOpen(null);
-  };
+  //   setDropdownOpen(null);
+  // };
   const handleMessageUpdate = (newMessage: string) => {
     setMessage(newMessage);
   };
@@ -268,17 +272,15 @@ const Leaves = () => {
                               (1000 * 60 * 60 * 24)
                           )}
                     </td>
-                    <td
-                      className={
-                        leave.status === "APPROVED"
-                          ? "text-green-600"
-                          : leave.status === "PENDING"
-                          ? "text-blue-600"
-                          : "text-red-600"
+                    {
+                        leave.status === "PENDING" ? (
+                          <td><div className="badge badge-warning">PENDING</div></td>
+                        ) : leave.status === "APPROVED" ? (
+                          <td><div className="badge badge-success">APPROVED</div></td>
+                        ) : (
+                          <td><div className="badge badge-error">DISAPPROVED</div></td>
+                        )
                       }
-                    >
-                      {leave.status}
-                    </td>
                     <td className="relative">
                       {leave.status === "PENDING" && (
                         <div
@@ -302,7 +304,9 @@ const Leaves = () => {
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleDelete(leave.id)}
+                               onClick={() => {
+                                setdeletingLeave(leave);  
+                                setIsDeleting(true); setDropdownOpen(null)}}
                                 className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200"
                               >
                                 Delete
@@ -344,17 +348,22 @@ const Leaves = () => {
           </div>
         </div>
       </div>
-      <LeaveModal 
-  isOpen={isModalOpen} 
-  onClose={() => {
-    setIsModalOpen(false);
-    setSelectedLeave(null); 
-  }} 
-  leave={selectedLeave} 
-  refresh={fetchLeaves} 
-  setMessage={handleMessageUpdate}  
-/>
-
+           <LeaveModal 
+                  isOpen={isModalOpen} 
+                  onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedLeave(null); 
+                  }} 
+                  leave={selectedLeave} 
+                  refresh={fetchLeaves} 
+                  setMessage={handleMessageUpdate}  
+                />
+                <DeleteLeaveModal 
+                      isOpen={isDeleting}
+                      onClose={() => {setIsDeleting(false); fetchLeaves();}}
+                      leave={deletingLeave}
+                      alertMessage={alertMessage}
+                    />
     </div>
   );
 };

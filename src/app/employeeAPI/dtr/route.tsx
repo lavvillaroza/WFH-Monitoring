@@ -72,11 +72,16 @@ export async function GET(req: Request) {
         if (!employeeId) {
             return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
         }
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);  
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);  
 
-        // Fetch the last DTR entry for the user
-        const lastRecord = await prisma.dailyTimeRecord.findFirst({
-            where: { employeeId },
-            orderBy: { date: "desc" },
+        
+        const lastRecord = await prisma.dailyTimeRecord.findMany({
+            where: {
+                employeeId,
+            },
         });
 
         return NextResponse.json(lastRecord, { status: 200 });

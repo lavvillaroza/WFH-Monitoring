@@ -101,18 +101,19 @@ const DailyTimeRecord = () => {
     setIsModalOpen(false);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this record?")) return;
-    try {
-      await fetch(`/employeeAPI/dtrp/${id}`, { method: "DELETE" });
-      setMessage("Record deleted successfully");
-      setMessageType("success");
-      fetchRecords();
-    } catch (error) {
-      setMessage("Error deleting record");
-      setMessageType("error");
-    }
-  };
+  // const handleDelete = async (id) => {
+  //   setIsDeleting(false);
+  //   if (!confirm("Are you sure you want to delete this record?")) return;
+  //   try {
+  //     await fetch(`/employeeAPI/dtrp/${id}`, { method: "DELETE" });
+  //     setMessage("Record deleted successfully");
+  //     setMessageType("success");
+  //     fetchRecords();
+  //   } catch (error) {
+  //     setMessage("Error deleting record");
+  //     setMessageType("error");
+  //   }
+  // };
 
   return (
     <div className="min-h-screen shadow-md bg-white">
@@ -161,10 +162,25 @@ const DailyTimeRecord = () => {
               {records?.length > 0 ? (
                 records.map((record) => (
                   <tr key={record.id}>
-                    <td>{new Date(record.date).toLocaleDateString()}</td>
-                    <td>{record.type}</td>
+                    <td>{new Date(record.date).toLocaleDateString()} {new Date(record.date).toLocaleTimeString('en-GB', { hour12: true })}</td>
+                    {
+                        record.type === "time-in" ? (
+                          <td><div className="badge badge-primary">Time in</div></td>
+                        ) : (
+                          <td><div className="badge badge-primary">Time out</div></td>
+                        )
+                      }
+
                     <td>{record.remarks}</td>
-                    <td>{record.status || "Pending"}</td>
+                    {
+                        record.status === "PENDING" ? (
+                          <td><div className="badge badge-warning">PENDING</div></td>
+                        ) : record.status === "APPROVED" ? (
+                          <td><div className="badge badge-success">APPROVED</div></td>
+                        ) : (
+                          <td><div className="badge badge-error">DISAPPROVED</div></td>
+                        )
+                      }
                     <td className="relative">
                       {record.status === "PENDING" && (
                         <div
@@ -190,7 +206,7 @@ const DailyTimeRecord = () => {
                               <button
                                onClick={() => {
                                 setDeletingRecord(record);  
-                                setIsDeleting(true); }}
+                                setIsDeleting(true); setDropdownOpen(null)}}
                                 className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200"
                               >
                                 Delete

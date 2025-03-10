@@ -11,16 +11,16 @@ type DTRPModalProps = {
 };
 
 const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh, setMessage }) => {
-  const [type, setType] = useState("time-in");
-  const [dateTime, setDateTime] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [type, setType] = useState<string>("");
+  const [dateTime, setDateTime] = useState<string>("");
+  const [remarks, setRemarks] = useState<string>("");
   const [alertMessage, setAlertMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
     if (record) {
-      setType(record.type || "");
+      setType(record.type || "time-in");
       setDateTime(record.date ? new Date(record.date).toISOString().slice(0, 16) : "");
       setRemarks(record.remarks || "")
       setAlertMessage(record.reason || "");
@@ -37,6 +37,10 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if(type==="" || remarks ===""){
+      
+      return;
+    }
     e.preventDefault();
   
     setLoading(true);
@@ -45,10 +49,11 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
     const authToken = localStorage.getItem("authToken");
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     const employeeId = storedUser?.employeeId;
-    const payload = record ? { id: record.id, type, dateTime, remarks } : { employeeId, type, dateTime, remarks };
+    const payload = record ? { id: record.id, type, dateTime, remarks } : { employeeId, dateTime, type, remarks };
 
     try {
-      const res = await fetch(`/employeeAPI/dtrp`, {
+      console.log(payload);
+      const res = await fetch(`/employeeAPI/dtrp?employeeId=${employeeId}`, {
         method: record ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +91,9 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
           className="w-full px-4 py-2 border rounded-md mb-4 bg-white"
           value={type}
           onChange={(e) => setType(e.target.value)}
+          required
         >
+        <option value="">Select</option>
           <option value="time-in">Time In</option>
           <option value="time-out">Time Out</option>
         </select>
