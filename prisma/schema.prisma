@@ -57,6 +57,7 @@ model EmployeeDetails {
   picture  Bytes?  
   scheduleTimeIn  String? 
   scheduleTimeOut String? 
+  activityStatus String?
 
 }
 
