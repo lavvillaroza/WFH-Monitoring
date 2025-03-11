@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     // Create a log entry in the database
-    const logEntry = await prisma.humanActivityLog.create({
+    const logEntry = await prisma.humanactivitylog.create({
       data: {
         activity,
         employeeId,
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     tomorrow.setDate(today.getDate() + 1);
     async function sendUpdates() {
       // Fetch the logs for the employee with all necessary details
-      const logs = await prisma.humanActivityLog.findMany({
+      const logs = await prisma.humanactivitylog.findMany({
         where: { employeeId, 
           start: {
           gte: today, 
@@ -115,7 +115,7 @@ export async function PUT(req: Request) {
     console.log("Received PUT request:", { activity, employeeId, remarks, end });
 
     // Find the existing activity log for the employee and activity
-    const existingLog = await prisma.humanActivityLog.findFirst({
+    const existingLog = await prisma.humanactivitylog.findFirst({
       where: { 
         employeeId, 
         activity,
@@ -137,7 +137,7 @@ export async function PUT(req: Request) {
     const duration = (endTimestamp - startTimestamp) / 1000;
 
     // Update the activity log entry with remarks, end, and duration
-    const updatedLog = await prisma.humanActivityLog.update({
+    const updatedLog = await prisma.humanactivitylog.update({
       where: { id: existingLog.id },
       data: {
         remarks,

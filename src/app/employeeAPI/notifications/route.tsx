@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch the latest DTRP and Leave requests for the specified employee
-    const latestDTRP = await prisma.dailyTimeRecordProblem.findFirst({
+    const latestDTRP = await prisma.dailytimerecordproblem.findFirst({
       where: { employeeId: employeeId }, // Filter by employeeId
       orderBy: { createdAt: "desc" },
       select: { id: true, createdAt: true, status: true },
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     });
 
     // Fetch all pending DTRP and Leave requests for the specified employee
-    const pendingDTRP = await prisma.dailyTimeRecordProblem.findMany({
+    const pendingDTRP = await prisma.dailytimerecordproblem.findMany({
       where: { employeeId: employeeId, status: "PENDING" }, // Filter by employeeId and status
       select: { id: true, createdAt: true, status: true },
     });

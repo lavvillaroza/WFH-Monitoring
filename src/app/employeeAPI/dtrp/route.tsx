@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     }
 
     // ✅ Ensure correct field names in Prisma query
-    const dtrProblems = await prisma.dailyTimeRecordProblem.findMany({
+    const dtrProblems = await prisma.dailytimerecordproblem.findMany({
       where: { employeeId: employeeId }   });
     
 
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create DTR Problem record in the database
-    const newDTRP = await prisma.dailyTimeRecordProblem.create({
+    const newDTRP = await prisma.dailytimerecordproblem.create({
       data: {
         employeeId,
         date: parsedDate,
@@ -90,7 +90,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "ID and status are required" }, { status: 400 });
     }
 
-    const updatedDTRP = await prisma.dailyTimeRecordProblem.update({
+    const updatedDTRP = await prisma.dailytimerecordproblem.update({
       where: { id },
       data: { status },
     });
@@ -114,7 +114,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    await prisma.dailyTimeRecordProblem.delete({ where: { id } });
+    await prisma.dailytimerecordproblem.delete({ where: { id } });
 
     return NextResponse.json({ message: "Record deleted successfully" }, { status: 200 });
   } catch (error: any) {
@@ -132,14 +132,14 @@ export async function PATCH(req: NextRequest) {
     }
 
     // 🔍 Check if leave exists
-    const existingRecord = await prisma.dailyTimeRecordProblem.findUnique({ where: { id } });
+    const existingRecord = await prisma.dailytimerecordproblem.findUnique({ where: { id } });
 
     if (!existingRecord) {
       return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     }
 
     // 🔄 Update the leave request
-    const updatedRecord = await prisma.dailyTimeRecordProblem.update({
+    const updatedRecord = await prisma.dailytimerecordproblem.update({
       where: { id },
       data: {
         type: type || existingRecord.type,
