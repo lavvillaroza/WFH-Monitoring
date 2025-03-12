@@ -4,6 +4,7 @@ import NavbarEmployer from "@/app/navbarEmployer/page";
 import { useEffect, useRef, useState } from "react";
 import { FileText, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ApprovalModal from "../modals/approval-form/page";
 
 const ApprovalRequest = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -19,6 +20,10 @@ const ApprovalRequest = () => {
   const [latestRequests, setLatestRequests] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(null);
+  const [leaves, setLeaves] = useState([]);
+  const [message, setMessage] = useState("");
 
   const handleDropdownToggle = (id) => {
     setDropdownOpen(dropdownOpen === id ? null : id); // Toggle dropdown
@@ -79,7 +84,10 @@ const fetchNotificationLogs = async () => {
   }
 };
 
-  
+const handleMessageUpdate = (newMessage: string) => {
+  setMessage(newMessage);
+};
+
   console.log(pendingRequests)
   
   const handleDateRangeChange = () => {
@@ -95,9 +103,11 @@ const fetchNotificationLogs = async () => {
     setCurrentPage(1);
   };
 
-  const handleEdit = (request) => {
-    console.log("Editing request:", request.id);
-    // Add your edit functionality here
+  const handleEdit = (request: any) => {
+    setSelectedLeave(request);
+    setIsModalOpen(true);
+    setDropdownOpen(null);
+    console.log(request)
   };
 
   const handleDelete = (request) => {
@@ -170,7 +180,7 @@ const fetchNotificationLogs = async () => {
                           <td className="px-4 py-2 border-b text-black text-center">
                             {new Date(request.createdAt).toLocaleDateString()}
                           </td>
-                          <td className="px-4 py-2 border-b text-black text-center">{request.type}</td>
+                          <td className="px-4 py-2 border-b text-black text-center">{request.file_type}</td>
                           <td className="px-4 py-2 border-b text-black text-center">{request.employeeName}</td>
                           <td className="px-4 py-2 border-b text-black text-center">{request.employeeId}</td>
                           <td
@@ -198,10 +208,9 @@ const fetchNotificationLogs = async () => {
                                 className="block px-4 py-2 w-full text-left hover:bg-gray-100"
                                 onClick={() => {
                                   handleEdit(request);  
-                                  setIsEditing(true); 
                                 }}
                               >
-                                Edit
+                                View
                               </button>
                               <button className="block px-4 py-2 w-full text-left hover:bg-gray-100"  onClick={() => {
                                   setDeleteEmployee(request);  
@@ -256,6 +265,17 @@ const fetchNotificationLogs = async () => {
           </div>
         </div>
       </div>
+
+      <ApprovalModal 
+                  isOpen={isModalOpen} 
+                  onClose={() => {
+                    setIsModalOpen(false);
+                    setSelectedLeave(null); 
+                  }} 
+                  record={selectedLeave} 
+                  refresh={fetchNotificationLogs} 
+                  setMessage={handleMessageUpdate}  
+                />
     </div>
   );
 };

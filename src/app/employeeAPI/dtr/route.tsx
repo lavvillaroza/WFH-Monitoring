@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
         if (timeIn) {
             // Create a new record for "Time In"
-            await prisma.dailytimerecord.create({
+            await prisma.dailyTimeRecord.create({
                 data: {
                     employeeId,
                     date: new Date(),
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
             });
         } else if (timeOut) {
             // Find the latest record with a null timeOut
-            const lastRecord = await prisma.dailytimerecord.findFirst({
+            const lastRecord = await prisma.dailyTimeRecord.findFirst({
                 where: { employeeId, timeOut: null },
                 orderBy: { date: "desc" }, // Get the latest record
             });
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             const durationInSeconds = Math.floor((timeOutDate.getTime() - timeIn.getTime()) / 1000);
         
             // Update the found record with timeOut, duration, and remarks
-            await prisma.dailytimerecord.update({
+            await prisma.dailyTimeRecord.update({
                 where: { id: lastRecord.id },
                 data: {
                     timeOut: timeOutDate,
@@ -78,7 +78,7 @@ export async function GET(req: Request) {
         todayEnd.setHours(23, 59, 59, 999);  
 
         
-        const lastRecord = await prisma.dailytimerecord.findMany({
+        const lastRecord = await prisma.dailyTimeRecord.findMany({
             where: {
                 employeeId,
             },
