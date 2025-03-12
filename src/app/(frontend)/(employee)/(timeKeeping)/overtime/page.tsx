@@ -182,7 +182,7 @@ const Overtime = () => {
               onClick={() => setIsModalOpen(true)}
               className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md"
             >
-              <Plus className="w-5 h-5 mr-2" /> Add Overtime  
+              <Plus className="w-5 h-5 mr-2" /> Add   
             </button>
           </div>
 
@@ -299,22 +299,22 @@ const Overtime = () => {
         </div>
       </div>
            <OvertimeModal  // Renamed from LeaveModal to OvertimeModal
-                  isOpen={isModalOpen} 
-                  onClose={() => {
-                    setIsModalOpen(false);
-                    setSelectedOvertime(null);  // Renamed from setSelectedLeave to setSelectedOvertime
-                  }} 
-                  overtime={selectedOvertime}  // Renamed from leave to overtime
-                  refresh={fetchOvertimes}  // Renamed from fetchLeaves to fetchOvertimes
-                  setMessage={handleMessageUpdate} 
-                  setError={handleMessageError}   
-                />
-                <DeleteOvertimeModal 
-                      isOpen={isDeleting}
-                      onClose={() => {setIsDeleting(false); fetchOvertimes();}}  // Renamed from fetchLeaves to fetchOvertimes
-                      overtime={deletingOvertime}  // Renamed from deletingLeave to deletingOvertime
-                      alertMessage={alertMessage}
+                      isOpen={isModalOpen} 
+                      onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedOvertime(null);  // Renamed from setSelectedLeave to setSelectedOvertime
+                      }} 
+                      overtime={selectedOvertime}  // Renamed from leave to overtime
+                      refresh={fetchOvertimes}  // Renamed from fetchLeaves to fetchOvertimes
+                      setMessage={handleMessageUpdate} 
+                      setError={handleMessageError}   
                     />
+                    <DeleteOvertimeModal 
+                          isOpen={isDeleting}
+                          onClose={() => {setIsDeleting(false); fetchOvertimes();}}  // Renamed from fetchLeaves to fetchOvertimes
+                          overtime={deletingOvertime}  
+                          alertMessage={alertMessage}
+                        />
     </div>
   );
 };

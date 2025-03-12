@@ -68,11 +68,11 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
 
       if (!res.ok) throw new Error("Failed to submit leave");
       if(payload.id != undefined){
-        setMessage("Leave Updated Successfully!");
+        setMessage("Overtime Updated Successfully!");
         setError("success"); 
       }
       else{
-        setMessage("Leave Added Successfully!"); 
+        setMessage("Overtime Added Successfully!"); 
         setError("success");
       }
       refresh();
@@ -87,7 +87,7 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-96  text-black">
         <h2 className="text-lg font-semibold mb-4">File Overtime</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Date & Time From */}
@@ -131,7 +131,7 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="border p-2 rounded-md"
+              className="border p-2 rounded-md bg-white"
               rows={3}
               required
             ></textarea>
