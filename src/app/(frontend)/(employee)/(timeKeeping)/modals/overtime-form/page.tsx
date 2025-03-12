@@ -3,43 +3,70 @@
 import { useState, useEffect } from "react";
 
 type OvertimeModalProps = {
-    isOpen: boolean;
-    onClose: () => void;
-    overtime?: any;
-    refresh: () => void;
-    setMessage: (message: string) => void; 
-    setError: (message: string) => void;
-  };
+  isOpen: boolean;
+  onClose: () => void;
+  overtime?: any;
+  refresh: () => void;
+  setMessage: (message: string) => void;
+  setError: (message: string) => void;
+};
 
-const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime, refresh, setMessage,setError }) => {
-  if (!isOpen) return null; // Ensure modal only renders when isOpen is true
+const OvertimeModal: React.FC<OvertimeModalProps> = ({
+  isOpen,
+  onClose,
+  overtime,
+  refresh,
+  setMessage,
+  setError,
+}) => {
+  if (!isOpen) return null;
 
-  const [dateTimeFrom, setDateTimeFrom] = useState<string>("");
-  const [dateTimeTo, setDateTimeTo] = useState<string>("");
-  const [overtimeHours, setOvertimeHours] = useState<string>("0");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [reason, setReason] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Function to calculate overtime hours automatically
-  // useEffect(() => {
-  //   if (dateTimeFrom && dateTimeTo) {
-  //     const fromTime = new Date(dateTimeFrom);
-  //     const toTime = new Date(dateTimeTo);
-
-  //     if (toTime > fromTime) {
-  //       const diffMs = toTime.getTime() - fromTime.getTime(); // Get difference in milliseconds
-  //       const diffHours = diffMs / (1000 * 60 * 60); // Convert to hours
-  //       setOvertimeHours(diffHours.toFixed(2));
-  //     } else {
-  //       setOvertimeHours("0");
-  //     }
-  //   }
-  // }, [dateTimeFrom, dateTimeTo]);
-
+  // Current date in YYYY-MM-DD format
   const today = new Date().toISOString().slice(0, 10);
-  const isFutureDateNotAllowed = (dateTimeFrom > today || dateTimeTo > today);
 
-  if (!isOpen) return null;
+  // Function to convert the date to Philippine Time (UTC +8)
+  const convertToPHTime = (date: Date): Date => {
+    const phOffset = 8 * 60; // UTC+8 hours
+    const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
+    const offsetDifference = phOffset - localOffset;
+
+    date.setMinutes(date.getMinutes() + offsetDifference); // Adjust the date by the offset difference
+    return date;
+  };
+
+  // Check if the provided date is in the future
+  const isFutureDateNotAllowed =
+    (startDate && new Date(startDate) > new Date(today)) ||
+    (endDate && new Date(endDate) > new Date(today));
+
+  useEffect(() => {
+    if (overtime) {
+      const adjustedStartDate = overtime.startDate
+        ? convertToPHTime(new Date(overtime.startDate))
+        : null;
+      const adjustedEndDate = overtime.endDate
+        ? convertToPHTime(new Date(overtime.endDate))
+        : null;
+
+      // Format the date in the YYYY-MM-DDTHH:MM format for datetime-local
+      setStartDate(
+        adjustedStartDate ? adjustedStartDate.toISOString().slice(0, 16) : ""
+      );
+      setEndDate(
+        adjustedEndDate ? adjustedEndDate.toISOString().slice(0, 16) : ""
+      );
+      setReason(overtime.reason || "");
+    } else {
+      setStartDate("");
+      setEndDate("");
+      setReason("");
+    }
+  }, [overtime]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,7 +81,11 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
     const authToken = localStorage.getItem("authToken");
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     const employeeId = storedUser?.employeeId;
-    const payload = overtime ? { id: overtime.id, dateTimeFrom, dateTimeTo, reason } : { employeeId,  dateTimeFrom, dateTimeTo, reason };
+
+    // Use the PH time converted dates
+    const payload = overtime
+      ? { id: overtime.id, startDate, endDate, reason }
+      : { employeeId, startDate, endDate, reason };
 
     try {
       const res = await fetch(`/employeeAPI/overtime`, {
@@ -66,19 +97,20 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
         body: JSON.stringify(overtime ? { ...payload, id: overtime.id } : payload),
       });
 
-      if (!res.ok) throw new Error("Failed to submit leave");
-      if(payload.id != undefined){
+      if (!res.ok) throw new Error("Failed to submit overtime");
+
+      if (payload.id !== undefined) {
         setMessage("Overtime Updated Successfully!");
-        setError("success"); 
-      }
-      else{
-        setMessage("Overtime Added Successfully!"); 
+        setError("success");
+      } else {
+        setMessage("Overtime Added Successfully!");
         setError("success");
       }
+
       refresh();
       onClose();
     } catch (error) {
-      setMessage(""+error); 
+      setMessage(`${error}`);
       setError("error");
     } finally {
       setLoading(false);
@@ -87,7 +119,7 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96  text-black">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-96 text-black">
         <h2 className="text-lg font-semibold mb-4">File Overtime</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Date & Time From */}
@@ -95,8 +127,8 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
             <label className="text-sm font-medium">Date & Time From</label>
             <input
               type="datetime-local"
-              value={dateTimeFrom}
-              onChange={(e) => setDateTimeFrom(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
               className="border p-2 rounded-md"
               required
             />
@@ -107,23 +139,12 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({ isOpen, onClose, overtime
             <label className="text-sm font-medium">Date & Time To</label>
             <input
               type="datetime-local"
-              value={dateTimeTo}
-              onChange={(e) => setDateTimeTo(e.target.value)}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
               className="border p-2 rounded-md"
               required
             />
           </div>
-
-          {/* Overtime Hours (Auto-Computed) */}
-          {/* <div className="flex flex-col">
-            <label className="text-sm font-medium">Total Overtime Hours</label>
-            <input
-              type="text"
-              value={overtimeHours}
-              readOnly
-              className="border p-2 rounded-md bg-gray-100"
-            />
-          </div> */}
 
           {/* Reason for Overtime */}
           <div className="flex flex-col">

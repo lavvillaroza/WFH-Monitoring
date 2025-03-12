@@ -59,9 +59,9 @@ export async function GET(req: NextRequest) {
 // ✅ POST: Create a new overtime request
 export async function POST(req: NextRequest) {
   try {
-    const { employeeId, dateTimeFrom, dateTimeTo, reason } = await req.json();
+    const { employeeId, startDate, endDate, reason } = await req.json();
     
-    if (!employeeId || !dateTimeFrom || !dateTimeTo || !reason) {
+    if (!employeeId || !startDate || !endDate || !reason) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
@@ -69,8 +69,8 @@ export async function POST(req: NextRequest) {
     const newOvertime = await prisma.overtime.create({
       data: {
         employeeId,
-        startDate: new Date(dateTimeFrom),
-        endDate: new Date(dateTimeTo),
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
         reason,
         status: "PENDING",
       },

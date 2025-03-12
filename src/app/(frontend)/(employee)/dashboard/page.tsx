@@ -104,7 +104,7 @@ const Dashboard = () => {
   }, [employeeId]);
 
   const handleNavigation = (type: string) => {
-    if (type === "DTRP") router.push("/dtrp");
+    if (type === "DTRP") router.push("/dtr-problem");
     else if (type === "Overtime") router.push("/overtime");
     else if (type === "Leave") router.push("/leaves");
   };
@@ -258,7 +258,10 @@ const Dashboard = () => {
               {pendingRequests.length > 0 ? (
                 <div>
                   {["Leave", "Overtime", "DTRP"].map((type) => {
-                    const filteredRequests = pendingRequests.filter((req) => req.type === type);
+                    const filteredRequests = pendingRequests
+                    .filter((req) => req.type === type)
+                    .slice(0, 2); // Show only the two most recent requests
+
 
                     return (
                       <div key={type} className="mb-3">
