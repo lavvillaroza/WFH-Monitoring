@@ -155,7 +155,7 @@ const Dashboard = () => {
         setPendingRequests([]);
       }
     };
-  
+    
 
   const getDonutData = (employee: Employee | null) => {
     if (!employee) {
@@ -252,9 +252,9 @@ const Dashboard = () => {
                             <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
-                              onClick={() => handleNavigation(req.type)}
+                              onClick={() => handleNavigation(req.file_type)}
                             >
-                              {req.type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
+                              {req.file_type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
                             </span>
                           </p>
                         );
@@ -288,9 +288,9 @@ const Dashboard = () => {
                             <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
-                              onClick={() => handleNavigation(req.type)}
+                              onClick={() => handleNavigation(req.file_type)}
                             >
-                              {req.type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
+                              {req.file_type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
                             </span>
                           </p>
                         );

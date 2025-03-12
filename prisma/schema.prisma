@@ -21,6 +21,7 @@ enum RequestStatus {
 enum DTRProblemStatus {
   PENDING
   RESOLVED
+  REJECTED
 }
 
 model User {

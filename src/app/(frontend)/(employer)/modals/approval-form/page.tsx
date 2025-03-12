@@ -45,7 +45,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ isOpen, onClose, record, 
     const authToken = localStorage.getItem("authToken");
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     const employeeId = record.employeeId;
-    const payload = record ? { id: record.id, type, dateTime, remarks,file_type:record.file_type,employeeId } : { employeeId, type, dateTime, remarks };
+    const payload = record ? { id: record.id, type, dateTime, remarks,file_type:record.file_type,employeeId ,reason:record.reason ,approval:'APPROVED'} : { employeeId, type, dateTime, remarks };
 
     try {
       const res = await fetch(`/employerAPI/approval`, {
