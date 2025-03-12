@@ -1,80 +1,150 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  switch (req.method) {
-    case 'GET':
-      return getOvertimes(req, res);
-    case 'POST':
-      return createOvertime(req, res);
-    case 'PUT':
-      return updateOvertime(req, res);
-    case 'DELETE':
-      return deleteOvertime(req, res);
-    default:
-      return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-}
-
-// GET - Fetch all overtime records
-async function getOvertimes(req: NextApiRequest, res: NextApiResponse) {
+// ✅ GET: Fetch all overtime requests for a specific user with optional filters
+export async function GET(req: NextRequest) {
   try {
-    const overtimes = await prisma.overtime.findMany({
-      include: { employee: true },
-    });
-    return res.status(200).json(overtimes);
+    const { searchParams } = new URL(req.url);
+    const employeeId = searchParams.get("employeeId");
+    const status = searchParams.get("status");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+
+    // Pagination parameters
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+    const skip = (page - 1) * pageSize;
+    const take = pageSize;
+
+    if (!employeeId) {
+      return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
+    }
+
+    // Construct filter conditions
+    const whereClause = {
+      employeeId,
+      ...(status && { status }),
+      ...(startDate && endDate && {
+        AND: [
+          { startDate: { gte: new Date(startDate) } },
+          { endDate: { lte: new Date(endDate) } },
+        ],
+      }),
+    };
+
+    // Fetch overtime requests with filters and pagination
+    const [overtimes, totalOvertimes] = await prisma.$transaction([
+      prisma.overtime.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      prisma.overtime.count({ where: whereClause }),
+    ]);
+
+    const totalPages = Math.ceil(totalOvertimes / pageSize);
+
+    return NextResponse.json(
+      { overtimes, totalPages, totalOvertimes, currentPage: page, pageSize },
+      { status: 200 }
+    );
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to fetch overtime records' });
+    console.error("Error fetching overtime requests:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
 
-// POST - Create a new overtime request
-async function createOvertime(req: NextApiRequest, res: NextApiResponse) {
+
+// ✅ POST: Create a new overtime request
+export async function POST(req: NextRequest) {
   try {
-    const { employeeId, date, startTime, endTime, reason } = req.body;
+    const { employeeId, dateTimeFrom, dateTimeTo, reason } = await req.json();
+    
+    if (!employeeId || !dateTimeFrom || !dateTimeTo || !reason) {
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    // 📌 Create a new overtime request
     const newOvertime = await prisma.overtime.create({
       data: {
         employeeId,
-        date: new Date(date),
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
+        startDate: new Date(dateTimeFrom),
+        endDate: new Date(dateTimeTo),
         reason,
+        status: "PENDING",
       },
     });
-    return res.status(201).json(newOvertime);
+
+    return NextResponse.json(
+      { message: "Overtime request submitted", overtime: newOvertime },
+      { status: 201 }
+    );
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to create overtime record' });
+    console.error("Error creating overtime request:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: error }, { status: 500 });
   }
 }
 
-// PUT - Update an overtime request (approve/reject)
-async function updateOvertime(req: NextApiRequest, res: NextApiResponse) {
+// ✅ DELETE: Remove an overtime request
+export async function DELETE(req: NextRequest) {
   try {
-    const { id, status } = req.body;
-    if (!['Pending', 'Approved', 'Rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
+    const { id } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Overtime ID is required" }, { status: 400 });
     }
+
+    // 🔍 Check if overtime request exists
+    const existingOvertime = await prisma.overtime.findUnique({ where: { id } });
+
+    if (!existingOvertime) {
+      return NextResponse.json({ error: "Overtime request not found" }, { status: 404 });
+    }
+
+    // ❌ Delete the overtime request
+    await prisma.overtime.delete({ where: { id } });
+
+    return NextResponse.json({ message: "Overtime request deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting overtime request:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: error }, { status: 500 });
+  }
+}
+
+// ✅ PATCH: Update an existing overtime request
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, startDate, endDate, reason, status } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "Overtime ID is required" }, { status: 400 });
+    }
+
+    // 🔍 Check if overtime request exists
+    const existingOvertime = await prisma.overtime.findUnique({ where: { id } });
+
+    if (!existingOvertime) {
+      return NextResponse.json({ error: "Overtime request not found" }, { status: 404 });
+    }
+
+    // 🔄 Update the overtime request
     const updatedOvertime = await prisma.overtime.update({
       where: { id },
-      data: { status },
+      data: {
+        startDate: startDate ? new Date(startDate) : existingOvertime.startDate,
+        endDate: endDate ? new Date(endDate) : existingOvertime.endDate,
+        reason: reason || existingOvertime.reason,
+        status: status ?? existingOvertime.status,
+      },
     });
-    return res.status(200).json(updatedOvertime);
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to update overtime record' });
-  }
-}
 
-// DELETE - Remove an overtime request
-async function deleteOvertime(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    const { id } = req.body;
-    await prisma.overtime.delete({
-      where: { id },
-    });
-    return res.status(200).json({ message: 'Overtime record deleted successfully' });
+    return NextResponse.json(
+      { message: "Overtime request updated successfully", overtime: updatedOvertime },
+      { status: 200 }
+    );
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to delete overtime record' });
+    console.error("Error updating overtime request:", error);
+    return NextResponse.json({ error: "Internal Server Error", details: error }, { status: 500 });
   }
 }

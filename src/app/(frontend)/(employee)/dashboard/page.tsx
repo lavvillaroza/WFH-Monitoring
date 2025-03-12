@@ -11,11 +11,9 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const Dashboard = () => {
   const [activityStatus, setActivityStatus] = useState("ACTIVE");
   const [wakefulnessStatus, setWakefulnessStatus] = useState("Idle");
-  const [productivityPercentage, setProductivityPercentage] = useState(0); // Default to 100% productivity
-  const [focusLevel, setFocusLevel] = useState(85); // Default focus level
+  const [productivityPercentage, setProductivityPercentage] = useState(0); 
   const [latestRequests, setLatestRequests] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
-  const [employeeStatus, setEmployeeStatus] = useState("Active");
   const router = useRouter();
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -116,7 +114,7 @@ const Dashboard = () => {
       return {
         labels: ["No Data"],
         datasets: [{
-          data: [100],
+          data: [1, 1, 1],
           backgroundColor: ["#e0e0e0"],
         }]
       };
