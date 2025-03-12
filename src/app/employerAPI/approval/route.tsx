@@ -81,7 +81,41 @@ export async function PATCH(req: NextRequest) {
       }
     }
      
+    //leave
+
+    async function updateLeave() {
+      const date = new Date(dateTime);
+      console.log("Converted date:", date.toISOString());
     
+      const checkDTR = await prisma.dailyTimeRecord.findFirst({
+        where: {
+          employeeId: employeeId,
+          date: {
+            gte: startOfDay(date),
+            lte: endOfDay(date),
+          }
+        }
+      });
+    
+      if (checkDTR) {
+        await prisma.dailyTimeRecord.update({
+          where: { id: checkDTR.id },
+          data: {
+            ...(type === 'time-in' ? { timeIn: new Date(dateTime) } : { timeOut: new Date(dateTime) }),
+          },
+        });
+      } else {
+        await prisma.dailyTimeRecord.create({
+          data: {
+            employeeId,
+            date: new Date(dateTime),
+            timeIn: type === 'time-in' ? new Date(dateTime) : null,
+            timeOut: type === 'time-out' ? new Date(dateTime) : null,
+            remarks: null,
+          },
+        });
+      }
+    }
 
     return NextResponse.json(
       { message: "Record request updated successfully", record: updatedRecord },
