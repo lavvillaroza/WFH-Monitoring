@@ -7,125 +7,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model configsettings {
-  id        String @id
-  name      String
-  threshold Int
-}
-
-enum overtime_status {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum dailytimerecordproblem_status {
-  PENDING
-  RESOLVED
-}
-
-enum user_role {
+enum Role {
   ADMIN
   EMPLOYEE
 }
 
-enum leave_status {
+enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
-
-model dailytimerecord {
-  id         String    @id
-  date       DateTime  @default(now())
-  timeIn     DateTime
-  timeOut    DateTime?
-  duration   Int?
-  remarks    String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime
-  employeeId String
+enum DTRProblemStatus {
+  PENDING
+  RESOLVED
 }
 
-model dailytimerecordproblem {
-  id         String    @id
-  date       DateTime
-  type       String
-  remarks    String
-  status     dailytimerecordproblem_status @default(PENDING)
-  createdAt  DateTime                      @default(now())
-  updatedAt  DateTime
-  employeeId String
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  employeeId String  @unique
+  password  String
+  name      String
+  role      Role     @default(EMPLOYEE) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  picture  Bytes?  // Store image as binary data
+  status    String
 }
 
-model employeedetails {
-  id              String   @id
-  name            String
-  email           String   @unique(map: "EmployeeDetails_email_key")
-  employeeId      String   @unique(map: "EmployeeDetails_employeeId_key")
-  position        String
-  department      String
-  contactNumber   String?
-  address         String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime
-  picture         Bytes?
-  scheduleTimeIn  String?
-  scheduleTimeOut String?
-  activityStatus  String?
+model ScreenShotModel{
+  id        String   @id @default(uuid())
+  employeeId String  
+  picture  Bytes?  // Store image as binary data
+  date        DateTime
 }
 
-model humanactivitylog {
-  id         String    @id
-  activity   String
-  start      DateTime
-  end        DateTime?
-  duration   Int?
-  remarks    String?
-  employeeId String
+model EmployeeDetails {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique @map("email")  
+  employeeId    String   @unique
+  position      String
+  department    String
+  contactNumber String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  picture  Bytes?  
+  scheduleTimeIn  String? 
+  scheduleTimeOut String? 
+  activityStatus String?
+
 }
 
-model leave {
-  id         String       @id
-  leaveType  String
-  startDate  DateTime
-  endDate    DateTime
-  reason     String
-  status     leave_status @default(PENDING)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime
-  employeeId String
+model DailyTimeRecord {
+  id          String   @id @default(uuid())
+  date        DateTime @default(now())
+  timeIn      DateTime
+  timeOut     DateTime?  
+  duration    Int?  
+  remarks     String?    
+  createdAt   DateTime @default(now())  
+  updatedAt   DateTime @updatedAt  
+  employeeId  String  
+
 }
 
-model overtime {
-  id         String          @id
-  startDate  DateTime
-  endDate    DateTime
-  reason     String
-  status     overtime_status @default(PENDING)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime
-  employeeId String
+model DailyTimeRecordProblem {
+  id          String   @id @default(uuid())
+  date        DateTime
+  type        String
+  remarks     String
+  status      DTRProblemStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employeeId  String   
+
 }
 
-model screenshotmodel {
-  id         String   @id
-  employeeId String
-  picture    Bytes?
-  date       DateTime
+model Leave {
+  id          String        @id @default(uuid())
+  leaveType   String
+  startDate   DateTime
+  endDate     DateTime
+  reason      String
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  employeeId  String    
+
 }
 
-model user {
-  id         String    @id
-  email      String    @unique(map: "User_email_key")
-  employeeId String    @unique(map: "User_employeeId_key")
-  password   String
-  name       String
-  role       user_role @default(EMPLOYEE)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime
-  picture    Bytes?
-  status     String
+
+model HumanActivityLog {
+  id          String   @id @default(uuid())  
+  activity    String   
+  start       DateTime
+  end         DateTime?
+  duration    Int?
+  remarks     String?
+  employeeId  String 
+
 }
 
+model ConfigSettings {
+  id                 String @id @default(uuid())
+  name               String    
+  threshold          Int   
+     
+}

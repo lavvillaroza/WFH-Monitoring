@@ -16,6 +16,9 @@ const ApprovalRequest = () => {
   const router = useRouter();
   const recordsPerPage = 5;
   const dropdownRef = useRef(null);
+  const [latestRequests, setLatestRequests] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [employees, setEmployees] = useState([]);
 
   const handleDropdownToggle = (id) => {
     setDropdownOpen(dropdownOpen === id ? null : id); // Toggle dropdown
@@ -34,30 +37,54 @@ const ApprovalRequest = () => {
     setDropdownOpen(null); // Close dropdown when mouse leaves
   };
 
-  const fetchNotificationLogs = async () => {
-    try {
-      const response = await fetch("/employerAPI/notifications");
-      const data = await response.json();
-  
-      // Merge and sort by createdAt (newest first)
-      const mergedRequests = [...(data.latest || []), ...(data.pending || [])].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-  
-      setRequests(mergedRequests);
-      setFilteredRequests(mergedRequests); // Ensure table updates
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching notification logs:", error);
-      setRequests([]);
-      setFilteredRequests([]);
-      setLoading(false);
+
+
+const fetchNotificationLogs = async () => {
+  try {
+    // Fetch pending requests
+    const response = await fetch("/employerAPI/notifications");
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
     }
-  };
+    const data = await response.json();
+
+    // Fetch employees data
+    const employeeResponse = await fetch("/employerAPI/employee");
+    if (!employeeResponse.ok) {
+      throw new Error("Failed to fetch employees");
+    }
+    const employeesData = await employeeResponse.json();
+    setEmployees(employeesData); // Store employee data in state
+
+    // Create a map for quick lookup (employeeId -> employeeName)
+    const employeeMap = {};
+    employeesData.forEach((emp) => {
+      employeeMap[emp.employeeId] = emp.name; // Assuming employee object has 'id' and 'name'
+    });
+
+    // Sort and update pending requests with employee names
+    const sortedPendingRequests = (data.pending || [])
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((request) => ({
+        ...request,
+        employeeName: employeeMap[request.employeeId] || "Unknown", // Map employeeId to name
+      }));
+
+    setPendingRequests(sortedPendingRequests);
+    setLoading(false);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    setPendingRequests([]);
+    setLoading(false);
+  }
+};
+
+  
+  console.log(pendingRequests)
   
   const handleDateRangeChange = () => {
-    const filtered = requests.filter((request) => {
-      const requestDate = new Date(request.createdAt);
+    const filtered = requests.filter((pendingRequests) => {
+      const requestDate = new Date(pendingRequests.createdAt);
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
 
@@ -126,6 +153,7 @@ const ApprovalRequest = () => {
                     <tr className="bg-gray-200">
                       <th className="px-4 py-2 border-b text-black text-center">Date</th>
                       <th className="px-4 py-2 border-b text-black text-center">Type</th>
+                      <th className="px-4 py-2 border-b text-black text-center">Name</th>
                       <th className="px-4 py-2 border-b text-black text-center">Employee ID</th>
                       <th className="px-4 py-2 border-b text-black text-center">Status</th>
                       <th className="px-4 py-2 border-b text-black text-center">Action</th>
@@ -136,13 +164,14 @@ const ApprovalRequest = () => {
                       <tr>
                         <td colSpan="5" className="text-center py-4">Loading...</td>
                       </tr>
-                    ) : currentRecords.length > 0 ? (
-                      currentRecords.map((request) => (
+                    ) : pendingRequests.length > 0 ? (
+                      pendingRequests.map((request) => (
                         <tr key={request.id}>
                           <td className="px-4 py-2 border-b text-black text-center">
                             {new Date(request.createdAt).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-2 border-b text-black text-center">{request.type}</td>
+                          <td className="px-4 py-2 border-b text-black text-center">{request.employeeName}</td>
                           <td className="px-4 py-2 border-b text-black text-center">{request.employeeId}</td>
                           <td
                             className={`px-4 py-2 border-b text-black text-center ${

@@ -249,7 +249,7 @@ const Dashboard = () => {
                             <span className="cursor-pointer font-bold text-green-600 uppercase text-xs">
                               {employeeName}
                             </span>{" "}
-                            filed a{" "}
+                            <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
                               onClick={() => handleNavigation(req.type)}
@@ -285,7 +285,7 @@ const Dashboard = () => {
                             <span className="cursor-pointer font-bold text-green-600 uppercase text-xs">
                               {employeeName}
                             </span>{" "}
-                            filed a{" "}
+                            <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
                               onClick={() => handleNavigation(req.type)}
