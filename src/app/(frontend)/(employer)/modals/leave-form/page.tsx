@@ -7,7 +7,7 @@ type LeaveModalProps = {
   onClose: () => void;
   leave?: any;
   refresh: () => void;
-  setMessage: (message: string) => void; 
+  setMessage: (message: string) => void; // Add this prop to update the parent message
 };
 
 const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh, setMessage }) => {
@@ -37,46 +37,46 @@ const LeaveModal: React.FC<LeaveModalProps> = ({ isOpen, onClose, leave, refresh
 
   if (!isOpen) return null;
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (isFutureDateNotAllowed) {
-        setError("Future dates are not allowed for Sick Leave and Emergency Leave.");
-        return;
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isFutureDateNotAllowed) {
+      setError("Future dates are not allowed for Sick Leave and Emergency Leave.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    const authToken = localStorage.getItem("authToken");
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const employeeId = storedUser?.employeeId;
+    const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { employeeId, leaveType, startDate, endDate, reason };
+
+    try {
+      const res = await fetch(`/employeeAPI/leave`, {
+        method: leave ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(leave ? { ...payload, id: leave.id } : payload),
+      });
+
+      if (!res.ok) throw new Error("Failed to submit leave");
+      if(payload.id != undefined){
+        setMessage("Leave Updated Successfully!"); 
       }
-      setLoading(true);
-      setError("");
-
-      const authToken = localStorage.getItem("authToken");
-      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-      const employeeId = storedUser?.employeeId;
-      const payload = leave ? { id: leave.id, leaveType, startDate, endDate, reason } : { employeeId, leaveType, startDate, endDate, reason };
-
-      try {
-        const res = await fetch(`/employeeAPI/leave`, {
-          method: leave ? "PATCH" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(leave ? { ...payload, id: leave.id } : payload),
-        });
-
-        if (!res.ok) throw new Error("Failed to submit leave");
-        if(payload.id != undefined){
-          setMessage("Leave Updated Successfully!"); 
-        }
-        else{
-          setMessage("Leave Added Successfully!"); 
-        }
-        refresh();
-        onClose();
-      } catch (error) {
-        console.error("Error submitting leave:", error);
-        setMessage("Failed to submit leave."); 
-      } finally {
-        setLoading(false);
+      else{
+        setMessage("Leave Added Successfully!"); 
       }
-    };
+      refresh();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting leave:", error);
+      setMessage("Failed to submit leave."); 
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-black">

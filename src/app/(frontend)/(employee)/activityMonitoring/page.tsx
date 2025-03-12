@@ -40,7 +40,7 @@ const ActivityMonitoring = () => {
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
     if (!authToken) {
-      router.push("/"); // Redirect if not logged in
+      router.push("/"); // testing
     } else {
       setLoading(false);
     }

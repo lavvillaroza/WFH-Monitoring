@@ -21,6 +21,7 @@ enum RequestStatus {
 enum DTRProblemStatus {
   PENDING
   RESOLVED
+  REJECTED
 }
 
 model User {
@@ -57,6 +58,7 @@ model EmployeeDetails {
   picture  Bytes?  
   scheduleTimeIn  String? 
   scheduleTimeOut String? 
+  activityStatus String?
 
 }
 

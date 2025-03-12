@@ -17,7 +17,7 @@ const NavbarEmployer = () => {
     const pageTitles: { [key: string]: string } = {
         "/employerDashboard": "Dashboard",
         "/employeeMonitoring": "Employee Monitoring",
-        // "/approvalRequest": "Approval Request",
+        "/approvalRequest": "Approval Request",
         "/manageEmployee": "Manage Employee",
         "/employerReports": "Reports",
         "/screenCaptureMonitoring": "Screen Capture",

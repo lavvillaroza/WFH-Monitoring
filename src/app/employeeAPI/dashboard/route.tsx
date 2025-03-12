@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     // Infinite loop until we find the timeIn record
     while (!dailyTimeRecord || !dailyTimeRecord.timeIn) {
       // Fetch the daily time record for today
-      dailyTimeRecord = await prisma.dailyTimeRecord.findFirst({
+      dailyTimeRecord = await prisma.dailytimerecord.findFirst({
         where: {
           employeeId: employeeId,
           timeIn: {
@@ -77,7 +77,7 @@ export async function GET(req: Request) {
     // Function to get and calculate the current time spent in Idle and Sleeping
     const getProductivityData = async () => {
       // Fetch the activity logs (Idle and Sleeping) for today
-      const sleeping = await prisma.humanActivityLog.findMany({
+      const sleeping = await prisma.humanactivitylog.findMany({
         where: {
           employeeId,
           activity: "Sleeping",
@@ -87,7 +87,7 @@ export async function GET(req: Request) {
         },
       });
 
-      const idle = await prisma.humanActivityLog.findMany({
+      const idle = await prisma.humanactivitylog.findMany({
         where: {
           employeeId,
           activity: "Idle",
@@ -97,7 +97,7 @@ export async function GET(req: Request) {
         },
       });
 
-      const lastActivityLog = await prisma.humanActivityLog.findFirst({
+      const lastActivityLog = await prisma.humanactivitylog.findFirst({
         where: {
           employeeId,
           start: {

@@ -38,6 +38,7 @@
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "daisyui": "^4.12.23",
+    "date-fns": "^4.1.0",
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
     "express": "^4.21.2",
