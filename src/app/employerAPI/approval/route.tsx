@@ -16,66 +16,70 @@ export async function PATCH(req: NextRequest) {
     // 🔍 Check if record exists
   
     
-    const updatedRecord = 
-    file_type === 'DTRP' 
-      ? await prisma.dailyTimeRecordProblem.update({
-      where: { id },
-      data: {
-        status: approval === 'APPROVED' ? DTRProblemStatus.RESOLVED : DTRProblemStatus.REJECTED, // ✅ Use enum
-      },
-    }) 
-    
-      : file_type === 'Leave' 
-      ? await prisma.leave.update({
-        where: { id },
-        data: {
-          status: approval === 'APPROVED' ? RequestStatus.APPROVED :RequestStatus.REJECTED,
-        },
-      })
-      : file_type === 'Overtime' 
-      ? await prisma.overtime.update({
-        where: { id },
-        data: {
-          status: approval === 'APPROVED' ? RequestStatus.APPROVED :RequestStatus.REJECTED,
-        },
-      })
-      :null
-
-
-      const updateDTRP = async ()  =>{
-        const date = new Date(dateTime); // Convert to Date object in UTC
-        console.log("Converted date:", date.toISOString()); // Debugging
-    
-        const checkDTR = await prisma.dailyTimeRecord.findFirst({
-          where: {
-            employeeId: employeeId,
-            date: {
-              gte: startOfDay(date), // 2025-03-12T00:00:00.000Z
-              lte: endOfDay(date),   // 2025-03-12T23:59:59.999Z
-            }
-          }
+    const updatedRecord = await (async () => {
+      if (file_type === 'DTRP') {
+        const record = await prisma.dailyTimeRecordProblem.update({
+          where: { id },
+          data: {
+            status: approval === 'APPROVED' ? DTRProblemStatus.RESOLVED : DTRProblemStatus.REJECTED,
+          },
         });
-        
-        if (checkDTR) {
-          // ✅ Correcting the update statement
-          const uploadDTR = await prisma.dailyTimeRecord.update({
-            where: { id: checkDTR.id }, // ✅ Correctly referencing the ID
-            data: {
-              ...(type === 'time-in' ? { timeIn: new Date(dateTime) } : { timeOut: new Date(dateTime) }) // ✅ Convert to Date
-            }
-          });
-        } else {
-          await prisma.dailyTimeRecord.create({
-            data: {
-              employeeId,
-              date: new Date(dateTime), // ✅ Ensure this is also a Date object
-              timeIn: type === 'time-in' ? new Date(dateTime) : null,
-              timeOut: type === 'time-out' ? new Date(dateTime) : null,
-              remarks: null,
-            },
-          });
-        }
+    
+        await updateDTRP(); // ✅ Call function after updating DTRP
+        return record;
+      } else if (file_type === 'Leave') {
+        return await prisma.leave.update({
+          where: { id },
+          data: {
+            status: approval === 'APPROVED' ? RequestStatus.APPROVED : RequestStatus.REJECTED,
+          },
+        });
+      } else if (file_type === 'Overtime') {
+        return await prisma.overtime.update({
+          where: { id },
+          data: {
+            status: approval === 'APPROVED' ? RequestStatus.APPROVED : RequestStatus.REJECTED,
+          },
+        });
+      } else {
+        return null;
       }
+    })();
+    
+    // ✅ Define updateDTRP function correctly
+    async function updateDTRP() {
+      const date = new Date(dateTime);
+      console.log("Converted date:", date.toISOString());
+    
+      const checkDTR = await prisma.dailyTimeRecord.findFirst({
+        where: {
+          employeeId: employeeId,
+          date: {
+            gte: startOfDay(date),
+            lte: endOfDay(date),
+          }
+        }
+      });
+    
+      if (checkDTR) {
+        await prisma.dailyTimeRecord.update({
+          where: { id: checkDTR.id },
+          data: {
+            ...(type === 'time-in' ? { timeIn: new Date(dateTime) } : { timeOut: new Date(dateTime) }),
+          },
+        });
+      } else {
+        await prisma.dailyTimeRecord.create({
+          data: {
+            employeeId,
+            date: new Date(dateTime),
+            timeIn: type === 'time-in' ? new Date(dateTime) : null,
+            timeOut: type === 'time-out' ? new Date(dateTime) : null,
+            remarks: null,
+          },
+        });
+      }
+    }
      
     
 

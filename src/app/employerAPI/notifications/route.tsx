@@ -3,60 +3,21 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-<<<<<<< HEAD
-    const url = new URL(request.url);
-    const employeeId = url.searchParams.get('employeeId');
-
-    if (!employeeId) {
-      return NextResponse.json(
-        { error: "Employee ID is required" },
-        { status: 400 }
-      );
-    }
-
-=======
     // Fetch latest requests (only 1 each) and include createdAt, status, and employeeId
->>>>>>> f28a17a56f5053bbe799520814d433455d372129
     const latestDTRP = await prisma.dailyTimeRecordProblem.findFirst({
-      where: { employeeId: employeeId },
       orderBy: { createdAt: "desc" },
-<<<<<<< HEAD
-      select: { id: true, createdAt: true, status: true },
-    });
-
-    const latestOvertime = await prisma.overtime.findFirst({
-      where: { employeeId: employeeId },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, createdAt: true, status: true },
-=======
       select: { id: true, createdAt: true, status: true, employeeId: true ,remarks: true ,type:true,date:true},
->>>>>>> f28a17a56f5053bbe799520814d433455d372129
     });
 
     const latestLeave = await prisma.leave.findFirst({
-      where: { employeeId: employeeId },
       orderBy: { createdAt: "desc" },
       select: { id: true, createdAt: true, status: true, employeeId: true ,reason: true,leaveType:true,startDate:true,endDate:true}, // Include employeeId
     });
 
     // Fetch all pending requests
     const pendingDTRP = await prisma.dailyTimeRecordProblem.findMany({
-<<<<<<< HEAD
-      where: { status: "PENDING",employeeId: employeeId  },
-      select: { id: true, createdAt: true, status: true },
-    });
-
-    const pendingOvertime = await prisma.overtime.findMany({
-      where: { status: "PENDING",employeeId: employeeId  },
-      select: { id: true, createdAt: true, status: true },
-    });
-
-    const pendingLeave = await prisma.leave.findMany({
-      where: { status: "PENDING",employeeId: employeeId  },
-      select: { id: true, createdAt: true, status: true },
-=======
       orderBy: { createdAt: "desc" },
       where: { status: "PENDING" },
       select: { id: true, createdAt: true, status: true, employeeId: true,remarks: true,type:true ,date:true },
@@ -66,7 +27,6 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
       where: { status: "PENDING" },
       select: { id: true, createdAt: true, status: true, employeeId: true ,reason:true ,leaveType:true ,startDate:true,endDate:true}, // Include employeeId
->>>>>>> f28a17a56f5053bbe799520814d433455d372129
     });
 
     return NextResponse.json({
