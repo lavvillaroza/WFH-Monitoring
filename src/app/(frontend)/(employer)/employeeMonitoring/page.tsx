@@ -19,13 +19,18 @@ const EmployeeMonitoring = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-   const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const router = useRouter();
-
-  // Modal Filters
+  const [dateRange, setDateRange] = useState("Daily");
+  const [idle, SetIdle] = useState(0);
+  const [sleep, SetSleep] = useState(0);
+  const [totaltime, SetTotalTime] = useState(0);
   const [filterStatus, setFilterStatus] = useState<string>("All");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  const [activityStatus, setActivityStatus] = useState("ACTIVE");
+  const [wakefulnessStatus, setWakefulnessStatus] = useState("Idle");
+  const [productivityPercentage, setProductivityPercentage] = useState(0); 
 
   const fetchEmployees = async () => {
     try {
@@ -62,6 +67,7 @@ const EmployeeMonitoring = () => {
     }
   };
 
+
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
 
@@ -71,6 +77,99 @@ const EmployeeMonitoring = () => {
       fetchEmployees();
     }
   }, []);
+
+  
+
+  const handleEmployee = (employeeId) => {
+    if (!employeeId) return;
+    const eventSource = new EventSource(`/employeeAPI/dashboard?employeeId=${employeeId}`);
+    console.log(eventSource)
+
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log(data)
+
+        if (!data || Object.keys(data).length === 0) {
+          console.warn("No data received from SSE connection.");
+          SetIdle(0);
+          SetSleep(0);
+          SetTotalTime(0);
+          setActivityStatus("ACTIVE");
+          setWakefulnessStatus("Idle");
+          setProductivityPercentage(0);
+        } else {
+          SetIdle(data.idleTime || 0);
+          SetSleep(data.sleepingTime || 0);
+          SetTotalTime(data.totaltime || 0);
+          setActivityStatus(data.employeeStatus || "ACTIVE");
+          setWakefulnessStatus(data.wakefulnessStatus || "Idle");
+          setProductivityPercentage(data.productivityPercentage || 100);
+        }
+      } catch (error) {
+        setActivityStatus("ACTIVE");
+        setWakefulnessStatus("Idle");
+        setProductivityPercentage(0);
+        SetIdle(0);
+        SetSleep(0);
+        SetTotalTime(0);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      setActivityStatus("ACTIVE");
+      setWakefulnessStatus("Idle");
+      setProductivityPercentage(0);
+      SetIdle(0);
+      SetSleep(0);
+      SetTotalTime(0);
+
+      eventSource.close(); // Close the connection gracefully
+    };
+
+    return () => {
+      eventSource.close(); // Clean up when component unmounts
+    };
+  };
+
+  
+  const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDateRange(e.target.value);
+
+    if (e.target.value === "Date Range") {
+      setStartDate("2025-01-01");
+      setEndDate("2025-01-31");
+      setIsModalOpen(true);
+    }
+  };
+
+
+  const donutData = () => {
+    if (totaltime === 0) {
+      return {
+        labels: ["No Data"],
+        datasets: [{
+          data: [1, 1, 1],
+          backgroundColor: ["#e0e0e0"],
+        }]
+      };
+    }
+    const idleTimePercentage = (idle / totaltime) * 100;
+    const sleepingTimePercentage = (sleep / totaltime) * 100;
+    const productiveTimePercentage = 100 - idleTimePercentage - sleepingTimePercentage;
+
+    return {
+      labels: ["Productive Tasks", "Idle Time", "Sleeping"],
+      datasets: [
+        {
+          data: [productiveTimePercentage, idleTimePercentage, sleepingTimePercentage],
+          backgroundColor: ["#4CAF50", "#FFC107", "#F44336"],
+          hoverBackgroundColor: ["#45a049", "#ffca2c", "#e53935"],
+        },
+      ],
+    };
+  };
 
   const calculateAverageProductivity = () => {
     const totalEmployees = employees.length;
@@ -154,7 +253,7 @@ const EmployeeMonitoring = () => {
         <div className="space-y-6">
           <div className="flex gap-4">
             {/* Employee List + Filter */}
-            <div className="w-[30%] bg-white shadow-lg p-6 rounded-lg h-screen">
+            <div className="w-[30%] bg-white shadow-lg p-6 rounded-lg h-auto">
               <h2 className="text-xl font-semibold text-gray-700">Employee List</h2>
 
                 {/* Search Bar */}
@@ -179,20 +278,23 @@ const EmployeeMonitoring = () => {
               </select>
 
               {/* Employee List */}
-              <div className="mt-4 space-y-3 overflow-y-auto">
-                {filteredEmployees1.map((employee) => (
-                 <div
-                 key={employee.id}
-                 className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200 flex items-center"
-                 onClick={() => setSelectedEmployee(employee)}
-               >
-                 <Image
-                   src={userLogo}
-                   alt="User Icon"
-                   width={60} 
-                   height={60} 
-                   className="w-14 h-14 mr-4"
-                 />
+              <div className="mt-4 space-y-3 overflow-y-auto max-h-[500px]">
+              {filteredEmployees1.slice(0, 7).map((employee) => (
+                <div
+                  key={employee.id}
+                  className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200 flex items-center"
+                  onClick={() => {
+                    setSelectedEmployee(employee);
+                    handleEmployee(employee.employeeId);
+                  }}
+                >
+                <Image
+                  src={userLogo}
+                  alt="User Icon"
+                  width={60} 
+                  height={60} 
+                  className="w-14 h-14 mr-4"
+                />
                  <div className="flex-1 flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
                    <p className={`text-sm font-medium ${getStatusColor(employee.status)}`}>
@@ -207,9 +309,32 @@ const EmployeeMonitoring = () => {
             {/* Right Section: Pie Chart + Activity Logs */}
             <div className="w-[70%] flex flex-col gap-4">
               {/* Dynamic Pie Chart */}
-              <div className="w-full bg-white shadow-lg p-6 rounded-lg">
-                <h2 className="text-xl font-semibold pb-3 text-gray-700"> Employee Activity Chart {selectedEmployee ? selectedEmployee.name : ""}</h2>
+               {/* Productivity vs Idle Time Card */}
+            <div className="card bg-white shadow-md text-black p-10">
+              <h2 className="text-xl font-bold mb-4">Productivity vs Idle Time vs Sleeping Time</h2>
+              <h3 className="text-xl font-bold mb-4">{selectedEmployee?.name}</h3>
+
+              {/* Date Range Selector inside the card */}
+              <div className="mb-4">
+                <label htmlFor="dateRange" className="text-sm font-medium">Filter by: </label>
+                <select
+                  id="dateRange"
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  className="mt-2 border p-2 rounded"
+                >
+                  <option value="Daily">Daily</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="Date Range">Date Range</option>
+                </select>
               </div>
+
+              <div className="flex justify-center items-center w-full h-full">
+                <div className="w-80 h-80">
+                  <Doughnut data={donutData()} />
+                </div>
+              </div>
+            </div>
 
               {/* Activity Logs - Two Sections */}
               <div className="flex gap-4">
