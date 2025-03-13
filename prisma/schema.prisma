@@ -124,7 +124,7 @@ model Overtime {
   endDate    DateTime
   reason     String
   status     RequestStatus @default(PENDING)
-  createdAt  DateTime        @default(now())
+  createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   employeeId String
 }
