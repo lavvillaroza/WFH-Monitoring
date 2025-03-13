@@ -114,22 +114,25 @@ const Navbar = () => {
                 setTakeScreenshot(true);
                 }
          
-            console.log(takeScreenshot+"here")
             const storedUser = localStorage.getItem("user");
             const storedPermission = localStorage.getItem("permissionToShare");
             if (!storedUser) {
                 router.push("/");
                 return;
             }
-                
+            
             const user = JSON.parse(storedUser);
             const employeeId = user.employeeId;  
             const timestamp = new Date();
+            
     
             let requestBody;
             if (selectedAction === "Time In") {
-               
-                if (cameraContext) {
+                if (!storedPermission) {
+                    return;
+                }
+                console.log(storedPermission);
+                if (cameraContext && storedPermission==="true") {
                     await cameraContext.startCamera(); // ✅ Start camera when clocking in
                     setIsCameraOn(true);
                     requestBody = {
@@ -138,12 +141,14 @@ const Navbar = () => {
                         timeOut: null,
                         remarks: "",
                     };
+                } else {
+                    // Handle the case where cameraContext or permission is invalid
+                    console.log("Camera permission not granted or camera context unavailable.");
+                    return;
                 }
                 
-            } else {
-               
-
-                if (cameraContext) {
+            } else if (selectedAction === "Time Out"){
+                if (cameraContext && storedPermission) {
                     await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
                     setTakeScreenshot(false);
                     setIsCameraOn(false);

@@ -60,17 +60,39 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { employeeId, startDate, endDate, reason } = await req.json();
-    
+
     if (!employeeId || !startDate || !endDate || !reason) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    }
+
+    // Convert the provided startDate and endDate to Date objects
+    const newStartDate = new Date(startDate);
+    const newEndDate = new Date(endDate);
+
+    // Check if there are any existing overtime requests that overlap with the new one
+    const overlappingOvertimes = await prisma.overtime.findMany({
+      where: {
+        employeeId,
+        status: { not: "REJECTED" }, 
+        startDate: {
+          lt: newEndDate, // New startDate should be before an existing endDate
+        },
+        endDate: {
+          gt: newStartDate, // New endDate should be after an existing startDate
+        },
+      },
+    });
+
+    if (overlappingOvertimes.length > 0) {
+      return NextResponse.json({ error: "❌ Overtime request overlaps with an existing request." }, { status: 400 });
     }
 
     // 📌 Create a new overtime request
     const newOvertime = await prisma.overtime.create({
       data: {
         employeeId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: newStartDate,
+        endDate: newEndDate,
         reason,
         status: "PENDING",
       },
@@ -128,12 +150,35 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Overtime request not found" }, { status: 404 });
     }
 
+    // Convert the provided startDate and endDate to Date objects
+    const newStartDate = startDate ? new Date(startDate) : existingOvertime.startDate;
+    const newEndDate = endDate ? new Date(endDate) : existingOvertime.endDate;
+
+    // Check if there are any existing overtime requests that overlap with the updated one
+    const overlappingOvertimes = await prisma.overtime.findMany({
+      where: {
+        employeeId: existingOvertime.employeeId,
+        id: { not: id }, // Exclude the current record from the check
+        status: { not: "REJECTED" }, 
+        startDate: {
+          lt: newEndDate, // New startDate should be before an existing endDate
+        },
+        endDate: {
+          gt: newStartDate, // New endDate should be after an existing startDate
+        },
+      },
+    });
+
+    if (overlappingOvertimes.length > 0) {
+      return NextResponse.json({ error: "❌ Overtime request overlaps with an existing request." }, { status: 400 });
+    }
+
     // 🔄 Update the overtime request
     const updatedOvertime = await prisma.overtime.update({
       where: { id },
       data: {
-        startDate: startDate ? new Date(startDate) : existingOvertime.startDate,
-        endDate: endDate ? new Date(endDate) : existingOvertime.endDate,
+        startDate: newStartDate,
+        endDate: newEndDate,
         reason: reason || existingOvertime.reason,
         status: status ?? existingOvertime.status,
       },

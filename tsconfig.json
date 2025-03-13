@@ -62,7 +62,7 @@
     "**/*.tsx",
     "electron/**/*",
     "next-env.d.ts",
-    ".next/types/**/*.ts",
+    ".next/types/**/*.ts", "src/app/components/takeScreenShot.js",
   ],
   "exclude": [
     "node_modules"

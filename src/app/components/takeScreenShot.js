@@ -35,7 +35,7 @@ export default function TakeScreenShot() {
       const data = await response.json();
       console.log("Screenshot sent:", data.message);
     } catch (error) {
-      console.error("Error capturing or sending screenshot:", error);
+      //console.error("Error capturing or sending screenshot:", error);
     }
   };
 
@@ -74,8 +74,8 @@ export default function TakeScreenShot() {
                         stopCapture();
                     });
                 } catch (error) {
-                    console.error("Error accessing display media:", error);
-                    console.log(mediaStream+"heqweqweqweqwew")
+                   // console.error("Error accessing display media:", error);
+                    console.log(mediaStream);
                     localStorage.setItem("permissionToShare", "false");
                 }
             }

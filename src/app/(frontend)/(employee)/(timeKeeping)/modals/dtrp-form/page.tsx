@@ -17,11 +17,23 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
   const [alertMessage, setAlertMessage] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const today = new Date().toISOString().slice(0, 10);
+  const dateInUTC = new Date(today);  // Parse the record.date to a Date object
+  const hongKongTime = new Date(dateInUTC.getTime() + (8 * 60 * 60 * 1000));
 
+  const formatDate = (date) => {
+    const dateInUTC = new Date(date);  // Parse the date to a Date object
+    // Add 8 hours (in milliseconds) to the UTC time to convert to Hong Kong Time (UTC +8)
+    const hongKongTime = new Date(dateInUTC.getTime() + (8 * 60 * 60 * 1000));
+    // Return the formatted date-time string in ISO format up to minutes (YYYY-MM-DDTHH:MM)
+    return hongKongTime.toISOString().slice(0, 16);
+  };
+  
+  
   useEffect(() => {
     if (record) {
-      setType(record.type || "time-in");
-      setDateTime(record.date ? new Date(record.date).toISOString().slice(0, 16) : "");
+      setType(record.type);
+      setDateTime(record.date? formatDate(record.date) : "");
       setRemarks(record.remarks || "")
       setAlertMessage(record.reason || "");
     } else {
@@ -38,10 +50,15 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     if(type==="" || remarks ===""){
-      
       return;
     }
     e.preventDefault();
+  
+      if (new Date(today) <= new Date(dateTime)) {
+      setMessage("Date time cannot be earlier than today date!");
+      setError("error");
+      return;
+    }
   
     setLoading(true);
     setError("");
@@ -52,7 +69,6 @@ const DTRPModal: React.FC<DTRPModalProps> = ({ isOpen, onClose, record, refresh,
     const payload = record ? { id: record.id, type, dateTime, remarks } : { employeeId, dateTime, type, remarks };
 
     try {
-      console.log(payload);
       const res = await fetch(`/employeeAPI/dtrp?employeeId=${employeeId}`, {
         method: record ? "PATCH" : "POST",
         headers: {

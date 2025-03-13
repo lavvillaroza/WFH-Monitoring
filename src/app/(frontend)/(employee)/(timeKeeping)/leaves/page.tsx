@@ -274,11 +274,11 @@ const Leaves = () => {
                     </td>
                     {
                         leave.status === "PENDING" ? (
-                          <td><div className="badge badge-warning">PENDING</div></td>
+                          <td><div className="text-warning">PENDING</div></td>
                         ) : leave.status === "APPROVED" ? (
-                          <td><div className="badge badge-success">APPROVED</div></td>
+                          <td><div className="text-success">APPROVED</div></td>
                         ) : (
-                          <td><div className="badge badge-error">DISAPPROVED</div></td>
+                          <td><div className="text-error">REJECTED</div></td>
                         )
                       }
                     <td className="relative">

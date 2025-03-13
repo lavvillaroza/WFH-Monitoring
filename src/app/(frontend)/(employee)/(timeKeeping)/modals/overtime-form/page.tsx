@@ -17,9 +17,8 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({
   overtime,
   refresh,
   setMessage,
-  setError,
+  setError
 }) => {
-  if (!isOpen) return null;
 
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -28,38 +27,24 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({
 
   // Current date in YYYY-MM-DD format
   const today = new Date().toISOString().slice(0, 10);
-
-  // Function to convert the date to Philippine Time (UTC +8)
-  const convertToPHTime = (date: Date): Date => {
-    const phOffset = 8 * 60; // UTC+8 hours
-    const localOffset = date.getTimezoneOffset(); // Local timezone offset in minutes
-    const offsetDifference = phOffset - localOffset;
-
-    date.setMinutes(date.getMinutes() + offsetDifference); // Adjust the date by the offset difference
-    return date;
-  };
-
+  const dateInUTC = new Date(today);  // Parse the record.date to a Date object
+  const hongKongTime = new Date(dateInUTC.getTime() + (8 * 60 * 60 * 1000));
+       
   // Check if the provided date is in the future
-  const isFutureDateNotAllowed =
-    (startDate && new Date(startDate) > new Date(today)) ||
-    (endDate && new Date(endDate) > new Date(today));
+ 
 
+  const formatDate = (date) => {
+    const dateInUTC = new Date(date);  // Parse the date to a Date object
+    // Add 8 hours (in milliseconds) to the UTC time to convert to Hong Kong Time (UTC +8)
+    const hongKongTime = new Date(dateInUTC.getTime() + (8 * 60 * 60 * 1000));
+    // Return the formatted date-time string in ISO format up to minutes (YYYY-MM-DDTHH:MM)
+    return hongKongTime.toISOString().slice(0, 16);
+  };
+  
   useEffect(() => {
     if (overtime) {
-      const adjustedStartDate = overtime.startDate
-        ? convertToPHTime(new Date(overtime.startDate))
-        : null;
-      const adjustedEndDate = overtime.endDate
-        ? convertToPHTime(new Date(overtime.endDate))
-        : null;
-
-      // Format the date in the YYYY-MM-DDTHH:MM format for datetime-local
-      setStartDate(
-        adjustedStartDate ? adjustedStartDate.toISOString().slice(0, 16) : ""
-      );
-      setEndDate(
-        adjustedEndDate ? adjustedEndDate.toISOString().slice(0, 16) : ""
-      );
+      setStartDate(overtime.startDate ? formatDate(overtime.startDate) : "");
+      setEndDate(overtime.endDate ? formatDate(overtime.endDate) : "");
       setReason(overtime.reason || "");
     } else {
       setStartDate("");
@@ -67,9 +52,36 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({
       setReason("");
     }
   }, [overtime]);
+  
+  
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const isFutureDateNotAllowed =
+  (startDate && new Date(startDate) > new Date(hongKongTime)) ||
+  (endDate && new Date(endDate) > new Date(hongKongTime));
+
+
+    if (new Date(endDate) < new Date(startDate)) {
+    setMessage("End date cannot be earlier than start date!");
+    setError("error");
+    return;
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const timeDifferenceInMs = end.getTime() - start.getTime(); // in milliseconds
+  const timeDifferenceInHours = timeDifferenceInMs / (1000 * 60 * 60); // convert to hours
+
+  // Check if the time difference is exactly 1 hour
+  if (timeDifferenceInHours < 1) {
+    setMessage("Minimum to file overtime is 1 hour.");
+    setError("error");
+    return;
+  }
+
     if (isFutureDateNotAllowed) {
       setMessage("Future dates are not allowed for Overtime!");
       setError("error");
@@ -131,6 +143,7 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({
               onChange={(e) => setStartDate(e.target.value)}
               className="border p-2 rounded-md"
               required
+              min={today}
             />
           </div>
 
@@ -143,6 +156,7 @@ const OvertimeModal: React.FC<OvertimeModalProps> = ({
               onChange={(e) => setEndDate(e.target.value)}
               className="border p-2 rounded-md"
               required
+              min={today}
             />
           </div>
 

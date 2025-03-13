@@ -214,8 +214,8 @@ const Overtime = () => {
               <tbody>
                 {overtimes.map((overtime: any) => (  
                   <tr key={overtime.id}>
-                    <td>{new Date(overtime.startDate).toLocaleDateString()}</td>
-                    <td>{new Date(overtime.endDate).toLocaleDateString()}</td>
+                    <td>{new Date(overtime.startDate).toLocaleDateString()} {new Date(overtime.startDate).toLocaleTimeString('en-GB', { hour12: true })}</td>
+                    <td>{new Date(overtime.endDate).toLocaleDateString()} {new Date(overtime.endDate).toLocaleTimeString('en-GB', { hour12: true })}</td>
                     <td>
                       {overtime.startDate === overtime.endDate
                         ? 1
@@ -226,11 +226,11 @@ const Overtime = () => {
                     </td>
                     {
                         overtime.status === "PENDING" ? (
-                          <td><div className="badge badge-warning">PENDING</div></td>
+                          <td><div className="text-warning">PENDING</div></td>
                         ) : overtime.status === "APPROVED" ? (
-                          <td><div className="badge badge-success">APPROVED</div></td>
+                          <td><div className="text-success">APPROVED</div></td>
                         ) : (
-                          <td><div className="badge badge-error">DISAPPROVED</div></td>
+                          <td><div className="text-error">REJECTED</div></td>
                         )
                       }
                     <td className="relative">
@@ -250,14 +250,14 @@ const Overtime = () => {
                           {dropdownOpen === overtime.id && (
                             <div className="absolute left-0 mt-2 bg-white shadow-lg rounded-md border w-32 z-50">
                               <button
-                                onClick={() => handleEdit(overtime)}  // Renamed from handleEditLeave to handleEdit
+                                onClick={() => handleEdit(overtime)}  
                                 className="block w-full text-left px-4 py-2 hover:bg-gray-200"
                               >
                                 Edit
                               </button>
                               <button
                                onClick={() => {
-                                setDeletingOvertime(overtime);  // Renamed from setdeletingLeave to setDeletingOvertime
+                                setDeletingOvertime(overtime);  
                                 setIsDeleting(true); setDropdownOpen(null)}}
                                 className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-200"
                               >
@@ -299,20 +299,20 @@ const Overtime = () => {
           
         </div>
       </div>
-           <OvertimeModal  // Renamed from LeaveModal to OvertimeModal
+           <OvertimeModal  
                       isOpen={isModalOpen} 
                       onClose={() => {
                         setIsModalOpen(false);
-                        setSelectedOvertime(null);  // Renamed from setSelectedLeave to setSelectedOvertime
+                        setSelectedOvertime(null);
                       }} 
-                      overtime={selectedOvertime}  // Renamed from leave to overtime
-                      refresh={fetchOvertimes}  // Renamed from fetchLeaves to fetchOvertimes
+                      overtime={selectedOvertime}  
+                      refresh={fetchOvertimes}  
                       setMessage={handleMessageUpdate} 
                       setError={handleMessageError}   
                     />
                     <DeleteOvertimeModal 
                           isOpen={isDeleting}
-                          onClose={() => {setIsDeleting(false); fetchOvertimes();}}  // Renamed from fetchLeaves to fetchOvertimes
+                          onClose={() => {setIsDeleting(false); fetchOvertimes();}} 
                           overtime={deletingOvertime}  
                           alertMessage={alertMessage}
                         />

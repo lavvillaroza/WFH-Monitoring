@@ -165,20 +165,20 @@ const DailyTimeRecord = () => {
                     <td>{new Date(record.date).toLocaleDateString()} {new Date(record.date).toLocaleTimeString('en-GB', { hour12: true })}</td>
                     {
                         record.type === "time-in" ? (
-                          <td><div className="badge badge-primary">Time in</div></td>
+                          <td><div className="text-primary">Time in</div></td>
                         ) : (
-                          <td><div className="badge badge-primary">Time out</div></td>
+                          <td><div className="text-primary">Time out</div></td>
                         )
                       }
 
                     <td>{record.remarks}</td>
                     {
                         record.status === "PENDING" ? (
-                          <td><div className="badge badge-warning">PENDING</div></td>
+                          <td><div className="text-warning">PENDING</div></td>
                         ) : record.status === "APPROVED" ? (
-                          <td><div className="badge badge-success">APPROVED</div></td>
+                          <td><div className="text-success">APPROVED</div></td>
                         ) : (
-                          <td><div className="badge badge-error">DISAPPROVED</div></td>
+                          <td><div className="text-error">REJECTED</div></td>
                         )
                       }
                     <td className="relative">
@@ -229,7 +229,7 @@ const DailyTimeRecord = () => {
           </table>
         </div>
       </div>
-      <DTRPModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedRecord(null); }}refresh={fetchRecords}  onSave={handleAddEditRecord} record={selectedRecord} setMessage={handleMessageUpdate}   />
+      <DTRPModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedRecord(null); }}refresh={fetchRecords}  record={selectedRecord} setMessage={handleMessageUpdate}   />
       <DeleteDTRPModal 
                       isOpen={isDeleting}
                       onClose={() => {setIsDeleting(false); fetchRecords();}}

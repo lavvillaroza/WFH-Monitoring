@@ -66,6 +66,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
+    // Check if any leave requests already exist for this employee that overlap with the new date range
+    const overlappingLeaves = await prisma.leave.findMany({
+      where: {
+        employeeId,
+        status: { not: "REJECTED" }, 
+        AND: [
+          { startDate: { lte: new Date(endDate) } }, // Check if the new leave's end date is after any existing start date
+          { endDate: { gte: new Date(startDate) } }, // Check if the new leave's start date is before any existing end date
+        ],
+      },
+    });
+
+    if (overlappingLeaves.length > 0) {
+      return NextResponse.json(
+        { error: "You already have a leave request within the specified date range" },
+        { status: 400 }
+      );
+    }
+
     // 📌 Create a new leave request
     const newLeave = await prisma.leave.create({
       data: {
@@ -84,6 +103,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
   }
 }
+
 
 // ✅ DELETE: Remove a leave request
 export async function DELETE(req: NextRequest) {
@@ -127,6 +147,28 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Leave not found" }, { status: 404 });
     }
 
+    // Check if any leave requests already exist for this employee that overlap with the new date range (excluding the current leave request)
+    const overlappingLeaves = await prisma.leave.findMany({
+      where: {
+        employeeId: existingLeave.employeeId,
+        status: { not: "REJECTED" },
+        AND: [
+          { startDate: { lte: new Date(endDate) } },
+          { endDate: { gte: new Date(startDate) } },
+        ],
+        NOT: {
+          id: id, 
+        },
+      },
+    });
+
+    if (overlappingLeaves.length > 0) {
+      return NextResponse.json(
+        { error: "You already have a leave request within the specified date range" },
+        { status: 400 }
+      );
+    }
+
     // 🔄 Update the leave request
     const updatedLeave = await prisma.leave.update({
       where: { id },
@@ -135,7 +177,7 @@ export async function PATCH(req: NextRequest) {
         startDate: startDate ? new Date(startDate) : existingLeave.startDate,
         endDate: endDate ? new Date(endDate) : existingLeave.endDate,
         reason: reason || existingLeave.reason,
-        status: status ?? existingLeave.status, // ✅ Use "??" to prevent undefined issues
+        status: status ?? existingLeave.status,
       },
     });
 
