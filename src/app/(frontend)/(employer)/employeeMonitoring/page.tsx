@@ -6,6 +6,8 @@ import NavbarEmployer from "@/app/navbarEmployer/page";
 import { employees, Employee } from "../dummyData";
 import CustomPieChart from "../PieChartComponent";
 import { Doughnut } from "react-chartjs-2";
+import Image from "next/image";
+import userLogo from "@/app/img/user-icon.png";
 import { useRouter } from "next/navigation";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -177,18 +179,27 @@ const EmployeeMonitoring = () => {
               </select>
 
               {/* Employee List */}
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-3 overflow-y-auto">
                 {filteredEmployees1.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200"
-                    onClick={() => setSelectedEmployee(employee)}
-                  >
-                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
-                    <p className={`mt-1 text-sm font-medium ${getStatusColor(employee.status)}`}>
-                      {employee.status}
-                    </p>
-                  </div>
+                 <div
+                 key={employee.id}
+                 className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200 flex items-center"
+                 onClick={() => setSelectedEmployee(employee)}
+               >
+                 <Image
+                   src={userLogo}
+                   alt="User Icon"
+                   width={60} 
+                   height={60} 
+                   className="w-14 h-14 mr-4"
+                 />
+                 <div className="flex-1 flex justify-between items-center">
+                   <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
+                   <p className={`text-sm font-medium ${getStatusColor(employee.status)}`}>
+                     {employee.status}
+                   </p>
+                 </div>
+               </div>
                 ))}
               </div>
             </div>
