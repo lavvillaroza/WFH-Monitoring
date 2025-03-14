@@ -4,7 +4,7 @@ import NavbarEmployer from "@/app/navbarEmployer/page";
 import { useEffect, useRef, useState } from "react";
 import { FileText, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
-import ApprovalModal from "../modals/approval-form/page";
+import ApprovalModal from "../employerModals/approval-form/page";
 
 const ApprovalRequest = () => {
   const [currentPage, setCurrentPage] = useState(1);

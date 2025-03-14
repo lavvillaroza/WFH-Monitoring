@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { DTRProblemStatus, PrismaClient, RequestStatus } from "@prisma/client";
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, isToday ,format} from 'date-fns';
 
 const prisma = new PrismaClient();
 
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json(); // ✅ Extract JSON body
-    const { id,employeeId ,dateTime ,type,file_type ,approval} = body;
+    const { id,employeeId ,dateTime ,type,file_type ,approval,leaveStart,leaveEnd} = body;
+    console.log(approval+"qwewqeqwewq")
+
 
     if (!id) {
       return NextResponse.json({ error: "Record ID is required" }, { status: 400 });
     }
-
-    // 🔍 Check if record exists
   
     
     const updatedRecord = await (async () => {
@@ -24,16 +24,19 @@ export async function PATCH(req: NextRequest) {
             status: approval === 'APPROVED' ? DTRProblemStatus.RESOLVED : DTRProblemStatus.REJECTED,
           },
         });
-    
-        await updateDTRP(); // ✅ Call function after updating DTRP
+        (approval === 'APPROVED' ? await updateDTRP() : null)
+        
         return record;
+
       } else if (file_type === 'Leave') {
-        return await prisma.leave.update({
+        const record=  await prisma.leave.update({
           where: { id },
           data: {
             status: approval === 'APPROVED' ? RequestStatus.APPROVED : RequestStatus.REJECTED,
           },
         });
+        (approval === 'APPROVED' ? await updateLeave() : null)
+        return record;
       } else if (file_type === 'Overtime') {
         return await prisma.overtime.update({
           where: { id },
@@ -81,41 +84,51 @@ export async function PATCH(req: NextRequest) {
       }
     }
      
-    //leave
-
-    async function updateLeave() {
-      const date = new Date(dateTime);
-      console.log("Converted date:", date.toISOString());
-    
-      const checkDTR = await prisma.dailyTimeRecord.findFirst({
-        where: {
-          employeeId: employeeId,
-          date: {
-            gte: startOfDay(date),
-            lte: endOfDay(date),
-          }
+   
+        //leave
+      async function updateLeave() {
+        const startDate = new Date(leaveStart);
+        const endDate = new Date(leaveEnd);
+      
+        if (isToday(startDate)) {
+          await prisma.employeeDetails.update({
+            where: { employeeId },
+            data: {
+              activityStatus: "On Leave",
+              updatedAt: new Date(),
+            },
+          });
         }
-      });
-    
-      if (checkDTR) {
-        await prisma.dailyTimeRecord.update({
-          where: { id: checkDTR.id },
-          data: {
-            ...(type === 'time-in' ? { timeIn: new Date(dateTime) } : { timeOut: new Date(dateTime) }),
-          },
+      
+        const findSched = await prisma.employeeDetails.findUnique({
+          where: { employeeId },
         });
-      } else {
-        await prisma.dailyTimeRecord.create({
-          data: {
-            employeeId,
-            date: new Date(dateTime),
-            timeIn: type === 'time-in' ? new Date(dateTime) : null,
-            timeOut: type === 'time-out' ? new Date(dateTime) : null,
-            remarks: null,
-          },
-        });
+      
+        let currentDate = new Date(startDate); // Create a copy of startDate to avoid modifying the original reference
+      
+        while (currentDate <= endDate) {
+          const formattedDate = format(currentDate, 'yyyy-MM-dd');
+          const timeIn = `${formattedDate}T${findSched?.scheduleTimeIn}:00.000Z`;
+          const timeOut = `${formattedDate}T${findSched?.scheduleTimeOut}:00.000Z`;
+      
+          await prisma.dailyTimeRecord.create({
+            data: {
+              employeeId,
+              date: new Date(currentDate),
+              timeIn: new Date(timeIn),
+              timeOut: new Date(timeOut),
+              remarks: 'On Leave',
+            },
+          });
+      
+          // Move to the next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
-    }
+      
+
+
+   
 
     return NextResponse.json(
       { message: "Record request updated successfully", record: updatedRecord },

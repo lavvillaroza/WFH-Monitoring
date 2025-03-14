@@ -9,6 +9,7 @@ const NavbarEmployer = () => {
     const [profileOpen, setProfileOpen] = useState(false);
     const [logoutMessage, setLogoutMessage] = useState(false);
     const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+    const [approvalRequestOpen, setApprovalRequestOpen] = useState(false);
 
     const router = useRouter();
     const pathname = usePathname();

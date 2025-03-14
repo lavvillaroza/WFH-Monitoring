@@ -31,6 +31,7 @@ const EmployeeMonitoring = () => {
   const [activityStatus, setActivityStatus] = useState("ACTIVE");
   const [wakefulnessStatus, setWakefulnessStatus] = useState("Idle");
   const [productivityPercentage, setProductivityPercentage] = useState(0); 
+  const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
 
   const fetchEmployees = async () => {
     try {
@@ -204,6 +205,32 @@ const EmployeeMonitoring = () => {
     };
   };
 
+
+  useEffect(() => {
+    console.log(selectedEmployee + "console here")
+    if (!selectedEmployee) return;
+
+    // Use SSE to listen for real-time updates of activity logs
+    const eventSource = new EventSource(`/employeeAPI/humanActivityLog?employeeId=${selectedEmployee.employeeId}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setActivityLogs(data); // Update UI with latest logs
+      } catch (error) {
+        console.error("❌ Error parsing activity logs:", error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("❌ SSE connection error:", error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [selectedEmployee]);
   
 
   const getStatusColor = (status: string) => {
@@ -316,7 +343,7 @@ const EmployeeMonitoring = () => {
 
               {/* Date Range Selector inside the card */}
               <div className="mb-4">
-                <label htmlFor="dateRange" className="text-sm font-medium">Filter by: </label>
+                <label htmlFor="dateRange" className="text-sm font-medium bg-white">Filter by: </label>
                 <select
                   id="dateRange"
                   value={dateRange}
@@ -336,36 +363,33 @@ const EmployeeMonitoring = () => {
               </div>
             </div>
 
-              {/* Activity Logs - Two Sections */}
-              <div className="flex gap-4">
-                {/* Activity Log */}
-                <div className="w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px] flex flex-col">
-                  <h2 className="text-xl font-semibold pb-3 text-gray-700">Activity Log</h2>
-
-                  {selectedEmployee ? (
-                    <ul className="mt-3 text-sm text-gray-500 list-disc list-inside flex-1">
-                      {selectedEmployee?.activityLog?.slice(0, 5).map((log, index) => (
-                          <li key={index}>{log.date} - {log.log} ({log.status})</li>
-                        )) || <p className="text-gray-400">No activity logs available.</p>}
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-400 flex-1">Click an employee to view activity.</p>
-                  )}
-
-                  {/* More Button Inside Card */}
-                  {selectedEmployee && (
-                    <button
-                      className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-600"
-                      onClick={() => setIsModalOpen(true)}
-                    >
-                      More in Activity Log
-                    </button>
-                  )}
+           {/* Activity Logs & Wakefulness Detection in a row */}
+           <div className="flex flex-col md:flex-row gap-4">
+             {/* Human Activity Log */}
+              <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+                <h2 className="text-xl font-semibold pb-3 text-gray-700">HUMAN ACTIVITY RECOGNITION</h2>
+                <p className="mt-2 text-sm text-gray-500">Alertness Report & Real-Time Alert Log.</p>
+                <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
+                  <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
+                  <ul className="space-y-2">
+                    {activityLogs.length > 0 ? (
+                      activityLogs.map((log, index) => (
+                        <li key={index}>
+                          <span className="font-medium">{log.activity}</span>
+                          <span className="text-gray-500 text-xs ml-2">
+                            {log.start} - {log.end ? log.end : "Ongoing"}
+                          </span>
+                        </li>
+                      ))
+                    ) : (
+                      <p className="text-gray-500">No logs available.</p>
+                    )}
+                  </ul>
                 </div>
+              </div>
 
-                {/* Wakefulness Detection */}
-                <div className="w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+                 {/* Wakefulness Detection */}
+                <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
                   <h2 className="text-xl font-semibold pb-3 text-gray-700">Wakefulness Detection</h2>
 
                   {selectedEmployee ? (
@@ -382,60 +406,62 @@ const EmployeeMonitoring = () => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>  
+     </div>
 
-      {/* Modal for Full Activity Log */}
-      {isModalOpen && selectedEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-            <h2 className="text-xl font-semibold pb-3 text-gray-700">Full Activity Log</h2>
 
-            {/* Status Filter */}
-            <select
-              className="w-full p-2 border rounded-md bg-white text-gray-700 mb-3"
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="All">All</option>
-              <option value="Active">Active</option>
-              <option value="Idle">Idle</option>
-              <option value="On Meeting">On Meeting</option>
-            </select>
+      // {isModalOpen && selectedEmployee && (
+      //   <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      //     <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+      //       <h2 className="text-xl font-semibold pb-3 text-gray-700">Full Activity Log</h2>
 
-            {/* Date Range Filter */}
-              {/* Start Date */}
-              <div>
-                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                  <input
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
-                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
-                  />
-                </div>
+      //       {/* Status Filter */}
+      //       <select
+      //         className="w-full p-2 border rounded-md bg-white text-gray-700 mb-3"
+      //         value={filterStatus}
+      //         onChange={(e) => setFilterStatus(e.target.value)}
+      //       >
+      //         <option value="All">All</option>
+      //         <option value="Active">Active</option>
+      //         <option value="Idle">Idle</option>
+      //         <option value="On Meeting">On Meeting</option>
+      //       </select>
 
-                {/* End Date */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">End Date</label>
-                  <input
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    required
-                    className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
-                  />
-                </div>
+      //       {/* Date Range Filter */}
+      //         {/* Start Date */}
+      //         <div>
+      //             <label className="block text-sm font-medium text-gray-700">Start Date</label>
+      //             <input
+      //               type="datetime-local"
+      //               value={startDate}
+      //               onChange={(e) => setStartDate(e.target.value)}
+      //               required
+      //               className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
+      //             />
+      //           </div>
 
-            <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-600" onClick={() => setIsModalOpen(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      //           {/* End Date */}
+      //           <div>
+      //             <label className="block text-sm font-medium text-gray-700">End Date</label>
+      //             <input
+      //               type="datetime-local"
+      //               value={endDate}
+      //               onChange={(e) => setEndDate(e.target.value)}
+      //               required
+      //               className="mt-1 block w-full p-2 border bg-white text-black appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
+      //             />
+      //           </div>
+
+      //       <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-red-600" onClick={() => setIsModalOpen(false)}>
+      //         Close
+      //       </button>
+      //     </div>
+      //   </div>
+      // )}
+    // </div>
   );
 };
 

@@ -115,7 +115,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ isOpen, onClose, record, 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-black">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 className="text-xl font-semibold mb-4">{record.file_type == 'DTRP' ? "Daily Time Record Problem": "Leave "}</h2>
+        <h2 className="text-xl font-semibold mb-4">{record.file_type == 'DTRP' ? "Daily Time Record Problem": "Leave2 "}</h2>
 
 
         <label className="block mb-2 font-medium"> Type</label>

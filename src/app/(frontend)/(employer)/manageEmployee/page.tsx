@@ -54,6 +54,8 @@ const ManageEmployees = () => {
     department: "",
     contactNumber: "",
     address: "",
+    scheduleTimein:"",
+    scheduleTimeout:"",
   });
 
   const [newUser, setNewUser] = useState({
@@ -471,6 +473,25 @@ const ManageEmployees = () => {
                 className="border p-2 rounded w-full mb-2 custom-input-bg"
                 onChange={(e) => setNewEmployee({ ...newEmployee, address: e.target.value })}
               />
+
+              <div className="flex justify-between mb-2">
+                  <div className="w-1/2 pr-1">
+                    <label className="block text-sm font-medium text-gray-600">Schedule Check-in</label>
+                    <input
+                      className="border p-2 rounded w-full"
+                      type="time"
+                      value={newEmployee.scheduleTimein}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, scheduleTimein: e.target.value })} />
+                  </div>
+                  <div className="w-1/2 pl-1">
+                    <label className="block text-sm font-medium text-gray-600">Schedule Timeout</label>
+                    <input
+                      className="border p-2 rounded w-full"
+                      type="time"
+                      value={newEmployee.scheduleTimeout}
+                      onChange={(e) => setNewEmployee({ ...newEmployee, scheduleTimeout: e.target.value })} />
+                  </div>
+                </div>
 
               <div className="flex justify-end">
                 <button
