@@ -83,6 +83,14 @@ const EmployeeMonitoring = () => {
     fetchScreenshots(employee.employeeId);
   };
 
+  const filteredEmployees = employees
+  .filter((employee) =>
+    employee.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+  .filter((employee) => 
+    sortStatus === "All" || employee.activityStatus === sortStatus
+  );
+
   return (
     <div className="min-h-screen bg-white">
       <NavbarEmployer />
@@ -104,38 +112,48 @@ const EmployeeMonitoring = () => {
             <option value="All">All</option>
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Idle</option>
-            <option value="On Meeting">On Meeting</option>
+            <option value="On Leave">On Leave</option>
           </select>
         </div>
 
-        {/* Employee Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {employees.map((employee) => (
+      {/* Employee Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {filteredEmployees.map((employee) => (
             <div
               key={employee.id}
-              className="bg-white shadow-lg p-4 rounded-lg cursor-pointer hover:shadow-xl flex items-center space-x-4"
+              className="relative bg-white shadow-lg p-4 rounded-lg cursor-pointer hover:shadow-xl flex flex-col items-center w-60"
               onClick={() => handleEmployeeClick(employee)}
             >
               {/* Profile Picture */}
-         
-               <Image
-                  src={userLogo}
-                  alt="User Icon"
-                  width={60} 
-                  height={60} 
-                   className="w-14 h-14 rounded-full object-cover"
-                />
+              <Image
+                src={userLogo}
+                alt="User Icon"
+                width={60}
+                height={60}
+                className="w-14 h-14 rounded-full object-cover"
+              />
 
               {/* Employee Details */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
-                <p className={`text-sm ${employee.status === "Active" ? "text-green-600" : "text-red-600"}`}>
-                  {employee.status}
+              <div className="flex flex-col items-center text-center w-full mt-2">
+                <p className="text-md font-semibold text-gray-800 break-words w-full mb-2">
+                  {employee.name}
                 </p>
               </div>
+
+              {/* Status - Positioned at Bottom Right */}
+              <p
+                className={`absolute bottom-2 right-2 text-xs font-medium ${
+                  employee.activityStatus === "Active" || employee.activityStatus === null
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {employee.activityStatus === null ? "Active" : employee.activityStatus}
+              </p>
             </div>
           ))}
         </div>
+
 
         {/* Employee Details Modal */}
         {isModalOpen && selectedEmployee && (

@@ -12,7 +12,7 @@ export async function PUT(request: Request, { params }: { params: { employeeId: 
     const body = await request.json();
     console.log("Request body:", body);
 
-    const { name, email, position, department, contactNumber, address } = body;
+    const { name, email, position, department, contactNumber, address ,scheduleTimeIn,scheduleTimeOut } = body;
     const { employeeId } = params;  // Extract employeeId from the URL params
 
     
@@ -27,6 +27,8 @@ export async function PUT(request: Request, { params }: { params: { employeeId: 
         department,
         contactNumber,
         address,
+        scheduleTimeIn,
+        scheduleTimeOut,
         updatedAt: new Date(),
       },
     });

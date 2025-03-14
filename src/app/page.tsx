@@ -50,6 +50,17 @@ router.push("/register");
          employeeId: data.user.employeeId
        }));
     localStorage.setItem("authToken", data.token);
+
+    const updateStatus = await fetch('/employerAPI/getEmployeeStatus', {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const updatedStatusData = await updateStatus.json();
+
+    console.log(updatedStatusData)
     
       setTimeout(() => {
         setMessage("");

@@ -299,7 +299,7 @@ const ManageEmployees = () => {
                 {showToast && (
                 <ToastMessage toastMessage={toastMessage} toastStatus={toastStatus}/>
                 )}
-            <div className="overflow-x-auto min-h-[350px]">
+            <div className="overflow-x-auto min-h-[450px]">
               <table className="table table-xs">
                 <thead>
                   <tr className="bg-gray-200">

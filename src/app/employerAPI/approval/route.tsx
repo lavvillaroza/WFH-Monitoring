@@ -8,7 +8,6 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json(); // ✅ Extract JSON body
     const { id,employeeId ,dateTime ,type,file_type ,approval,leaveStart,leaveEnd} = body;
-    console.log(approval+"qwewqeqwewq")
 
 
     if (!id) {

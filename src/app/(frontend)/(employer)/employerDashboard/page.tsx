@@ -157,7 +157,8 @@ const Dashboard = () => {
     };
     
 
-  const getDonutData = (employee: Employee | null) => {
+  const getDonutData = (employee) => {
+    console.log(employee)
     if (!employee) {
       const avg = calculateAverageProductivity();
       return {
@@ -171,7 +172,7 @@ const Dashboard = () => {
     return {
       labels: ["Sleeping Time", "Idle Time"],
       datasets: [{
-        data: [employee.productivity?.productive || 0, employee.productivity?.idle || 0],
+        data: [humanActivityLog.sleeping, humanActivityLog.idle],
         backgroundColor: ["#4CAF50", "#FFC107"],
         hoverBackgroundColor: ["#45a049", "#ffca2c"],
       }],
@@ -195,7 +196,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-center w-full">
                   {/* Centered Doughnut Chart */}
                   <div className="w-[250px] sm:w-[280px] md:w-[300px] lg:w-[350px]">
-                    <Doughnut data={getDonutData()} options={{ maintainAspectRatio: false }} />
+                    <Doughnut data={getDonutData(employees)} options={{ maintainAspectRatio: false }} />
                   </div>
 
                   {/* Right-side Labels */}
