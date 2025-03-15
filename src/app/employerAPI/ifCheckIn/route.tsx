@@ -39,5 +39,7 @@ export async function GET(req: Request) {
       { error: error.message || "An unknown error occurred" },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect(); // Close the database connection after execution
   }
 }

@@ -48,6 +48,7 @@
     "html2canvas-pro": "^1.5.8",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.0",
+    "jspdf-autotable": "^5.0.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
     "mysql2": "^3.13.0",
@@ -56,6 +57,7 @@
     "react-chartjs-2": "^5.3.0",
     "react-datepicker": "^8.2.0",
     "react-dom": "^19.0.0",
+    "recharts": "^2.15.1",
     "screenshot-desktop": "^1.15.1",
     "selfsigned": "^2.4.1",
     "wait-on": "^8.0.2"

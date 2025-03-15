@@ -183,27 +183,27 @@ const EmployeeMonitoring = () => {
     };
   };
 
-  const getDonutData = (employee: Employee | null) => {
-    if (!employee) {
-      const avg = calculateAverageProductivity();
-      return {
-        labels: ["Productive Tasks", "Idle Time"],
-        datasets: [{
-          data: [avg.productive, avg.idle],
-          backgroundColor: ["#4CAF50", "#FFC107"],
-          hoverBackgroundColor: ["#45a049", "#ffca2c"],
-        }],
-      };
-    }
-    return {
-      labels: ["Productive Tasks", "Idle Time"],
-      datasets: [{
-        data: [employee.productivity?.productive || 0, employee.productivity?.idle || 0],
-        backgroundColor: ["#4CAF50", "#FFC107"],
-        hoverBackgroundColor: ["#45a049", "#ffca2c"],
-      }],
-    };
-  };
+  // const getDonutData = (employee: Employee | null) => {
+  //   if (!employee) {
+  //     const avg = calculateAverageProductivity();
+  //     return {
+  //       labels: ["Productive Tasks", "Idle Time"],
+  //       datasets: [{
+  //         data: [avg.productive, avg.idle],
+  //         backgroundColor: ["#4CAF50", "#FFC107"],
+  //         hoverBackgroundColor: ["#45a049", "#ffca2c"],
+  //       }],
+  //     };
+  //   }
+  //   return {
+  //     labels: ["Productive Tasks", "Idle Time"],
+  //     datasets: [{
+  //       data: [employee.productivity?.productive || 0, employee.productivity?.idle || 0],
+  //       backgroundColor: ["#4CAF50", "#FFC107"],
+  //       hoverBackgroundColor: ["#45a049", "#ffca2c"],
+  //     }],
+  //   };
+  // };
 
 
   useEffect(() => {
