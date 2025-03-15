@@ -125,9 +125,10 @@ const EmployeeMonitoring = () => {
             onChange={(e) => setSortStatus(e.target.value)}
           >
             <option value="All">All</option>
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Idle</option>
+            <option value="Active">Active</option>
+            <option value="Idle">Idle</option>
             <option value="On Leave">On Leave</option>
+            <option value="Sleeping">Sleeping</option>
           </select>
         </div>
 

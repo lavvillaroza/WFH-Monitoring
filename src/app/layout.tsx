@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CameraProvider } from "@/app/(frontend)/(employee)/context/CameraContext";
 import TakeScreenShot from "@/app/components/takeScreenShot";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 
 
@@ -31,28 +31,73 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [checkedIn, setCheckedIn] = useState(false);
 
   useEffect(() => {
-    const fetchStatus = async () => {
+    const user = localStorage.getItem("user");
+  
+    if (user) {
       try {
-        const response = await fetch("/employerAPI/getEmployeeStatus", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await response.json();
-        console.log("Fetched Employee Status:", data);
+        const parsedUser = JSON.parse(user); // Parse the stored JSON
+        const employeeId = parsedUser.employeeId;
+  
+        const fetchStatus = async () => {
+          try {
+            const response = await fetch("/employerAPI/getEmployeeStatus", {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            const data = await response.json();
+            console.log("Fetched Employee Status:", data);
+          } catch (error) {
+            console.error("Error fetching status:", error);
+          }
+        };
+  
+        const ifCheckIn = async () => {
+          const permission = localStorage.getItem("permissionToShare")
+
+          console.log(permission+'permission here')
+      
+          if(permission === "false"){
+            setCheckedIn(false)
+          }
+          try {
+            const empResponse = await fetch(`/employerAPI/ifCheckIn?employeeId=${employeeId}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+            
+            const data = await empResponse.json();
+            console.log(data+'data here')
+
+            if(data){
+              
+              setCheckedIn(true);
+            }
+            console.log("Check-in status:", data);
+          } catch (error) {
+            console.error("Error checking in:", error);
+          }
+        };
+  
+        fetchStatus();
+        ifCheckIn(); // Call the function
+  
+        const interval = setInterval(() => {
+          fetchStatus();
+          ifCheckIn();
+        }, 10000);
+  
+        return () => clearInterval(interval); // Cleanup on unmount
       } catch (error) {
-        console.error("Error fetching status:", error);
+        console.error("Error parsing user data:", error);
       }
-    };
-
-    fetchStatus();
-
-    const interval = setInterval(fetchStatus, 10000);
-
-    return () => clearInterval(interval); // Cleanup on unmount
+    }
   }, []);
 
   return (
@@ -62,6 +107,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
          <CameraProvider>
+         {checkedIn && <TakeScreenShot />} {/* Render component conditionally */}
           {children}
         </CameraProvider>
       </body>

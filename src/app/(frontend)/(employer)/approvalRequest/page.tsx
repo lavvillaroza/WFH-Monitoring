@@ -157,7 +157,7 @@ const handleMessageUpdate = (newMessage: string) => {
             <div className="card bg-white shadow-xl text-black p-10">
               <h2 className="text-xl font-semibold mb-4">REQUESTS LOG</h2>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto min-h-[450px]">
                 <table className="table table-xs">
                   <thead>
                     <tr className="bg-gray-200">

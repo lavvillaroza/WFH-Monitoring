@@ -307,8 +307,8 @@ const EmployeeMonitoring = () => {
               </select>
 
               {/* Employee List */}
-              <div className="mt-4 space-y-3 overflow-y-auto max-h-[500px]">
-              {filteredEmployees1.slice(0, 7).map((employee) => (
+              <div className="mt-4 space-y-3 overflow-y-auto max-h-[650px]">
+              {filteredEmployees1.slice(0, 9).map((employee) => (
                 <div
                   key={employee.id}
                   className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200 flex items-center"
