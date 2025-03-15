@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Employee with this email already exists" }, { status: 400 });
     }
 
-    if(!body.scheduleTimeIn || !body.scheduleTimeOut){
+    if(!body.scheduleTimein || !body.scheduleTimeout){
       return NextResponse.json({error: "Missing schedule"},{status:400})
     }
 
