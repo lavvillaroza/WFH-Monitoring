@@ -178,6 +178,52 @@ const Dashboard = () => {
       }],
     };
   }
+
+  const getDonutData2 = (employees) => {
+    console.log("Fetched Employees:", employees);
+  
+    if (!employees || employees.length === 0) {
+      return {
+        labels: ["No Data"],
+        datasets: [
+          {
+            data: [100],
+            backgroundColor: ["#e0e0e0"],
+          },
+        ],
+      };
+    }
+  
+    // 🔹 Step 1: Initialize counts for each activity category
+    const activityCounts = {
+      "On Leave": 0,
+      "Idle": 0,
+      "Sleeping": 0,
+      "Active": 0, // Add more activity statuses if needed
+    };
+  
+    // 🔹 Step 2: Count employees based on their activity status
+    employees.forEach((employee) => {
+      if (employee.activityStatus in activityCounts) {
+        activityCounts[employee.activityStatus] += 1;
+      } else {
+        activityCounts[employee.activityStatus] = 1; // Handle unexpected statuses
+      }
+    });
+  
+    // 🔹 Step 3: Prepare data for the donut chart
+    return {
+      labels: Object.keys(activityCounts), // Activity categories
+      datasets: [
+        {
+          data: Object.values(activityCounts), // Number of employees in each category
+          backgroundColor: ["#FF5733", "#FFC107", "blue", "green"], // Customize colors
+          hoverBackgroundColor: ["#E64A19", "#FFB300", "#388E3C", "green"],
+        },
+      ],
+    };
+  };
+  
   return (
     <div className="min-h-screen bg-white">
       <NavbarEmployer />
@@ -312,15 +358,48 @@ const Dashboard = () => {
 
 
 
-               {/* Quick Access */}
-            <div className="card bg-white shadow-md text-black p-10">
-              <h2 className="text-lg font-semibold">Quick Access</h2>
-              <ul className="space-y-2">
-                <li><a href="/dtr-problem" className="text-blue-500 hover:underline">Daily Time Record Problems</a></li>
-                <li><a href="/leaves" className="text-blue-500 hover:underline">Leaves</a></li>
-                <li><a href="/overtime" className="text-blue-500 hover:underline">Overtime</a></li>
-              </ul>
+         {/* Employee Activity Chart */}
+            <div className="p-6 bg-white shadow-lg rounded-lg">
+              <p className="text-md text-gray-500 mb-2">{todayDate}</p>
+              <h2 className="text-lg font-semibold pb-3 text-gray-700">Employee Activity Chart</h2>
+              <p className="text-md text-gray-600 mb-2">
+                Total Employees: <span className="font-bold">{employees.length}</span>
+              </p>
+
+              {/* Count each activity type */}
+              {(() => {
+                const activityCounts = {
+                  "Sleeping": 0,
+                  "Idle": 0,
+                  "On Leave": 0,
+                  "Active": 0
+                };
+
+                employees.forEach((employee) => {
+                  if (employee.activityStatus in activityCounts) {
+                    activityCounts[employee.activityStatus] += 1;
+                  }
+                });
+
+                return (
+                  <div className="flex items-center justify-center w-full">
+                    {/* Centered Doughnut Chart */}
+                    <div className="w-[250px] sm:w-[280px] md:w-[300px] lg:w-[350px]">
+                      <Doughnut data={getDonutData2(employees)} options={{ maintainAspectRatio: false }} />
+                    </div>
+
+                    {/* Right-side Labels (Updated Counts) */}
+                    <div className="ml-6 text-sm text-gray-700">
+                      <p className="font-bold text-red-500 mt-2">On Leave: {activityCounts["On Leave"]}</p>
+                      <p className="font-bold text-yellow-500 mt-2">Idle: {activityCounts.Idle}</p>
+                      <p className="font-bold text-blue-600">Sleeping: {activityCounts.Sleeping}</p>
+                      <p className="font-bold text-green-500 mt-2">Active: {activityCounts.Active}</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
+
 
         </div>
       </div>

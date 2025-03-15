@@ -77,6 +77,21 @@ const EmployeeMonitoring = () => {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Idle":
+        return "text-[#FFC107]";
+      case "Active":
+        return "text-green-500";
+      case "On Leave":
+        return "text-red-500";
+      case "Sleeping":
+        return "text-blue-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
   const handleEmployeeClick = (employee) => {
     setSelectedEmployee(employee);
     setIsModalOpen(true);
@@ -141,13 +156,7 @@ const EmployeeMonitoring = () => {
               </div>
 
               {/* Status - Positioned at Bottom Right */}
-              <p
-                className={`absolute bottom-2 right-2 text-xs font-medium ${
-                  employee.activityStatus === "Active" || employee.activityStatus === null
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
+              <p className={`text-sm font-medium ${getStatusColor(employee.activityStatus)}`}>
                 {employee.activityStatus === null ? "Active" : employee.activityStatus}
               </p>
             </div>

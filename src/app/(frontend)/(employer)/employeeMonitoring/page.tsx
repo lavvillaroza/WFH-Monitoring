@@ -235,11 +235,13 @@ const EmployeeMonitoring = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "INACTIVE":
+      case "Idle":
         return "text-[#FFC107]";
-      case "ACTIVE":
+      case "Active":
         return "text-green-500";
-      case "On Meeting":
+      case "On Leave":
+        return "text-red-500";
+      case "Sleeping":
         return "text-blue-500";
       default:
         return "text-gray-500";
@@ -324,8 +326,8 @@ const EmployeeMonitoring = () => {
                 />
                  <div className="flex-1 flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
-                   <p className={`text-sm font-medium ${getStatusColor(employee.status)}`}>
-                     {employee.status}
+                   <p className={`text-sm font-medium ${getStatusColor(employee.activityStatus)}`}>
+                     {employee.activityStatus}
                    </p>
                  </div>
                </div>

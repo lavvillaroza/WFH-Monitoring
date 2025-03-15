@@ -12,16 +12,21 @@ export async function GET() {
     });
 
     const checkLatestActivity = await prisma.humanActivityLog.findMany({
-        where: {end : null}
+        where: {end : null},
+        select: {activity:true,employeeId:true}
+    })
+
+    const checkNull = await prisma.employeeDetails.findMany({
+      where:{activityStatus : null}
     })
 
     for (const leave of leaves) {
       if (isToday(new Date(leave.startDate))) {
-        await prisma.employeeDetails.update({
+        await prisma.employeeDetails.updateMany({
             where: { 
                 employeeId: leave.employeeId, 
                 activityStatus: { NOT: "On Leave" } 
-            }
+            },
             data: {
                 activityStatus: "On Leave",
                 updatedAt: new Date(),
@@ -37,7 +42,7 @@ export async function GET() {
             where: { 
                 employeeId: leave.employeeId, 
                 activityStatus:  "On Leave" 
-            }
+            },
             data: {
               activityStatus: "Active",
               updatedAt: new Date(),
@@ -47,8 +52,32 @@ export async function GET() {
       }
 
 
+      for (const activityLog of checkLatestActivity){
+        await prisma.employeeDetails.update({
+          where:{
+            employeeId:activityLog.employeeId
+          },
+          data:{
+            activityStatus:activityLog.activity
+          }
+        })
+      }
 
-    return NextResponse.json({ message: "Leave status updated successfully" ,leaves}, { status: 200 });
+      for (const employee of checkNull){
+        await prisma.employeeDetails.updateMany({
+          where:{
+            employeeId:employee.employeeId
+          },
+          data:{
+            activityStatus:"Active"
+          }
+        })
+      }
+
+   
+
+
+    return NextResponse.json({ message: "Leave status updated successfully" ,checkLatestActivity,checkNull}, { status: 200 });
   } catch (error) {
     console.error("Error updating leave status:", error);
 
@@ -60,5 +89,23 @@ export async function GET() {
       }, 
       { status: 500 }
     );
+  }
+}
+
+
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    console.log("Request body:", body);
+
+    await prisma.employeeDetails.update({
+      where:{employeeId:body.employeeId},
+      data:{
+        activityStatus:"Active"
+      }
+    })
+  }catch{
+
   }
 }
