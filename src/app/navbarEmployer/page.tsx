@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, UserCircle, LogOut, CheckCircle } from "lucide-react";
+import Image from "next/image";
+import userLogo from "@/app/img/user-icon.png"
 
 const NavbarEmployer = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -49,7 +51,7 @@ const NavbarEmployer = () => {
 
     return (
         <>
-            <nav className="custom-card-bg shadow-md relative z-50">
+            <nav className="bg-white shadow-md text-gray-600 relative z-50">
                 <div className="container mx-auto px-4 py-3 flex justify-between items-center">
                     {/* Menu Button for Mobile */}
                     <div className="flex items-center">
@@ -73,8 +75,18 @@ const NavbarEmployer = () => {
                     {/* Profile Dropdown */}
                     <div className="relative">
                         <button className="flex items-center space-x-2 text-black" onClick={() => setProfileOpen(!profileOpen)}>
-                            <UserCircle className="w-6 h-6" />
-                            <span>{user ? user.name : "Loading..."}</span>
+                            <div className="avatar avatar-online">
+                                <div className="w-9 h-9 rounded-full ring ">
+                                    <Image
+                                        src={userLogo}
+                                        alt="User Icon"
+                                        width={60} 
+                                        height={60} 
+                                        className="w-14 h-14 mr-4"
+                                        />
+                                 </div>
+                                </div>
+                            <span className="text-gray-600">{user ? user.name : "Loading..."}</span>
                         </button>
 
                         {/* Dropdown Menu */}

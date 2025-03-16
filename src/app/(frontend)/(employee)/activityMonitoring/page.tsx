@@ -36,7 +36,41 @@ const ActivityMonitoring = () => {
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = storedUser ? JSON.parse(storedUser) : null;
   const employeeId = user?.employeeId;
+  const [schedule, setSchedule] = useState(null); // Store schedule data
 
+
+  const findSchedule = async (employeeId) => {
+    try {
+      const fetchEmployees = await fetch("/employerAPI/employee");
+
+      if (!fetchEmployees.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+
+      const employees = await fetchEmployees.json();
+      const employee = employees.find(emp => emp.employeeId === employeeId);
+
+
+      if (!employee) {
+        console.log("Employee not found");
+        return null;
+      }
+
+      return {
+        timeIn: employee.scheduleTimeIn || "07:00",
+        timeOut: employee.scheduleTimeOut || "17:00",
+      };
+    } catch (error) {
+      console.error("Error fetching employee schedule:", error);
+      return null;
+    }
+  };
+
+  const parseTime = (timeStr) => {
+    const [hour, minute] = timeStr.split(":").map(Number);
+    return { hour, minute };
+  };
+  
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
     if (!authToken) {
@@ -46,9 +80,22 @@ const ActivityMonitoring = () => {
     }
   }, []);
 
+    // Fetch employee schedule when employeeId is available
+    useEffect(() => {
+      if (!employeeId) return;
+  
+      const fetchSchedule = async () => {
+        const result = await findSchedule(employeeId);
+        setSchedule(result);
+      };
+  
+      fetchSchedule();
+    }, [employeeId]);
+
   useEffect(() => {
     if (!employeeId) return;
 
+    console.log(schedule,'schedule here')
     // Use SSE to listen for real-time updates of activity chart data
     const eventSource = new EventSource(`/employeeAPI/humanActivityGraph?employeeId=${employeeId}`);
 
@@ -97,61 +144,64 @@ const ActivityMonitoring = () => {
   }, [employeeId]);
 
   const getChartData = () => {
-    const activities = ["Active", "Idle", "Sleeping"];  // Updated order: Active, Idle, Sleeping
-    const labels = Array.from({ length: (11 * 60) / 5 }, (_, i) => {
-      const hour = Math.floor((i * 5) / 60) + 7;
-      const minute = (i * 5) % 60;
-      return `${hour}:${minute < 10 ? '0' + minute : minute}`;
-    });
-
+    if (!schedule) return { labels: [], datasets: [] };
+  
+    const { hour: startHour, minute: startMinute } = parseTime(schedule.timeIn);
+    const { hour: endHour, minute: endMinute } = parseTime(schedule.timeOut);
+  
+    // Generate labels dynamically based on the schedule time range
+    const labels = [];
+    let currentHour = startHour;
+    let currentMinute = startMinute;
+  
+    while (currentHour < endHour || (currentHour === endHour && currentMinute <= endMinute)) {
+      labels.push(`${currentHour}:${currentMinute < 10 ? "0" + currentMinute : currentMinute}`);
+      currentMinute += 5;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour++;
+      }
+    }
+  
+    // Initialize activityData with zeros
     const activityData = {
-      total: Array((11 * 60) / 5).fill(0), // Default to Active (0) for all time slots
+      total: Array(labels.length).fill(0),
     };
-
-    let lastEndIndex = -1;  // Track the last end time to fill in active time for gaps
-
-    // Process each activity log
-    activityLogs.forEach((log, idx) => {
+  
+    // Populate activity data dynamically based on logs
+    activityLogs.forEach((log) => {
       const startTime = new Date(log.start);
       const endTime = new Date(log.end);
-      const startHour = startTime.getHours();
-      const startMinute = startTime.getMinutes();
-      const endHour = endTime.getHours();
-      const endMinute = endTime.getMinutes();
+      const logStartHour = startTime.getHours();
+      const logStartMinute = startTime.getMinutes();
+      const logEndHour = endTime.getHours();
+      const logEndMinute = endTime.getMinutes();
+
       const activity = log.activity;
-
-      // Only consider times between 7 AM to 5 PM
-      if (startHour >= 7 && endHour <= 17) {
-        // Calculate the index for the start time and end time
-        const startIndex = Math.floor(((startHour - 7) * 60 + startMinute) / 5);
-        const endIndex = Math.floor(((endHour - 7) * 60 + endMinute) / 5);
-
-        // Fill any active time between the last end index and the current start index
-        if (lastEndIndex >= 0 && startIndex > lastEndIndex) {
-          for (let i = lastEndIndex + 1; i < startIndex; i++) {
-            activityData.total[i] = 0;  // Set to Active (0) for the gap
-          }
+  
+      // Ensure the activity falls within the schedule range
+      if (startHour >= startHour && startHour <= endHour) {
+        let startIndex = Math.floor(((logStartHour - startHour) * 60 + logStartMinute) / 5);
+        let endIndex = Math.floor(((logEndHour - startHour) * 60 + logEndMinute) / 5);
+        
+        if (endHour > endHour || (endHour === endHour && endMinute > endMinute)) {
+          endIndex = labels.length - 1; // Trim activity to the schedule end time
         }
-
-        // Set the activity data based on the activity type (Active, Idle, Sleeping)
-        const activityIndex = activities.indexOf(activity);
-
-        // Set the correct y-value for each activity
+  
+        const activityIndex = ["Active", "Idle", "Sleeping"].indexOf(activity);
         for (let i = startIndex; i <= endIndex; i++) {
-          activityData.total[i] = activityIndex; // Set the activity value (0 = Active, 1 = Idle, 2 = Sleeping)
+          activityData.total[i] = activityIndex;
         }
-
-        lastEndIndex = endIndex; // Update the last end index
       }
     });
-
+  
     return {
-      labels,
+      labels,                        
       datasets: [
         {
           label: "Activity (Total)",
           data: activityData.total,
-          borderColor: "green", // Single color for all activities
+          borderColor: "green",
           backgroundColor: "rgba(0, 128, 0, 0.2)",
           fill: false,
           tension: 0.1,
@@ -159,6 +209,7 @@ const ActivityMonitoring = () => {
       ],
     };
   };
+  
 
   const formatDateToPHT = (dateString) => {
     const options = { timeZone: "Asia/Manila", hour12: false };
@@ -197,7 +248,7 @@ const ActivityMonitoring = () => {
                       x: {
                         title: {
                           display: true,
-                          text: 'Time (7:00 AM to 5:00 PM)',
+                          text: `Time (${schedule?.timeIn || "07:00"} AM to ${schedule?.timeOut || "05:00"} PM)`,
                         },
                         ticks: {
                           autoSkip: true,

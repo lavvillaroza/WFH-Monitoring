@@ -1,7 +1,6 @@
 "use client";
 
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import "./globals.css";
 
@@ -10,15 +9,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
-  const [showPassword, setshowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  
-
-
-
-const handleRegister = async() => {
-router.push("/register");
-}
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,100 +18,115 @@ router.push("/register");
       setMessageType("error");
       return;
     }
-  
+
     try {
-      const response = await fetch(`/employeeAPI/user?email=${email}&password=${password}`, { 
+      const response = await fetch(`/employeeAPI/user?email=${email}&password=${password}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-  
+
       const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.error);
-      }
+      if (!response.ok) throw new Error(data.error);
+
       setMessage("Login successful!");
       setMessageType("success");
-    localStorage.setItem("user", JSON.stringify({ 
-         id: data.user.id,
-         name: data.user.name, 
-         email: data.user.email,
-         role: data.user.role,
-         employeeId: data.user.employeeId
-       }));
-    localStorage.setItem("authToken", data.token);
 
-    const updateStatus = await fetch('/employerAPI/getEmployeeStatus', {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          employeeId: data.user.employeeId,
+        })
+      );
+      localStorage.setItem("authToken", data.token);
 
-    const updatedStatusData = await updateStatus.json();
-
-    console.log(updatedStatusData)
-    
       setTimeout(() => {
         setMessage("");
-        
-        console.log(data.user.role)
-         // Redirect based on role
-      if (data.user.role === "ADMIN") {
-        router.push("/employerDashboard");
-      } else if (data.user.role === "EMPLOYEE") {
-        router.push("/dashboard");
-      } else {
-        router.push("/employerDashboard"); // Default fallback
-      }
-
+        if (data.user.role === "ADMIN") {
+          router.push("/employerDashboard");
+        } else if (data.user.role === "EMPLOYEE") {
+          router.push("/dashboard");
+        } else {
+          router.push("/employerDashboard");
+        }
       }, 2000);
     } catch (error: any) {
       setMessage(error.message);
       setMessageType("error");
     }
   };
-  
 
-  const handleShowPassword = async() =>{
-    setshowPassword((prev) => !prev);
-  }
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-900 to-teal-600 p-4">
+      {/* Welcome Title */}
+      <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">Welcome to Employee Monitoring</h1>
+
+      {/* Message Box */}
       {message && (
-        <div className={`absolute top-4 right-4 p-3 rounded-lg shadow-lg border ${messageType === "error" ? "bg-red-600 border-red-800" : "bg-green-600 border-green-800"} text-white`}>
+        <div
+          className={`fixed top-6 right-6 px-4 py-2 rounded-lg shadow-lg text-white text-sm transition-transform ${
+            messageType === "error" ? "bg-red-600" : "bg-green-600"
+          }`}
+        >
           {message}
         </div>
       )}
-      <div className="card w-96 bg-white-600 shadow-xl border border-[#2C6975] text-black">
-        <div className="card-body">
-          <h2>LOGIN</h2>
-          <input
-            type="email"
-            placeholder="Email"
-            className="input input-bordered w-full mt-2 input-field bg-white "
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            className="input input-bordered w-full mt-2 bg-white text-black "
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <p><input
-            type="checkbox"
-            placeholder="Password"
-            className=" mt-2 bg-white-100 text-black border-[#2C6975]"
-            onClick={handleShowPassword}
-          /> Show Password</p>
-          <div className="card-actions justify-end">
-            <button className="btn bg-[#2C6975] hover:bg-gray-600 bg-black text-white" onClick={handleLogin}>Login</button>
+
+      {/* Login Card */}
+      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-8">
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-4">Login</h2>
+        <div className="space-y-4">
+          {/* Email Input */}
+          <div>
+            <label className="block text-gray-700 font-medium">Email</label>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-teal-500 focus:outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
-          <a onClick={handleRegister}>Click here to register.</a>
+
+          {/* Password Input */}
+          <div>
+            <label className="block text-gray-700 font-medium">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-teal-500 focus:outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-teal-600"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          {/* Login Button */}
+          <button
+            onClick={handleLogin}
+            className="w-full bg-teal-600 text-white py-2 rounded-md text-lg font-semibold hover:bg-teal-700 transition"
+          >
+            Login
+          </button>
+
+          {/* Register Link
+          <p className="text-center text-gray-600 text-sm">
+            Don't have an account?{" "}
+            <button onClick={() => router.push("/register")} className="text-teal-500 hover:underline">
+              Register here
+            </button>
+          </p> */}
         </div>
       </div>
     </div>

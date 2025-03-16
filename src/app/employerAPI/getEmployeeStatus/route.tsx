@@ -93,18 +93,19 @@ export async function GET() {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(req: Request) {
   try {
-    const body = await request.json();
-    console.log("Request body:", body);
 
-    if (!body.employeeId) {
+    const { searchParams } = new URL(req.url);
+    const employeeId = searchParams.get("employeeId");
+
+    if (!employeeId) {
       return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
     }
 
     // Check if employee exists before updating
     const employee = await prisma.employeeDetails.findUnique({
-      where: { employeeId: body.employeeId },
+      where: { employeeId: employeeId },
     });
 
     if (!employee) {
@@ -113,7 +114,7 @@ export async function PUT(request: Request) {
 
     // Update employee's activity status to Active
     await prisma.employeeDetails.update({
-      where: { employeeId: body.employeeId },
+      where: { employeeId: employeeId },
       data: { activityStatus: "Active" },
     });
 

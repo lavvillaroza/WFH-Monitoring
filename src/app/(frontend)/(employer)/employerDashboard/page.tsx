@@ -254,29 +254,31 @@ const Dashboard = () => {
               </div>
 
           
-              {/* Human Activity Recognition Card */}
-                <div className="p-6 bg-white shadow-lg rounded-lg">
-                  <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
-                    <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
-                    {activityLogs.length > 0 ? (
-                      activityLogs.map((log, index) => {
-                        const employee = employees.find(emp => emp.employeeId === log.employeeId);
-                        const employeeName = employee ? employee.name : "Unknown";
+             {/* Human Activity Recognition Card */}
+              <div className="p-6 bg-white shadow-lg rounded-lg">
+                <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
+                  <h3 className="text-md font-semibold text-gray-700 mb-2">Real-Time Log:</h3>
+                  {activityLogs.length > 0 ? (
+                    activityLogs.map((log, index) => {
+                      const employee = employees.find(emp => emp.employeeId === log.employeeId);
+                      const employeeName = employee ? employee.name : "Unknown";
 
-                        return (
-                          <p key={index} className="text-gray-600">
-                            <span className="font-semibold">
-                              {new Date(log.start).toLocaleTimeString("en-PH")}: 
-                            </span>
-                            {` ${employeeName} is ${log.activity.toLowerCase()}.`}
-                          </p>
-                        );
-                      })
-                    ) : (
-                      <p className="text-gray-500">No recent activity logs.</p>
-                    )}
-                  </div>
+                      const logDate = new Date(log.start).toLocaleDateString("en-PH");
+                      const logTime = new Date(log.start).toLocaleTimeString("en-PH");
+
+                      return (
+                        <p key={index} className="text-gray-600">
+                          <span className="font-semibold">{logDate} {logTime}: </span>
+                          {` ${employeeName} is ${log.activity.toLowerCase()}.`}
+                        </p>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500">No recent activity logs.</p>
+                  )}
                 </div>
+              </div>
+
 
 
               {/* Notification Logs Card */}
@@ -388,13 +390,25 @@ const Dashboard = () => {
                       <Doughnut data={getDonutData2(employees)} options={{ maintainAspectRatio: false }} />
                     </div>
 
-                    {/* Right-side Labels (Updated Counts) */}
-                    <div className="ml-6 text-sm text-gray-700">
-                      <p className="font-bold text-red-500 mt-2">On Leave: {activityCounts["On Leave"]}</p>
-                      <p className="font-bold text-yellow-500 mt-2">Idle: {activityCounts.Idle}</p>
-                      <p className="font-bold text-blue-600">Sleeping: {activityCounts.Sleeping}</p>
-                      <p className="font-bold text-green-500 mt-2">Active: {activityCounts.Active}</p>
-                    </div>
+                     {/* Right-side Labels (Updated Counts) */}
+                      <div className="ml-6 text-sm text-gray-700">
+                        <div className="flex items-center mt-2">
+                          <span className="w-6 h-2 bg-red-500 rounded mr-2"></span>
+                          <p className="font-bold text-gray-500">On Leave: {activityCounts["On Leave"]}</p>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span className="w-6 h-2 bg-yellow-500 rounded mr-2"></span>
+                          <p className="font-bold text-gray-500">Idle: {activityCounts.Idle}</p>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span className="w-6 h-2 bg-blue-600 rounded mr-2"></span>
+                          <p className="font-bold text-gray-500">Sleeping: {activityCounts.Sleeping}</p>
+                        </div>
+                        <div className="flex items-center mt-2">
+                          <span className="w-6 h-2 bg-green-500 rounded mr-2"></span>
+                          <p className="font-bold text-gray-500">Active: {activityCounts.Active}</p>
+                        </div>
+                      </div>
                   </div>
                 );
               })()}

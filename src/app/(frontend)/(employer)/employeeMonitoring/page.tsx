@@ -350,7 +350,7 @@ const EmployeeMonitoring = () => {
                   id="dateRange"
                   value={dateRange}
                   onChange={handleDateRangeChange}
-                  className="mt-2 border p-2 rounded"
+                  className="mt-2 border p-2 rounded bg-white"
                 >
                   <option value="Daily">Daily</option>
                   <option value="Monthly">Monthly</option>
@@ -368,7 +368,7 @@ const EmployeeMonitoring = () => {
            {/* Activity Logs & Wakefulness Detection in a row */}
            <div className="flex flex-col md:flex-row gap-4">
              {/* Human Activity Log */}
-              <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+              <div className="w-full md:w-full bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
                 <h2 className="text-xl font-semibold pb-3 text-gray-700">HUMAN ACTIVITY RECOGNITION</h2>
                 <p className="mt-2 text-sm text-gray-500">Alertness Report & Real-Time Alert Log.</p>
                 <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
@@ -377,7 +377,7 @@ const EmployeeMonitoring = () => {
                     {activityLogs.length > 0 ? (
                       activityLogs.map((log, index) => (
                         <li key={index}>
-                          <span className="font-medium">{log.activity}</span>
+                          <span className="font-medium text-gray-500">{log.activity}</span>
                           <span className="text-gray-500 text-xs ml-2">
                             {log.start} - {log.end ? log.end : "Ongoing"}
                           </span>
@@ -391,7 +391,7 @@ const EmployeeMonitoring = () => {
               </div>
 
                  {/* Wakefulness Detection */}
-                <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+                {/* <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
                   <h2 className="text-xl font-semibold pb-3 text-gray-700">Wakefulness Detection</h2>
 
                   {selectedEmployee ? (
@@ -405,7 +405,7 @@ const EmployeeMonitoring = () => {
                   ) : (
                     <p className="text-gray-400">Click an employee to view alertness details.</p>
                   )}
-                </div>
+                </div> */}
               </div>
             </div>
 

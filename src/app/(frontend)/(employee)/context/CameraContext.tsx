@@ -40,6 +40,14 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const [currentActivity, setCurrentActivity] = useState("");
 
 
+  const updateOnClose = async ()=>{
+
+    const response = await fetch(`/employerAPI/getEmployeeStatus?employeeId=${employeeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const handleModalResponse = async (response: boolean) => {
     userResponseRef.current = response;
     setIsModalOpen(false);
@@ -445,7 +453,10 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       )}
       <TrackerModal 
             isOpen={isModalOpen} 
-            onClose={() => handleModalResponse(true)} 
+            onClose={() => {
+              handleModalResponse(true);
+              updateOnClose();
+            }}
             refresh={() => {}} 
             setMessage={message} 
           />

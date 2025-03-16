@@ -87,7 +87,20 @@ const DTR = () => {
                       <td>{new Date(record.date).toLocaleDateString()}</td>
                       <td>{new Date(record.timeIn).toLocaleTimeString()}</td>
                       <td>{record.timeOut ? new Date(record.timeOut).toLocaleTimeString() : ''}</td>
-                      <td>{record.duration}</td>
+                      <td>
+                      {record.timeOut
+                        ? (() => {
+                            const timeIn = new Date(record.timeIn);
+                            const timeOut = new Date(record.timeOut);
+                            const diffMs = timeOut - timeIn; // Difference in milliseconds
+
+                            const hours = Math.floor(diffMs / (1000 * 60 * 60)); // Convert ms to hours
+                            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60)); // Remaining minutes
+
+                            return `${hours}h ${minutes}m`;
+                          })()
+                        : ''}
+                    </td>
                     </tr>
                   ))
                 ) : (

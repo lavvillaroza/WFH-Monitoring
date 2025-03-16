@@ -6,6 +6,8 @@ import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "luc
 import { useRouter } from "next/navigation";
 import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
 import  TakeScreenShot from "@/app/components/takeScreenShot";
+import userLogo from "@/app/img/user-icon.png"
+import Image from "next/image";
 
 
 const Navbar = () => {
@@ -108,14 +110,14 @@ const Navbar = () => {
     
 
     const handlePlayPause = async () => {
-            setTakeScreenshot(false)
+            // setTakeScreenshot(false)
         try {
-            if(!takeScreenshot){
-                setTakeScreenshot(true);
-                }
+            // if(!takeScreenshot){
+            //     setTakeScreenshot(true);
+            //     }
          
             const storedUser = localStorage.getItem("user");
-            const storedPermission = localStorage.getItem("permissionToShare");
+            // const storedPermission = localStorage.getItem("permissionToShare");
             if (!storedUser) {
                 router.push("/");
                 return;
@@ -124,15 +126,17 @@ const Navbar = () => {
             const user = JSON.parse(storedUser);
             const employeeId = user.employeeId;  
             const timestamp = new Date();
+
+            console.log(employeeId+"employee ID hereeeeee")
             
     
             let requestBody;
             if (selectedAction === "Time In") {
-                if (!storedPermission) {
-                    return;
-                }
-                console.log(storedPermission);
-                if (cameraContext && storedPermission==="true") {
+                // if (!storedPermission) {
+                //     return;
+                // }
+                // console.log(storedPermission);
+                if (cameraContext) {
                     await cameraContext.startCamera(); // ✅ Start camera when clocking in
                     setIsCameraOn(true);
                     requestBody = {
@@ -148,7 +152,7 @@ const Navbar = () => {
                 }
                 
             } else if (selectedAction === "Time Out"){
-                if (cameraContext && storedPermission) {
+                if (cameraContext) {
                     await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
                     setTakeScreenshot(false);
                     setIsCameraOn(false);
@@ -319,7 +323,17 @@ const Navbar = () => {
     
                     <div className="relative">
                         <button className="flex items-center space-x-2 text-gray-600" onClick={() => setProfileOpen(!profileOpen)}>
-                            <UserCircle className="w-6 h-6" />
+                        <div className="avatar avatar-online">
+                                <div className="w-9 h-9 rounded-full ring ">
+                                    <Image
+                                        src={userLogo}
+                                        alt="User Icon"
+                                        width={60} 
+                                        height={60} 
+                                        className="w-14 h-14 mr-4"
+                                        />
+                                 </div>
+                                </div>
                             <span>{user?.name || "Guest"}</span>
                         </button>
                         {profileOpen && (
