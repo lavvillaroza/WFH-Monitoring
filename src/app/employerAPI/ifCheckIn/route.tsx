@@ -29,6 +29,7 @@ export async function GET(req: Request) {
           gte: today, // Greater than or equal to today at 00:00:00
           lt: tomorrow, // Less than tomorrow at 00:00:00
         },
+        timeOut: null,
       },
     });
 

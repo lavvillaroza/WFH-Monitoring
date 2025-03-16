@@ -71,7 +71,9 @@ export default function TakeScreenShot() {
                     track.addEventListener("ended", () => {
                         console.log("User stopped screen sharing.");
                         setMediaStream(null);
+                        
                         stopCapture();
+                        console.log("deleting permission here 2")
                     });
                 } catch (error) {
                    // console.error("Error accessing display media:", error);
@@ -87,6 +89,7 @@ export default function TakeScreenShot() {
             intervalRef.current = setInterval(() => {
                 if (!localStorage.getItem("user")) {
                     stopCapture();
+                    console.log("deleting permission here 1")
                 } else {
                     captureAndSendScreenshot(user.employeeId);
                     
@@ -94,6 +97,7 @@ export default function TakeScreenShot() {
             }, 10000);
         } else {
             stopCapture();
+            console.log("deleting permission here 4")
         }
     };
 
@@ -108,6 +112,7 @@ export default function TakeScreenShot() {
 
     return () => {
         stopCapture();
+        console.log("deleting permission here 5")
         window.removeEventListener("storage", handleStorageChange);
     };
 }, [user, mediaStream]);

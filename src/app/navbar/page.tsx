@@ -22,10 +22,11 @@ const Navbar = () => {
     const pathname = usePathname();
     const [user, setUser] = useState<{ name: string; email: string } | null>(null); 
     const cameraContext = useContext(CameraContext);
-    const [selectedAction, setSelectedAction] = useState("Time In"); // Default option
+    const [selectedAction, setSelectedAction] = useState(""); // Default option
     const [DropdownOpen, setDropdownOpen] = useState(false); 
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [takeScreenshot,setTakeScreenshot] = useState(false)
+    const [ifTimeIn ,setIfTimeIn] = useState(false)
 
   
     const pageTitles: { [key: string]: string } = {
@@ -83,6 +84,27 @@ const Navbar = () => {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
+        const parsedUser = JSON.parse(storedUser); // Parse the stored JSON
+        const employeeId = parsedUser.employeeId;
+
+        const checkIfIn = async()  =>{
+            const empResponse = await fetch(`/employerAPI/ifCheckIn?employeeId=${employeeId}`, {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              });
+    
+              const data = await empResponse.json();
+              console.log(data, 'data here');
+    
+              if (data.employees != null) {
+                setIfTimeIn(true)
+                setSelectedAction("Time Out")
+              }
+        }
+        checkIfIn();
+
         const handleBeforeUnload = async () => {
             if (selectedAction === "Time Out" && storedUser) { 
                 const user = JSON.parse(storedUser);
@@ -127,8 +149,7 @@ const Navbar = () => {
             const employeeId = user.employeeId;  
             const timestamp = new Date();
 
-            console.log(employeeId+"employee ID hereeeeee")
-            
+        
     
             let requestBody;
             if (selectedAction === "Time In") {
@@ -408,7 +429,7 @@ const Navbar = () => {
                             selectedAction === "Time Out" ? "bg-red-600" : "bg-purple-600"
                         } text-white px-4 py-1 rounded-full flex items-center`}
                     >
-                        {selectedAction}
+                        {ifTimeIn ? "Time Out" : selectedAction}
                     </button>
                     <span className="text-gray-300">{currentTime}</span>
                 </div>

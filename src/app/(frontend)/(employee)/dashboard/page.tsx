@@ -52,6 +52,20 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    // Set an interval to check every 10 seconds
+    const interval = setInterval(() => {
+      const tokenRefresh = localStorage.getItem("tokenRef");
+
+      if (!tokenRefresh) {
+        window.location.reload(); // Refresh the page if token is not found
+      }
+    }, 10000); // 10000 milliseconds = 10 seconds
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (!employeeId) return;
 
     // Use SSE to listen for real-time updates of activity chart data
@@ -114,15 +128,19 @@ const Dashboard = () => {
       return {
         labels: ["No Data"],
         datasets: [{
-          data: [1, 1, 1],
+          data: [1], // Only one data point since no valid time
           backgroundColor: ["#e0e0e0"],
         }]
       };
     }
-    const idleTimePercentage = (idle / totaltime) * 100;
-    const sleepingTimePercentage = (sleep / totaltime) * 100;
+  
+    // Handle cases where idle or sleep might be null or undefined
+    const idleTimePercentage = totaltime ? ((idle || 0) / totaltime) * 100 : 0;
+    const sleepingTimePercentage = totaltime ? ((sleep || 0) / totaltime) * 100 : 0;
     const productiveTimePercentage = 100 - idleTimePercentage - sleepingTimePercentage;
-
+  
+    console.log({ totaltime, idle, sleep, productiveTimePercentage, idleTimePercentage, sleepingTimePercentage });
+  
     return {
       labels: ["Productive Tasks", "Idle Time", "Sleeping"],
       datasets: [
@@ -134,6 +152,9 @@ const Dashboard = () => {
       ],
     };
   };
+  
+
+  
 
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setDateRange(e.target.value);
@@ -209,7 +230,7 @@ const Dashboard = () => {
           </div>
 
           {/* Row 2 */}
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             {/* Notification Logs Card */}
             <div className="card bg-white shadow-md text-black p-10">
               <h1 className="text-xl font-bold mb-4">NOTIFICATION LOGS</h1>
@@ -291,10 +312,9 @@ const Dashboard = () => {
             </div>
 
             {/* Productivity vs Idle Time Card */}
-            <div className="card bg-white shadow-md text-black p-10">
+            {/* <div className="card bg-white shadow-md text-black p-10">
               <h2 className="text-xl font-bold mb-4">Productivity vs Idle Time vs Sleeping Time</h2>
 
-              {/* Date Range Selector inside the card */}
               <div className="mb-4">
                 <label htmlFor="dateRange" className="text-sm font-medium">Filter by: </label>
                 <select
@@ -311,10 +331,10 @@ const Dashboard = () => {
 
               <div className="flex justify-center items-center w-full h-full">
                 <div className="w-80 h-80">
-                  <Doughnut data={donutData()} />
+                  <Doughnut data={donutData()} options={{ maintainAspectRatio: false }} />
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

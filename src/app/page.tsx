@@ -49,6 +49,7 @@ const LoginPage = () => {
           router.push("/employerDashboard");
         } else if (data.user.role === "EMPLOYEE") {
           router.push("/dashboard");
+
         } else {
           router.push("/employerDashboard");
         }
