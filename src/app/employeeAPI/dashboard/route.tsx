@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-
+let totalTime = 0;
+let hoursRendered = 0;
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const employeeId = url.searchParams.get("employeeId");
@@ -41,16 +42,17 @@ export async function GET(req: Request) {
             gte: today,  
             lt: tomorrow, 
           },
+          timeOut:null,
         },
         orderBy: {
           timeIn: "asc", 
         },
-        select: { timeIn: true },
+        select: { timeIn: true ,timeOut:true},
       });
 
-      if (!dailyTimeRecord || !dailyTimeRecord.timeIn) {
-        await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
-      }
+      // if (!dailyTimeRecord || !dailyTimeRecord.timeIn) {
+      //   await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
+      // }
     }
 
     const timein = new Date(dailyTimeRecord.timeIn); // Convert timein to Date object
@@ -119,7 +121,26 @@ export async function GET(req: Request) {
         select: { activityStatus: true },
       });
 
-      
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0); // Set time to 00:00:00.000
+
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Set time to 23:59:59.999
+
+      const employeeDTR = await prisma.dailyTimeRecord.findMany({
+        where: {
+          employeeId: employeeId,
+          timeIn: {
+            gte: startOfDay, // Greater than or equal to start of day (00:00:00)
+            lte: endOfDay,   // Less than or equal to end of day (23:59:59)
+          },
+          timeOut: { not: null }
+        },
+        select: { duration: true },
+      });
+
+      const totalDuration = employeeDTR.reduce((sum, record) => sum + (record.duration ?? 0), 0);
+
       let wakefulnessStatus = "Awake"; // Default is "Awake"
       if (lastActivityLog) {
         if (lastActivityLog.activity === "Sleeping" || lastActivityLog.activity === "Idle") {
@@ -132,7 +153,20 @@ export async function GET(req: Request) {
       const sleepingTime = calculateTimeSpent(sleeping) / 1000;
       const currentTime = new Date();
       // Calculate total time for the day (from first timein to now)
-      const totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000);
+      
+      
+      if (dailyTimeRecord && dailyTimeRecord.timeOut === null) {
+        totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration;
+        hoursRendered = totalTime - (idleTime + sleepingTime);
+        console.log("If time null : ",totalTime+" - ",hoursRendered);
+      }else{
+        totalTime = totalDuration;
+        hoursRendered = totalTime - (idleTime + sleepingTime);
+        
+        console.log("If time not null : ",totalTime+" - ",hoursRendered);
+      }
+    
+     // const totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration ;
 
       // Calculate the total time spent in non-productive activities (Idle + Sleeping)
       const nonProductiveTime = idleTime + sleepingTime;
@@ -143,7 +177,7 @@ export async function GET(req: Request) {
       if (nonProductiveTime > 0) {
         productivityPercentage = ((totalTime - nonProductiveTime) / totalTime) * 100;
       }
-      let hoursRendered = totalTime - nonProductiveTime;
+      // let hoursRendered = totalTime - nonProductiveTime;
 
       return { idleTime, sleepingTime, productivityPercentage,totalTime ,wakefulnessStatus,hoursRendered,employeeStatus};
     };
