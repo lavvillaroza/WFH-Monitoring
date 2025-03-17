@@ -20,9 +20,9 @@ export async function GET(req: Request) {
 
   try {
     // Fetch employee status
-    const employeeStatus = await prisma.user.findUnique({
+    const employeeStatus = await prisma.employeeDetails.findUnique({
       where: { employeeId: employeeId },
-      select: { status: true },
+      select: { activityStatus: true },
     });
 
     if (!employeeStatus) {
@@ -113,6 +113,13 @@ export async function GET(req: Request) {
         },
       });
   
+
+      const employeeStatus = await prisma.employeeDetails.findUnique({
+        where: { employeeId: employeeId },
+        select: { activityStatus: true },
+      });
+
+      
       let wakefulnessStatus = "Awake"; // Default is "Awake"
       if (lastActivityLog) {
         if (lastActivityLog.activity === "Sleeping" || lastActivityLog.activity === "Idle") {
@@ -121,11 +128,11 @@ export async function GET(req: Request) {
       }
 
       // Calculate idle and sleeping times
-      const idleTime = calculateTimeSpent(idle);
-      const sleepingTime = calculateTimeSpent(sleeping);
-
+      const idleTime = calculateTimeSpent(idle) / 1000;
+      const sleepingTime = calculateTimeSpent(sleeping) / 1000;
+      const currentTime = new Date();
       // Calculate total time for the day (from first timein to now)
-      const totalTime = new Date().getTime() - timein.getTime();
+      const totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000);
 
       // Calculate the total time spent in non-productive activities (Idle + Sleeping)
       const nonProductiveTime = idleTime + sleepingTime;
@@ -136,12 +143,10 @@ export async function GET(req: Request) {
       if (nonProductiveTime > 0) {
         productivityPercentage = ((totalTime - nonProductiveTime) / totalTime) * 100;
       }
+      let hoursRendered = totalTime - nonProductiveTime;
 
-      return { idleTime, sleepingTime, productivityPercentage,totalTime ,wakefulnessStatus};
+      return { idleTime, sleepingTime, productivityPercentage,totalTime ,wakefulnessStatus,hoursRendered,employeeStatus};
     };
-
-
-    
 
     // Prepare the response using TransformStream
     const { readable, writable } = new TransformStream();
@@ -153,15 +158,16 @@ export async function GET(req: Request) {
 
     // Function to send updates
     async function sendUpdates() {
-      const { idleTime, sleepingTime, productivityPercentage,totalTime,wakefulnessStatus } = await getProductivityData();
+      const { idleTime, sleepingTime, productivityPercentage,totalTime,wakefulnessStatus,hoursRendered,employeeStatus } = await getProductivityData();
 
       const message = {
-        employeeStatus: employeeStatus.status,
+        employeeStatus: employeeStatus?.activityStatus,
         wakefulnessStatus: wakefulnessStatus, 
         productivityPercentage: Math.round(productivityPercentage),
         idleTime: idleTime,
         sleepingTime: sleepingTime,
         totaltime:totalTime,
+        hoursRendered:hoursRendered,
       };
 
       console.log(`data: ${JSON.stringify(message)}\n\n`);

@@ -25,6 +25,8 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [hoursRendered, SethoursRendered] = useState("");
+  
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -83,6 +85,7 @@ const Dashboard = () => {
           setActivityStatus("ACTIVE");
           setWakefulnessStatus("Idle");
           setProductivityPercentage(0);
+          SethoursRendered("");
         } else {
           SetIdle(data.idleTime || 0);
           SetSleep(data.sleepingTime || 0);
@@ -90,6 +93,17 @@ const Dashboard = () => {
           setActivityStatus(data.employeeStatus || "ACTIVE");
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
+          const totalSeconds = data.totaltime || 0;
+
+          // Convert to HH:MM:SS format
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+
+          // Format as "H hrs M mins S secs"
+          const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
+
+          SethoursRendered(formattedTime);
         }
       } catch (error) {
         setActivityStatus("ACTIVE");
@@ -217,6 +231,12 @@ const Dashboard = () => {
                   {wakefulnessStatus}
                 </span>
               </p>
+              <p>
+                <strong>Hours Rendered:</strong>
+                <span className="ml-2 px-2 py-1 rounded text-white text-xs bg-green-900">
+                  {hoursRendered}
+                </span>
+              </p>
             </div>
 
             {/* Quick Access */}
@@ -231,7 +251,7 @@ const Dashboard = () => {
           </div>
 
           {/* Row 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Notification Logs Card */}
             <div className="card bg-white shadow-md text-black p-10">
               <h1 className="text-xl font-bold mb-4">NOTIFICATION LOGS</h1>
