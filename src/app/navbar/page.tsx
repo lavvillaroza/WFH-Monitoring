@@ -8,6 +8,7 @@ import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
 import  TakeScreenShot from "@/app/components/takeScreenShot";
 import userLogo from "@/app/img/user-icon.png"
 import Image from "next/image";
+import TimeOutModal from "../(frontend)/(employee)/(timeKeeping)/modals/timeOut/page";
 
 
 const Navbar = () => {
@@ -27,8 +28,8 @@ const Navbar = () => {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [takeScreenshot,setTakeScreenshot] = useState(false)
     const [ifTimeIn ,setIfTimeIn] = useState(false)
-
-  
+    // const [isModalOpen, setIsModalOpen] = useState(false);
+    // const [message, setMessage] = useState("");
     const pageTitles: { [key: string]: string } = {
         "/dashboard": "Dashboard",
         "/activityMonitoring": "Activity Monitoring",
@@ -55,7 +56,7 @@ const Navbar = () => {
     
                 const user = JSON.parse(storedUser);
                 const employeeId = user.employeeId;
-    
+                const storedPermission = localStorage.getItem("permissionToShare");
                 const response = await fetch(`/employeeAPI/dtr?employeeId=${employeeId}`);
     
                 if (!response.ok) {
@@ -68,7 +69,28 @@ const Navbar = () => {
     
                 if (lastDTR && lastDTR.timeOut === null) {
                     setSelectedAction("Time Out");
+
+                    if(!isCameraOn){
+                        console.log("Camera On");
+                        if(cameraContext){
+                            await cameraContext.startCamera();
+                            setIsCameraOn(true);
+                            const activity ="Idle";
+                            const remarks = "User Auto Logout";
+                            const currentTime = new Date().toISOString();
+                            await fetch(`/employeeAPI/humanActivityLog?activity=${activity}&employeeId=${employeeId}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                end: currentTime,
+                                remarks: remarks,
+                              }),
+                            });
+                        }
+                    }
+                    
                     setIsCameraOn(true);
+    
                 } else {
                     setSelectedAction("Time In");
                     setIsCameraOn(false);
@@ -79,31 +101,37 @@ const Navbar = () => {
         };
     
         fetchLastDTR();
+        //justin to add
+        if(selectedAction==="Time Out"){
+            if(!takeScreenshot){
+                setTakeScreenshot(true);
+            }
+        }
     }, []);
 
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-        const parsedUser = JSON.parse(storedUser); // Parse the stored JSON
-        const employeeId = parsedUser.employeeId;
+       // const parsedUser = JSON.parse(storedUser); // Parse the stored JSON
+      //  const employeeId = parsedUser.employeeId;
 
-        const checkIfIn = async()  =>{
-            const empResponse = await fetch(`/employerAPI/ifCheckIn?employeeId=${employeeId}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              });
+        // const checkIfIn = async()  =>{
+        //     const empResponse = await fetch(`/employerAPI/ifCheckIn?employeeId=${employeeId}`, {
+        //         method: "GET",
+        //         headers: {
+        //           "Content-Type": "application/json",
+        //         },
+        //       });
     
-              const data = await empResponse.json();
-              console.log(data, 'data here');
+        //       const data = await empResponse.json();
+        //       console.log(data, 'data here');
     
-              if (data.employees != null) {
-                setIfTimeIn(true)
-                setSelectedAction("Time Out")
-              }
-        }
-        checkIfIn();
+        //       if (data.employees != null) {
+        //         setIfTimeIn(true)
+        //         setSelectedAction("Time Out")
+        //       }
+        // }
+        // checkIfIn();
 
         const handleBeforeUnload = async () => {
             if (selectedAction === "Time Out" && storedUser) { 
@@ -111,15 +139,31 @@ const Navbar = () => {
                 const employeeId = user.employeeId;
                 const timestamp = new Date();
     
-                await fetch("/employeeAPI/dtr", {
+                // await fetch("/employeeAPI/dtr", {
+                //     method: "POST",
+                //     headers: { "Content-Type": "application/json" },
+                //     body: JSON.stringify({
+                //         employeeId: employeeId,
+                //         timeOut: timestamp,
+                //         remarks: "Auto clock-out due to page close",
+                //     }),
+                // });
+                const activity="Idle";
+                const startTime = new Date().toISOString();
+                let end=null;
+                let userRemarks=null;
+                await fetch("/employeeAPI/humanActivityLog", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        employeeId: employeeId,
-                        timeOut: timestamp,
-                        remarks: "Auto clock-out due to page close",
+                      activity,
+                      employeeId,
+                      start: startTime,
+                      end: end,
+                      remarks: userRemarks,
                     }),
-                });
+                  });
+                  setIsCameraOn(false);
             }
         };
     
@@ -132,14 +176,8 @@ const Navbar = () => {
     
 
     const handlePlayPause = async () => {
-            // setTakeScreenshot(false)
         try {
-            // if(!takeScreenshot){
-            //     setTakeScreenshot(true);
-            //     }
-         
             const storedUser = localStorage.getItem("user");
-            // const storedPermission = localStorage.getItem("permissionToShare");
             if (!storedUser) {
                 router.push("/");
                 return;
@@ -153,10 +191,6 @@ const Navbar = () => {
     
             let requestBody;
             if (selectedAction === "Time In") {
-                // if (!storedPermission) {
-                //     return;
-                // }
-                // console.log(storedPermission);
                 if (cameraContext) {
                     await cameraContext.startCamera(); // ✅ Start camera when clocking in
                     setIsCameraOn(true);
@@ -175,15 +209,15 @@ const Navbar = () => {
             } else if (selectedAction === "Time Out"){
                 if (cameraContext) {
                     await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
-                    setTakeScreenshot(false);
                     setIsCameraOn(false);
-                }
+              
                 requestBody = {
                     employeeId: employeeId,
                     timeOut: timestamp,
                     remarks: "Clocked out",
                 };
-            }
+            }  
+        }
     
             const response = await fetch("/employeeAPI/dtr", {
                 method: "POST",
@@ -438,6 +472,16 @@ const Navbar = () => {
                 <TakeScreenShot />
         
             )}  
+
+
+             {/* <TimeOutModal 
+                        isOpen={isModalOpen} 
+                        onClose={() => {
+                            setIsModalOpen(false);
+                        }}
+                        refresh={() => {}} 
+                        setMessage={message} 
+                      /> */}
         </>
      
     );

@@ -4,9 +4,9 @@ import Navbar from "@/app/navbar/page";
 import { useEffect, useState } from "react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation"; // Import the plugin
 import { useRouter } from "next/navigation";
-
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, annotationPlugin); // Register the plugin
 
 const Dashboard = () => {
   const [activityStatus, setActivityStatus] = useState("ACTIVE");
@@ -127,13 +127,14 @@ const Dashboard = () => {
     if (totaltime === 0) {
       return {
         labels: ["No Data"],
-        datasets: [{
-          data: [1], // Only one data point since no valid time
-          backgroundColor: ["#e0e0e0"],
-        }]
+        datasets: [
+          {
+            data: [1], // Ensure the dataset has at least one data point
+            backgroundColor: ["#e0e0e0"],
+          },
+        ],
       };
     }
-  
     // Handle cases where idle or sleep might be null or undefined
     const idleTimePercentage = totaltime ? ((idle || 0) / totaltime) * 100 : 0;
     const sleepingTimePercentage = totaltime ? ((sleep || 0) / totaltime) * 100 : 0;
@@ -312,7 +313,7 @@ const Dashboard = () => {
             </div>
 
             {/* Productivity vs Idle Time Card */}
-            {/* <div className="card bg-white shadow-md text-black p-10">
+            <div className="card bg-white shadow-md text-black p-10">
               <h2 className="text-xl font-bold mb-4">Productivity vs Idle Time vs Sleeping Time</h2>
 
               <div className="mb-4">
@@ -334,7 +335,7 @@ const Dashboard = () => {
                   <Doughnut data={donutData()} options={{ maintainAspectRatio: false }} />
                 </div>
               </div>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>

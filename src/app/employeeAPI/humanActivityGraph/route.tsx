@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       // Fetch logs for the specific employee, only for today's date
-      const logs = await prisma.humanactivitylog.findMany({
+      const logs = await prisma.humanActivityLog.findMany({
         where: {
           employeeId,
           activity: { not: "Yawning" },

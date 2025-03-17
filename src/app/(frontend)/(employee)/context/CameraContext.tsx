@@ -337,7 +337,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
           setIdleTimer((prev) => {
             const updatedTimer = prev + 1; // Increment the timer by 1
             console.log(`Idle Timer: ${updatedTimer}`);
-    
+            setSleepingTimer(0);
             if (updatedTimer >= 10 && !isIdle && !isModalOpen) {
               console.log("User is out of area");
               logActivity("Idle");
@@ -390,7 +390,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
         setSleepingTimer((prev) => {
           const updatedTimer = prev + 1; // Increment the timer by 1
           console.log(`Sleeping Timer: ${updatedTimer}`);
-
+          setIdleTimer(0);
           if (updatedTimer >= 10 && !isAsleep && !isModalOpen) {
             console.log("User is sleeping");
             logActivity("Sleeping");
@@ -413,14 +413,44 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       console.error("❌ Error detecting face:", error);
     }
   };
+// ✅ Add this inside the component where detectUserState is used
+useEffect(() => {
+  const resetTimers = () => {
+    console.log("User is active");
+    setIdleTimer(0);
+    setSleepingTimer(0);
+  };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      detectUserState();
-    }, 1000);
+  // Set up interval for face detection
+  const interval = setInterval(() => {
+  // Attach multiple event listeners for user activity detection
+  window.addEventListener("mousemove", resetTimers);
+  window.addEventListener("keydown", resetTimers);
+  window.addEventListener("mousedown", resetTimers);
+  window.addEventListener("wheel", resetTimers);
+  window.addEventListener("touchstart", resetTimers);
+  window.addEventListener("pointermove", resetTimers);
+  window.addEventListener("input", resetTimers);
+  window.addEventListener("focus", resetTimers);
 
-    return () => clearInterval(interval); // Cleanup interval on component unmount
-  }, [modelsLoaded, faceapi]);
+    detectUserState();
+  }, 1000);
+
+  // Cleanup function to remove event listeners and clear interval on unmount
+  return () => {
+    window.removeEventListener("mousemove", resetTimers);
+    window.removeEventListener("keydown", resetTimers);
+    window.removeEventListener("mousedown", resetTimers);
+    window.removeEventListener("wheel", resetTimers);
+    window.removeEventListener("touchstart", resetTimers);
+    window.removeEventListener("pointermove", resetTimers);
+    window.removeEventListener("input", resetTimers);
+    window.removeEventListener("focus", resetTimers);
+    clearInterval(interval);
+  };
+}, [modelsLoaded, faceapi]); 
+
+
 
   return (
     <CameraContext.Provider value={{ videoRef, startCamera, stopCamera, stream }}>

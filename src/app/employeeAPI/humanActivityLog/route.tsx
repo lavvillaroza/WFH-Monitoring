@@ -25,15 +25,15 @@ export async function POST(req: Request) {
       },
     });
 
-    // if (activity === "Sleeping" || activity === "Idle") {
+    if (activity === "Sleeping" || activity === "Idle") {
       
-    //     await prisma.user.update({
-    //       where: { employeeId: employeeId }, 
-    //       data: {
-    //         status: "INACTIVE", 
-    //       },
-    //     });
-    // }
+        await prisma.employeeDetails.update({
+          where: { employeeId: employeeId }, 
+          data: {
+            activityStatus: "INACTIVE", 
+          },
+        });
+    }
     
     // Return the created log entry as a response
     return NextResponse.json(logEntry, { status: 201 });
@@ -145,10 +145,10 @@ export async function PUT(req: Request) {
         duration, // The duration in seconds
       },
     });
-      await prisma.user.update({
+      await prisma.employeeDetails.update({
         where: { employeeId: employeeId }, 
         data: {
-          status: "ACTIVE", 
+          activityStatus: "ACTIVE", 
         },
       });
      

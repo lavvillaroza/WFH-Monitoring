@@ -72,17 +72,21 @@ export async function GET(req: Request) {
         if (!employeeId) {
             return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
         }
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);  
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);  
-
         
-        const lastRecord = await prisma.dailyTimeRecord.findMany({
+        const today = new Date();
+        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+        const lastRecord = await prisma.dailyTimeRecord.findFirst({
             where: {
                 employeeId,
+                createdAt: {
+                    gte: startOfDay, // Greater than or equal to start of the day
+                    lte: endOfDay,   // Less than or equal to end of the day
+                },
             },
         });
+
 
         return NextResponse.json(lastRecord, { status: 200 });
     } catch (error) {
