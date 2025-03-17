@@ -20,6 +20,7 @@ const EmployeeMonitoring = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,25 +32,32 @@ const EmployeeMonitoring = () => {
     }
   }, []);
 
+
+  
   const handleDateFilter = async () => {
     if (!selectedEmployee || !startDate || !endDate) return;
-
+  
     const startDateUTC = new Date(startDate).toISOString();
     const endDateUTC = new Date(endDate).toISOString();
-
+  
+    setIsLoading(true); // Start loading
+  
     try {
       const res = await fetch(
         `/employerAPI/screenShot?employeeId=${selectedEmployee.employeeId}&startDate=${startDateUTC}&endDate=${endDateUTC}`
       );
       if (!res.ok) throw new Error("Failed to fetch screenshots");
-
+  
       const data = await res.json();
       setScreenshots(data.screenshots);
     } catch (error) {
       console.error("Error fetching filtered screenshots:", error);
       setScreenshots([]);
+    } finally {
+      setIsLoading(false); // Stop loading after fetching is done
     }
   };
+  
 
   const fetchEmployees = async () => {
     try {
@@ -220,6 +228,7 @@ const EmployeeMonitoring = () => {
                 ) : (
                   <p className="text-gray-500 mt-2">No screenshots available.</p>
                 )}
+               {isLoading &&<span className="loading loading-bars loading-xl text-warning text-center"></span>}
               </div>
 
               <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md w-full" onClick={() => setIsModalOpen(false)}>

@@ -216,14 +216,14 @@ const handleMessageUpdate = (newMessage: string) => {
                                   setDeleteEmployee(request);  
                                   setIsDeleting(true); 
                                 }}>Delete</button>
-                              <button
+                              {/* <button
                               className="block px-4 py-2 w-full text-left hover:bg-gray-100"
                               onClick={() => {
                                 openModal(emp);
                               }}
                             >
                               View Attendance
-                            </button>
+                            </button> */}
                             </div>
                           )}
                         </div>

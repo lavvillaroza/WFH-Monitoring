@@ -42,6 +42,8 @@ export async function PATCH(
   } catch (error: any) {
     console.error("❌ Error deactivating user:", error.message);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect(); // Ensure database connection is closed
   }
 }
 

@@ -114,6 +114,13 @@ const Reports = () => {
   
     const zip = new JSZip();
     let fileCount = 0;
+
+    const ActivityLogResponse = await fetch("/employerAPI/humanActivityLog");
+    if (!ActivityLogResponse.ok) {
+      throw new Error("Failed to fetch employees");
+    }
+    const ActivityLogData = await ActivityLogResponse.json();
+    console.log(ActivityLogData , "activity log here")
   
     for (const employeeId of selectedEmployees) {
       console.log(`Fetching attendance for Employee ID: ${employeeId}`);
@@ -132,13 +139,11 @@ const Reports = () => {
       }
 
    
-      const ActivityLogResponse = await fetch("/employerAPI/humanActivityLog");
-      if (!ActivityLogResponse.ok) {
-        throw new Error("Failed to fetch employees");
-      }
-      const ActivityLogData = await ActivityLogResponse.json();
+     
 
-      const totalDurations = ActivityLogData.reduce(
+      const totalDurations = ActivityLogData
+      .filter(log => log.employeeId === employeeId) // Filter logs by employeeId
+      .reduce(
         (acc, log) => {
           if (log.activity === "Idle") {
             acc.idle += log.duration;
@@ -149,6 +154,7 @@ const Reports = () => {
         },
         { idle: 0, sleeping: 0 } // Initial state
       );
+    
   
       console.log(`Generating PDF for ${employee.name}`);
   

@@ -32,6 +32,8 @@ const EmployeeMonitoring = () => {
   const [wakefulnessStatus, setWakefulnessStatus] = useState("Idle");
   const [productivityPercentage, setProductivityPercentage] = useState(0); 
   const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
+  const [hoursRendered, SethoursRendered] = useState("");
+  const [yawningFrequency, setYawningFrequency] = useState({});
 
   const fetchEmployees = async () => {
     try {
@@ -42,7 +44,7 @@ const EmployeeMonitoring = () => {
       }
       const employeesData = await employeeResponse.json();
   
-      // Fetch user data (including passwords)
+
       const userResponse = await fetch("/employerAPI/user");
       if (!userResponse.ok) {
         throw new Error("Failed to fetch users");
@@ -69,6 +71,43 @@ const EmployeeMonitoring = () => {
   };
 
 
+const fetchYawningCount = async () => {
+  try {
+    const yawningResponse = await fetch("/employerAPI/checkYawning");
+    const yawningData = await yawningResponse.json();
+
+    console.log(yawningData, "yawning here");
+
+    if (!yawningData.employees || yawningData.employees.length === 0) {
+      console.warn("No yawning data available.");
+      setYawningFrequency({});
+      return;
+    }
+
+    const yawningCount = yawningData.employees.reduce((acc, log) => {
+      const { employeeId } = log;
+
+      if (!acc[employeeId]) {
+        acc[employeeId] = 0; 
+      }
+
+      acc[employeeId]++; 
+
+      return acc;
+    }, {});
+
+    console.log("Yawning Count per Employee:", yawningCount);
+
+    // Store the counts in state
+    setYawningFrequency(yawningCount);
+  } catch (error) {
+    console.error("Error fetching yawning data:", error);
+    setYawningFrequency({});
+  }
+};
+
+  
+
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
 
@@ -76,21 +115,25 @@ const EmployeeMonitoring = () => {
       router.push("/"); // Redirect if not logged in
     } else {
       fetchEmployees();
+      fetchYawningCount();
+
     }
   }, []);
 
   
 
-  const handleEmployee = (employeeId) => {
+  const handleEmployee =  (employeeId) => {
     if (!employeeId) return;
-    const eventSource = new EventSource(`/employeeAPI/dashboard?employeeId=${employeeId}`);
-    console.log(eventSource)
+    SethoursRendered("");
 
+    // Use SSE to listen for real-time updates of activity chart data
+    const eventSource = new EventSource(`/employeeAPI/dashboard?employeeId=${employeeId}`);
+ 
 
     eventSource.onmessage = (event) => {
+      
       try {
         const data = JSON.parse(event.data);
-        console.log(data)
 
         if (!data || Object.keys(data).length === 0) {
           console.warn("No data received from SSE connection.");
@@ -100,6 +143,7 @@ const EmployeeMonitoring = () => {
           setActivityStatus("ACTIVE");
           setWakefulnessStatus("Idle");
           setProductivityPercentage(0);
+          SethoursRendered("");
         } else {
           SetIdle(data.idleTime || 0);
           SetSleep(data.sleepingTime || 0);
@@ -107,6 +151,16 @@ const EmployeeMonitoring = () => {
           setActivityStatus(data.employeeStatus || "ACTIVE");
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
+          const totalSeconds = data.totaltime || 0;
+          // Convert to HH:MM:SS format
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+
+          // Format as "H hrs M mins S secs"
+          const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
+          console.log(employeeId,"empoyee id here",data)
+          SethoursRendered(formattedTime);
         }
       } catch (error) {
         setActivityStatus("ACTIVE");
@@ -115,6 +169,7 @@ const EmployeeMonitoring = () => {
         SetIdle(0);
         SetSleep(0);
         SetTotalTime(0);
+        SethoursRendered("");
       }
     };
 
@@ -125,6 +180,7 @@ const EmployeeMonitoring = () => {
       SetIdle(0);
       SetSleep(0);
       SetTotalTime(0);
+      SethoursRendered("");
 
       eventSource.close(); // Close the connection gracefully
     };
@@ -344,7 +400,7 @@ const EmployeeMonitoring = () => {
               <h3 className="text-xl font-bold mb-4">{selectedEmployee?.name}</h3>
 
               {/* Date Range Selector inside the card */}
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label htmlFor="dateRange" className="text-sm font-medium bg-white">Filter by: </label>
                 <select
                   id="dateRange"
@@ -356,7 +412,7 @@ const EmployeeMonitoring = () => {
                   <option value="Monthly">Monthly</option>
                   <option value="Date Range">Date Range</option>
                 </select>
-              </div>
+              </div> */}
 
               <div className="flex justify-center items-center w-full h-full">
                 <div className="w-80 h-80">
@@ -368,7 +424,7 @@ const EmployeeMonitoring = () => {
            {/* Activity Logs & Wakefulness Detection in a row */}
            <div className="flex flex-col md:flex-row gap-4">
              {/* Human Activity Log */}
-              <div className="w-full md:w-full bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+              <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
                 <h2 className="text-xl font-semibold pb-3 text-gray-700">HUMAN ACTIVITY RECOGNITION</h2>
                 <p className="mt-2 text-sm text-gray-500">Alertness Report & Real-Time Alert Log.</p>
                 <div className="mt-4 p-3 bg-gray-100 rounded-lg h-80 overflow-auto text-sm">
@@ -391,21 +447,21 @@ const EmployeeMonitoring = () => {
               </div>
 
                  {/* Wakefulness Detection */}
-                {/* <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
+                <div className="w-full md:w-1/2 bg-white shadow-lg p-6 rounded-lg min-h-[300px]">
                   <h2 className="text-xl font-semibold pb-3 text-gray-700">Wakefulness Detection</h2>
 
                   {selectedEmployee ? (
                     <div className="space-y-2 text-gray-600 text-sm">
-                      <p><strong>Blink Rate:</strong> {}</p>
-                      <p><strong>Active Duration:</strong> {}</p>
-                      <p><strong>Yawning Frequency:</strong> {}</p>
-                      <p><strong>Nodding Motions:</strong> {}</p>
-                      <p><strong>Drowsiness Detection:</strong> {}</p>
+                      {/* <p><strong>Blink Rate:</strong> {}</p> */}
+                      {/* <p><strong>Hours Rendered:</strong> {hoursRendered}</p> */}
+                      <p><strong>Yawning Frequency:</strong> {yawningFrequency[selectedEmployee.employeeId] || 0}</p>
+                      {/* <p><strong>Nodding Motions:</strong> {}</p>
+                      <p><strong>Drowsiness Detection:</strong> {}</p> */}
                     </div>
                   ) : (
                     <p className="text-gray-400">Click an employee to view alertness details.</p>
                   )}
-                </div> */}
+                </div>
               </div>
             </div>
 
