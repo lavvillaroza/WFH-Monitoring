@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { duration } from "html2canvas-pro/dist/types/css/property-descriptors/duration";
 
 const prisma = new PrismaClient();
 let totalTime = 0;
@@ -42,7 +43,6 @@ export async function GET(req: Request) {
             gte: today,  
             lt: tomorrow, 
           },
-          timeOut:null,
         },
         orderBy: {
           timeIn: "asc", 
@@ -121,6 +121,22 @@ export async function GET(req: Request) {
         select: { activityStatus: true },
       });
 
+
+      const dtr = await prisma.dailyTimeRecord.findFirst({
+        where: {
+          employeeId: employeeId,
+          timeIn: {
+            gte: today,  
+            lt: tomorrow, 
+          },
+          timeOut:null,
+        },
+        orderBy: {
+          timeIn: "asc", 
+        },
+        select: { timeIn: true ,timeOut:true},
+      });
+
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0); // Set time to 00:00:00.000
 
@@ -131,16 +147,16 @@ export async function GET(req: Request) {
         where: {
           employeeId: employeeId,
           timeIn: {
-            gte: startOfDay, // Greater than or equal to start of day (00:00:00)
-            lte: endOfDay,   // Less than or equal to end of day (23:59:59)
+            gte: today, // Greater than or equal to today's midnight
           },
           timeOut: { not: null }
         },
         select: { duration: true },
       });
-
+      
       const totalDuration = employeeDTR.reduce((sum, record) => sum + (record.duration ?? 0), 0);
-
+      
+      console.log("Total Duration : ",totalDuration);
       let wakefulnessStatus = "Awake"; // Default is "Awake"
       if (lastActivityLog) {
         if (lastActivityLog.activity === "Sleeping" || lastActivityLog.activity === "Idle") {
@@ -151,19 +167,16 @@ export async function GET(req: Request) {
       // Calculate idle and sleeping times
       const idleTime = calculateTimeSpent(idle) / 1000;
       const sleepingTime = calculateTimeSpent(sleeping) / 1000;
+      console.log("Idle Time and Sleeping: ",idleTime," - ",sleepingTime);
       const currentTime = new Date();
       // Calculate total time for the day (from first timein to now)
       
-      
-      if (dailyTimeRecord && dailyTimeRecord.timeOut === null) {
+      if (dtr && dtr.timeOut === null) {
         totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration;
         hoursRendered = totalTime - (idleTime + sleepingTime);
-        console.log("If time null : ",totalTime+" - ",hoursRendered);
       }else{
         totalTime = totalDuration;
         hoursRendered = totalTime - (idleTime + sleepingTime);
-        
-        console.log("If time not null : ",totalTime+" - ",hoursRendered);
       }
     
      // const totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration ;

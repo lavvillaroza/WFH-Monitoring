@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 ChartJS.register(ArcElement, Tooltip, Legend, annotationPlugin); // Register the plugin
 
 const Dashboard = () => {
-  const [activityStatus, setActivityStatus] = useState("ACTIVE");
+  const [activityStatus, setActivityStatus] = useState("INACTIVE");
   const [wakefulnessStatus, setWakefulnessStatus] = useState("Idle");
   const [productivityPercentage, setProductivityPercentage] = useState(0); 
   const [latestRequests, setLatestRequests] = useState([]);
@@ -90,7 +90,7 @@ const Dashboard = () => {
           SetIdle(data.idleTime || 0);
           SetSleep(data.sleepingTime || 0);
           SetTotalTime(data.totaltime || 0);
-          setActivityStatus(data.employeeStatus || "ACTIVE");
+          setActivityStatus(data.employeeStatus || "INACTIVE");
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
           const totalSeconds = data.totaltime || 0;
@@ -106,7 +106,7 @@ const Dashboard = () => {
           SethoursRendered(formattedTime);
         }
       } catch (error) {
-        setActivityStatus("ACTIVE");
+        setActivityStatus("INACTIVE");
         setWakefulnessStatus("Idle");
         setProductivityPercentage(0);
         SetIdle(0);
@@ -116,7 +116,7 @@ const Dashboard = () => {
     };
 
     eventSource.onerror = (error) => {
-      setActivityStatus("ACTIVE");
+      setActivityStatus("INACTIVE");
       setWakefulnessStatus("Idle");
       setProductivityPercentage(0);
       SetIdle(0);

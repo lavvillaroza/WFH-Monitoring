@@ -32,7 +32,7 @@ const ActivityMonitoring = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
-  const [activityChart, setActivityChart] = useState<{ activity: string; start: string; end: string }[]>([]);
+  const [activityChart, setActivityChart] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
   const storedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
   const user = storedUser ? JSON.parse(storedUser) : null;
   const employeeId = user?.employeeId;
@@ -93,9 +93,8 @@ const ActivityMonitoring = () => {
     }, [employeeId]);
 
   useEffect(() => {
+    console.log(employeeId);
     if (!employeeId) return;
-
-    console.log(schedule,'schedule here')
     // Use SSE to listen for real-time updates of activity chart data
     const eventSource = new EventSource(`/employeeAPI/humanActivityGraph?employeeId=${employeeId}`);
 
@@ -167,9 +166,9 @@ const ActivityMonitoring = () => {
     const activityData = {
       total: Array(labels.length).fill(0),
     };
-  
+    console.log(activityChart);
     // Populate activity data dynamically based on logs
-    activityLogs.forEach((log) => {
+    activityChart.forEach((log) => {
       const startTime = new Date(log.start);
       const endTime = new Date(log.end);
       const logStartHour = startTime.getHours();

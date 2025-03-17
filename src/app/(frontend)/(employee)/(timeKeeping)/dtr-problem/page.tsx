@@ -175,8 +175,8 @@ const DailyTimeRecord = () => {
                     {
                         record.status === "PENDING" ? (
                           <td><div className="text-warning">PENDING</div></td>
-                        ) : record.status === "APPROVED" ? (
-                          <td><div className="text-success">APPROVED</div></td>
+                        ) : record.status === "RESOLVED" ? (
+                          <td><div className="text-success">RESOLVED</div></td>
                         ) : (
                           <td><div className="text-error">REJECTED</div></td>
                         )

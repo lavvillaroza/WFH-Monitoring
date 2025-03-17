@@ -22,38 +22,27 @@ export async function GET(req: Request) {
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
+    writer.write(encoder.encode("event: open\ndata: Connection established\n\n"));
     // Function to send updates
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
     async function sendUpdates() {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); 
-  
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      // Fetch logs for the specific employee, only for today's date
+    
+      // Fetch the logs for the employee with all necessary details
       const logs = await prisma.humanActivityLog.findMany({
-        where: {
-          employeeId,
-          activity: { not: "Yawning" },
+        where: { employeeId,
+          activity: { not: "Yawning" }, 
           start: {
-            gte: today, 
-            lt: tomorrow, 
-          },
-        },
-        select: {
-          activity: true,
-          start: true,
-          end: true,
-          employeeId: true,
-        },
+          gte: today, 
+          lt: tomorrow, 
+        }, },
         orderBy: { start: "desc" },
       });
 
-      // Log the fetched logs to the console
-
-      // Send logs as SSE event
-      writer.write(encoder.encode(`event: update\ndata: ${JSON.stringify(logs)}\n\n`));
+      writer.write(encoder.encode(`data: ${JSON.stringify(logs)}\n\n`));
     }
-
     // Send updates every 5 seconds (can adjust the interval as needed)
     const interval = setInterval(sendUpdates, 5000);
 

@@ -50,7 +50,8 @@ const LoginPage = () => {
         } else if (data.user.role === "EMPLOYEE") {
           router.push("/dashboard");
 
-        } else {
+        }
+         else {
           router.push("/employerDashboard");
         }
       }, 2000);
