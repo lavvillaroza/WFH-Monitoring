@@ -116,9 +116,9 @@ export async function GET(req: Request) {
       });
   
 
-      const employeeStatus = await prisma.employeeDetails.findUnique({
+      const employeeStatus = await prisma.user.findUnique({
         where: { employeeId: employeeId },
-        select: { activityStatus: true },
+        select: { status: true },
       });
 
 

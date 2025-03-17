@@ -27,10 +27,10 @@ export async function POST(req: Request) {
 
     if (activity === "Sleeping" || activity === "Idle") {
       
-        await prisma.employeeDetails.update({
+        await prisma.user.update({
           where: { employeeId: employeeId }, 
           data: {
-            activityStatus: "INACTIVE", 
+            status: "INACTIVE", 
           },
         });
     }
@@ -145,10 +145,10 @@ export async function PUT(req: Request) {
         duration, // The duration in seconds
       },
     });
-      await prisma.employeeDetails.update({
+      await prisma.user.update({
         where: { employeeId: employeeId }, 
         data: {
-          activityStatus: "ACTIVE", 
+          status: "ACTIVE", 
         },
       });
      

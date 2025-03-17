@@ -23,10 +23,10 @@ export async function POST(req: Request) {
                     remarks: remarks,
                 },
             });
-            await prisma.employeeDetails.update({
+            await prisma.user.update({
                 where: { employeeId: employeeId }, 
                 data: {
-                  activityStatus: "ACTIVE", 
+                  status: "ACTIVE", 
                 },
               });
         } else if (timeOut) {
@@ -35,10 +35,10 @@ export async function POST(req: Request) {
                 where: { employeeId, timeOut: null },
                 orderBy: { date: "desc" }, // Get the latest record
             });
-            await prisma.employeeDetails.update({
+            await prisma.user.update({
                 where: { employeeId: employeeId }, 
                 data: {
-                  activityStatus: "INACTIVE", 
+                  status: "INACTIVE", 
                 },
               });
 
