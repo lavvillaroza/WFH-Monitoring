@@ -6,6 +6,11 @@ export default function TakeScreenShot() {
   const intervalRef = useRef(null);
   const [mediaStream, setMediaStream] = useState(null);
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user") || "null"));
+  const [settings, setSettings] = useState({
+    sleepingThreshold: 0,
+    idleThreshold: 0,
+    screenshotThreshold: 0,
+});
 
   const captureAndSendScreenshot = async (employeeId) => {
     try {
@@ -54,6 +59,24 @@ export default function TakeScreenShot() {
     }
   };
 
+      const fetchConfig = async () => {
+          const configSettings = await fetch("/employerAPI/configSettings/");
+          const configData = await configSettings.json();
+      
+          if (configData && Array.isArray(configData)) {
+              const sleepingThreshold = configData.find(item => item.name === "sleepingThreshold")?.threshold || 1;
+              const idleThreshold = configData.find(item => item.name === "idleThreshold")?.threshold || 1;
+              const screenshotThreshold = configData.find(item => item.name === "screenShotThreshold")?.threshold || 1;
+      
+              setSettings({
+                  sleepingThreshold,
+                  idleThreshold,
+                  screenshotThreshold
+              });
+          }
+      };
+      
+
   useEffect(() => {
     const startCapture = async () => {
         if (user && user.role === "EMPLOYEE") {
@@ -84,7 +107,7 @@ export default function TakeScreenShot() {
             if(mediaStream){
               localStorage.setItem("permissionToShare", "true");
             }
-
+            console.log(settings.screenshotThreshold,"screenshot threshold")
             // Start capturing every 10 seconds
             intervalRef.current = setInterval(() => {
                 if (!localStorage.getItem("user")) {
@@ -94,13 +117,13 @@ export default function TakeScreenShot() {
                     captureAndSendScreenshot(user.employeeId);
                     
                 }
-            }, 10000);
+            }, settings.screenshotThreshold);
         } else {
             stopCapture();
             console.log("deleting permission here 4")
         }
     };
-
+    fetchConfig();
     startCapture();
 
     const handleStorageChange = () => {
