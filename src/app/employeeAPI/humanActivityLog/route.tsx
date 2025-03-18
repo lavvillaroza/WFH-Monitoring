@@ -152,8 +152,11 @@ export async function PUT(req: Request) {
         },
       });
      
+
+      // const thresholds = await prisma.configSettings.findMany();
+  
     // Return the updated log entry as a response
-    return NextResponse.json(updatedLog, { status: 200 });
+    return NextResponse.json( updatedLog, { status: 200 });
   } catch (error) {
     console.error("❌ Error updating activity log:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

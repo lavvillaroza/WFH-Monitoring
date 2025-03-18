@@ -36,7 +36,6 @@
     picture  Bytes?  // Store image as binary data
     status    String
   }
-f
   model ScreenShotModel{
     id        String   @id @default(uuid())
     employeeId String  

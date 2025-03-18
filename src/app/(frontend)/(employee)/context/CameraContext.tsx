@@ -38,7 +38,11 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const lastLoggedTime = useRef<number | null>(null);
   const [message, setMessage] = useState("");
   const [currentActivity, setCurrentActivity] = useState("");
-
+  //const [arrayThreshold, setarrayThreshold] = useState([]);
+  const [idleThresholds, setIdleThreshold] = useState<number | null>(null);
+  const [sleepingThresholds, setSleepingThreshold] = useState<number | null>(null);
+  const [idleThresholdName, setIdleThresholdName] = useState<string>("");
+  const [sleepingThresholdName, setSleepingThresholdName] = useState<string>("");
 
   const updateOnClose = async ()=>{
 
@@ -47,6 +51,47 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  useEffect(() => {
+    fetchThresholds();
+  }, []);
+  
+  const fetchThresholds = async () => {
+    try {
+      const res = await fetch("/employeeAPI/thresholds");
+  
+      if (!res.ok) {
+        throw new Error(`Failed to fetch: ${res.statusText}`);
+      }
+  
+      const data = await res.json();
+  
+      // Ensure the correct data structure
+      if (Array.isArray(data)) {
+        //setarrayThreshold(data);
+  
+        // Extract specific thresholds
+        const idle = data.find((t) => t.name === "idleThreshold");
+        const sleeping = data.find((t) => t.name === "sleepingThreshold");
+  
+        if (idle) {
+          setIdleThresholdName(idle.name);
+          setIdleThreshold(idle.threshold);
+        }
+  
+        if (sleeping) {
+          setSleepingThresholdName(sleeping.name);
+          setSleepingThreshold(sleeping.threshold);
+        }
+      } else {
+        console.error("Unexpected data format:", data);
+      }
+    } catch (error) {
+      console.error("Error fetching thresholds:", error);
+    }
+  };
+  
+
 
   const handleModalResponse = async (response: boolean) => {
     userResponseRef.current = response;
@@ -338,7 +383,15 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
             const updatedTimer = prev + 1; // Increment the timer by 1
             console.log(`Idle Timer: ${updatedTimer}`);
             setSleepingTimer(0);
-            if (updatedTimer >= 10 && !isIdle && !isModalOpen) {
+
+            let idleThreshold=0;
+            if(idleThresholds===null){
+              idleThreshold=10;
+            }
+              if(idleThresholdName==="idleThreshold"){
+                idleThreshold = idleThresholds / 1000;
+              }
+            if (updatedTimer >= idleThreshold && !isIdle && !isModalOpen) {
               console.log("User is out of area");
               logActivity("Idle");
               if (currentActivity !== "Idle") {
@@ -391,7 +444,15 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
           const updatedTimer = prev + 1; // Increment the timer by 1
           console.log(`Sleeping Timer: ${updatedTimer}`);
           setIdleTimer(0);
-          if (updatedTimer >= 10 && !isAsleep && !isModalOpen) {
+
+          let sleepingThreshold=0;
+              if(sleepingThresholds===null){
+                sleepingThreshold=10;
+              }
+              if(sleepingThresholdName==="sleepingThreshold"){
+                sleepingThreshold = sleepingThresholds / 1000;
+              }
+          if (updatedTimer >= sleepingThreshold && !isAsleep && !isModalOpen) {
             console.log("User is sleeping");
             logActivity("Sleeping");
             if (currentActivity !== "Sleeping") {
@@ -415,37 +476,37 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   };
 // ✅ Add this inside the component where detectUserState is used
 useEffect(() => {
-  const resetTimers = () => {
-    console.log("User is active");
-    setIdleTimer(0);
-    setSleepingTimer(0);
-  };
+  // const resetTimers = () => {
+  //   console.log("User is active");
+  //   setIdleTimer(0);
+  //   setSleepingTimer(0);
+  // };
 
   // Set up interval for face detection
   const interval = setInterval(() => {
   // Attach multiple event listeners for user activity detection
-  window.addEventListener("mousemove", resetTimers);
-  window.addEventListener("keydown", resetTimers);
-  window.addEventListener("mousedown", resetTimers);
-  window.addEventListener("wheel", resetTimers);
-  window.addEventListener("touchstart", resetTimers);
-  window.addEventListener("pointermove", resetTimers);
-  window.addEventListener("input", resetTimers);
-  window.addEventListener("focus", resetTimers);
+  // window.addEventListener("mousemove", resetTimers);
+  // window.addEventListener("keydown", resetTimers);
+  // window.addEventListener("mousedown", resetTimers);
+  // window.addEventListener("wheel", resetTimers);
+  // window.addEventListener("touchstart", resetTimers);
+  // window.addEventListener("pointermove", resetTimers);
+  // window.addEventListener("input", resetTimers);
+  // window.addEventListener("focus", resetTimers);
 
     detectUserState();
   }, 1000);
 
   // Cleanup function to remove event listeners and clear interval on unmount
   return () => {
-    window.removeEventListener("mousemove", resetTimers);
-    window.removeEventListener("keydown", resetTimers);
-    window.removeEventListener("mousedown", resetTimers);
-    window.removeEventListener("wheel", resetTimers);
-    window.removeEventListener("touchstart", resetTimers);
-    window.removeEventListener("pointermove", resetTimers);
-    window.removeEventListener("input", resetTimers);
-    window.removeEventListener("focus", resetTimers);
+    // window.removeEventListener("mousemove", resetTimers);
+    // window.removeEventListener("keydown", resetTimers);
+    // window.removeEventListener("mousedown", resetTimers);
+    // window.removeEventListener("wheel", resetTimers);
+    // window.removeEventListener("touchstart", resetTimers);
+    // window.removeEventListener("pointermove", resetTimers);
+    // window.removeEventListener("input", resetTimers);
+    // window.removeEventListener("focus", resetTimers);
     clearInterval(interval);
   };
 }, [modelsLoaded, faceapi]); 

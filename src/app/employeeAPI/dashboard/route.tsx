@@ -127,7 +127,6 @@ export async function GET(req: Request) {
           employeeId: employeeId,
           timeIn: {
             gte: today,  
-            lt: tomorrow, 
           },
           timeOut:null,
         },
@@ -208,7 +207,7 @@ export async function GET(req: Request) {
       const { idleTime, sleepingTime, productivityPercentage,totalTime,wakefulnessStatus,hoursRendered,employeeStatus } = await getProductivityData();
 
       const message = {
-        employeeStatus: employeeStatus?.activityStatus,
+        employeeStatus: employeeStatus?.status,
         wakefulnessStatus: wakefulnessStatus, 
         productivityPercentage: Math.round(productivityPercentage),
         idleTime: idleTime,
