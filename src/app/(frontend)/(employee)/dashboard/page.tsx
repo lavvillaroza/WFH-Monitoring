@@ -69,43 +69,41 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!employeeId) return;
-
-    // Use SSE to listen for real-time updates of activity chart data
-    const eventSource = new EventSource(`/employeeAPI/dashboard?employeeId=${employeeId}`);
-
-    eventSource.onmessage = (event) => {
+  
+    const fetchData = async () => {
       try {
-        const data = JSON.parse(event.data);
-
+        const response = await fetch(`/employeeAPI/dashboard?employeeId=${employeeId}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+  
+        const data = await response.json();
+  
         if (!data || Object.keys(data).length === 0) {
-          console.warn("No data received from SSE connection.");
+          console.warn("No data received from API.");
           SetIdle(0);
           SetSleep(0);
           SetTotalTime(0);
-          setActivityStatus("ACTIVE");
+          setActivityStatus("INACTIVE");
           setWakefulnessStatus("Idle");
           setProductivityPercentage(0);
           SethoursRendered("");
         } else {
           SetIdle(data.idleTime || 0);
           SetSleep(data.sleepingTime || 0);
-          SetTotalTime(data.totaltime || 0);
+          SetTotalTime(data.totalTime || 0);
           setActivityStatus(data.employeeStatus || "INACTIVE");
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
-          const totalSeconds = data.totaltime || 0;
-
-          // Convert to HH:MM:SS format
+          
+          const totalSeconds = data.totalTime || 0;
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
           const seconds = totalSeconds % 60;
-
-          // Format as "H hrs M mins S secs"
           const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
-
+          
           SethoursRendered(formattedTime);
         }
       } catch (error) {
+        console.error("Error fetching dashboard data:", error);
         setActivityStatus("INACTIVE");
         setWakefulnessStatus("Idle");
         setProductivityPercentage(0);
@@ -114,21 +112,12 @@ const Dashboard = () => {
         SetTotalTime(0);
       }
     };
-
-    eventSource.onerror = (error) => {
-      setActivityStatus("INACTIVE");
-      setWakefulnessStatus("Idle");
-      setProductivityPercentage(0);
-      SetIdle(0);
-      SetSleep(0);
-      SetTotalTime(0);
-
-      eventSource.close(); // Close the connection gracefully
-    };
-
-    return () => {
-      eventSource.close(); // Clean up when component unmounts
-    };
+  
+    // Fetch data immediately, then every 3 seconds
+    fetchData();
+    const interval = setInterval(fetchData, 3000);
+  
+    return () => clearInterval(interval); // Cleanup on unmount
   }, [employeeId]);
 
   const handleNavigation = (type: string) => {

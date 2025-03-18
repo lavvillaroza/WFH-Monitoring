@@ -42,12 +42,8 @@ export async function POST(req: Request) {
   }
 }
 
-// fetch logs for a specific employee
+// Fetch logs for a specific employee
 export async function GET(req: Request) {
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encoder = new TextEncoder();
-
   try {
     const url = new URL(req.url);
     const employeeId = url.searchParams.get("employeeId");
@@ -56,41 +52,25 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     }
 
-    writer.write(encoder.encode("event: open\ndata: Connection established\n\n"));
     const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+    today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    async function sendUpdates() {
-      // Fetch the logs for the employee with all necessary details
-      const logs = await prisma.humanActivityLog.findMany({
-        where: { employeeId, 
-          start: {
-          gte: today, 
-          lt: tomorrow, 
-        }, },
-        orderBy: { start: "desc" },
-      });
 
-      writer.write(encoder.encode(`data: ${JSON.stringify(logs)}\n\n`));
-    }
-
-    // Send updates every 3 seconds (adjust as needed)
-    const interval = setInterval(sendUpdates, 3000);
-
-    req.signal.addEventListener("abort", () => {
-      clearInterval(interval);
-      writer.close();
-    });
-
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+    // Fetch the logs for the employee
+    const logs = await prisma.humanActivityLog.findMany({
+      where: { 
+        employeeId, 
+        start: {
+          gte: today,
+          lt: tomorrow,
+        },
       },
+      orderBy: { start: "desc" },
     });
+
+    return NextResponse.json(logs, { status: 200 });
   } catch (error) {
     console.error("❌ Error fetching activity logs:", error);
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 });

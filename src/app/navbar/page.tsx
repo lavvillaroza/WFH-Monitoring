@@ -6,9 +6,7 @@ import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "luc
 import { useRouter } from "next/navigation";
 import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
 import  TakeScreenShot from "@/app/components/takeScreenShot";
-
 import Image from "next/image";
-import TimeOutModal from "../(frontend)/(employee)/(timeKeeping)/modals/timeOut/page";
 
 
 const Navbar = () => {
@@ -56,7 +54,6 @@ const Navbar = () => {
     
                 const user = JSON.parse(storedUser);
                 const employeeId = user.employeeId;
-                const storedPermission = localStorage.getItem("permissionToShare");
                 const response = await fetch(`/employeeAPI/dtr?employeeId=${employeeId}`);
     
                 if (!response.ok) {

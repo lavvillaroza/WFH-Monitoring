@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { duration } from "html2canvas-pro/dist/types/css/property-descriptors/duration";
 
 const prisma = new PrismaClient();
-let totalTime = 0;
-let hoursRendered = 0;
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const employeeId = url.searchParams.get("employeeId");
@@ -13,229 +11,118 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
   }
 
-  // Get today's date at midnight to filter timein records for today only
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set time to midnight (00:00:00)
+  today.setHours(0, 0, 0, 0);
 
   const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1); // Set time to tomorrow (00:00:00) for comparison
+  tomorrow.setDate(today.getDate() + 1);
 
   try {
-    // Fetch employee status
     const employeeStatus = await prisma.employeeDetails.findUnique({
-      where: { employeeId: employeeId },
+      where: { employeeId },
       select: { activityStatus: true },
     });
 
     if (!employeeStatus) {
       return NextResponse.json({ error: "Employee not found" }, { status: 404 });
     }
+    const statusEMP = await prisma.user.findUnique({
+      where: { employeeId },
+      select: { status: true },
+    });
 
-    let dailyTimeRecord = null;
 
-    // Infinite loop until we find the timeIn record
-    while (!dailyTimeRecord || !dailyTimeRecord.timeIn) {
-      // Fetch the daily time record for today
-      dailyTimeRecord = await prisma.dailyTimeRecord.findFirst({
-        where: {
-          employeeId: employeeId,
-          timeIn: {
-            gte: today,  
-            lt: tomorrow, 
-          },
+    const dailyTimeRecord = await prisma.dailyTimeRecord.findFirst({
+      where: {
+        employeeId,
+        timeIn: {
+          gte: today,
+          lt: tomorrow,
         },
-        orderBy: {
-          timeIn: "asc", 
-        },
-        select: { timeIn: true ,timeOut:true},
-      });
+      },
+      orderBy: { timeIn: "asc" },
+      select: { timeIn: true, timeOut: true },
+    });
 
-      // if (!dailyTimeRecord || !dailyTimeRecord.timeIn) {
-      //   await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
-      // }
+    if (!dailyTimeRecord?.timeIn) {
+      return NextResponse.json({ }, { status: 200 });
     }
 
-    const timein = new Date(dailyTimeRecord.timeIn); // Convert timein to Date object
+    const timein = new Date(dailyTimeRecord.timeIn);
 
-    // Function to calculate total time spent in a given set of logs
     const calculateTimeSpent = (logs: any[]) => {
       return logs.reduce((total, log) => {
         const startTime = new Date(log.start);
-        if (isNaN(startTime.getTime())) {
-          console.warn(`Invalid start time for log: ${JSON.stringify(log)}`);
-          return total;
-        }
-  
         const endTime = log.end ? new Date(log.end) : new Date();
-        if (isNaN(endTime.getTime())) {
-          console.warn(`Invalid end time for log: ${JSON.stringify(log)}`);
-          return total;
-        }
-  
         return total + (endTime.getTime() - startTime.getTime());
       }, 0);
     };
 
-    // Function to get and calculate the current time spent in Idle and Sleeping
-    const getProductivityData = async () => {
-      // Fetch the activity logs (Idle and Sleeping) for today
-      const sleeping = await prisma.humanActivityLog.findMany({
-        where: {
-          employeeId,
-          activity: "Sleeping",
-          start: {
-            gte: today,
-          },
-        },
-      });
-
-      const idle = await prisma.humanActivityLog.findMany({
-        where: {
-          employeeId,
-          activity: "Idle",
-          start: {
-            gte: today,
-          },
-        },
-      });
-
-      const lastActivityLog = await prisma.humanActivityLog.findFirst({
-        where: {
-          employeeId,
-          start: {
-            gte: today, // Greater than or equal to today's midnight
-          },
-          end: null, // Ongoing activities (end is null)
-        },
-        orderBy: {
-          start: "desc", // Get the most recent log
-        },
-        select: {
-          activity: true,
-        },
-      });
-  
-
-      const employeeStatus = await prisma.user.findUnique({
-        where: { employeeId: employeeId },
-        select: { status: true },
-      });
-
-
-      const dtr = await prisma.dailyTimeRecord.findFirst({
-        where: {
-          employeeId: employeeId,
-          timeIn: {
-            gte: today,  
-          },
-          timeOut:null,
-        },
-        orderBy: {
-          timeIn: "asc", 
-        },
-        select: { timeIn: true ,timeOut:true},
-      });
-
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0); // Set time to 00:00:00.000
-
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999); // Set time to 23:59:59.999
-
-      const employeeDTR = await prisma.dailyTimeRecord.findMany({
-        where: {
-          employeeId: employeeId,
-          timeIn: {
-            gte: today, // Greater than or equal to today's midnight
-          },
-          timeOut: { not: null }
-        },
-        select: { duration: true },
-      });
-      
-      const totalDuration = employeeDTR.reduce((sum, record) => sum + (record.duration ?? 0), 0);
-      
-      console.log("Total Duration : ",totalDuration);
-      let wakefulnessStatus = "Awake"; // Default is "Awake"
-      if (lastActivityLog) {
-        if (lastActivityLog.activity === "Sleeping" || lastActivityLog.activity === "Idle") {
-          wakefulnessStatus = lastActivityLog.activity;
-        }
-      }
-
-      // Calculate idle and sleeping times
-      const idleTime = calculateTimeSpent(idle) / 1000;
-      const sleepingTime = calculateTimeSpent(sleeping) / 1000;
-      console.log("Idle Time and Sleeping: ",idleTime," - ",sleepingTime);
-      const currentTime = new Date();
-      // Calculate total time for the day (from first timein to now)
-      
-      if (dtr && dtr.timeOut === null) {
-        totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration;
-        hoursRendered = totalTime - (idleTime + sleepingTime);
-      }else{
-        totalTime = totalDuration;
-        hoursRendered = totalTime - (idleTime + sleepingTime);
-      }
-    
-     // const totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration ;
-
-      // Calculate the total time spent in non-productive activities (Idle + Sleeping)
-      const nonProductiveTime = idleTime + sleepingTime;
-
-      // Calculate productivity percentage
-      let productivityPercentage = 100;
-
-      if (nonProductiveTime > 0) {
-        productivityPercentage = ((totalTime - nonProductiveTime) / totalTime) * 100;
-      }
-      // let hoursRendered = totalTime - nonProductiveTime;
-
-      return { idleTime, sleepingTime, productivityPercentage,totalTime ,wakefulnessStatus,hoursRendered,employeeStatus};
-    };
-
-    // Prepare the response using TransformStream
-    const { readable, writable } = new TransformStream();
-    const writer = writable.getWriter();
-    const encoder = new TextEncoder();
-
-    // Send initial connection message
-    writer.write(encoder.encode("event: open\ndata: Connection established\n\n"));
-
-    // Function to send updates
-    async function sendUpdates() {
-      const { idleTime, sleepingTime, productivityPercentage,totalTime,wakefulnessStatus,hoursRendered,employeeStatus } = await getProductivityData();
-
-      const message = {
-        employeeStatus: employeeStatus?.status,
-        wakefulnessStatus: wakefulnessStatus, 
-        productivityPercentage: Math.round(productivityPercentage),
-        idleTime: idleTime,
-        sleepingTime: sleepingTime,
-        totaltime:totalTime,
-        hoursRendered:hoursRendered,
-      };
-
-      console.log(`data: ${JSON.stringify(message)}\n\n`);
-      writer.write(encoder.encode(`data: ${JSON.stringify(message)}\n\n`));
-    }
-
-    // Send updates every 3 seconds
-    const interval = setInterval(sendUpdates, 3000);
-
-    // Handle abort signal from client (when the request is canceled or closed)
-    req.signal.addEventListener("abort", () => {
-      clearInterval(interval);
-      writer.close(); // Close the writer when done
+    const sleeping = await prisma.humanActivityLog.findMany({
+      where: { employeeId, activity: "Sleeping", start: { gte: today } },
     });
 
-    // Return the readable stream
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "text/event-stream", // Content type for SSE
-        "Cache-Control": "no-cache",         // No caching
-        "Connection": "keep-alive",          // Keep connection alive
+    const idle = await prisma.humanActivityLog.findMany({
+      where: { employeeId, activity: "Idle", start: { gte: today } },
+    });
+
+    const lastActivityLog = await prisma.humanActivityLog.findFirst({
+      where: { employeeId, start: { gte: today }, end: null },
+      orderBy: { start: "desc" },
+      select: { activity: true },
+    });
+
+    const dtr = await prisma.dailyTimeRecord.findFirst({
+      where: {
+        employeeId,
+        timeIn: { gte: today },
+        timeOut: null,
       },
+      orderBy: { timeIn: "asc" },
+      select: { timeIn: true, timeOut: true },
+    });
+
+    const employeeDTR = await prisma.dailyTimeRecord.findMany({
+      where: { employeeId, timeIn: { gte: today }, timeOut: { not: null } },
+      select: { duration: true },
+    });
+
+    const totalDuration = employeeDTR.reduce((sum, record) => sum + (record.duration ?? 0), 0);
+
+    let wakefulnessStatus = "Awake";
+    if (lastActivityLog?.activity === "Sleeping" || lastActivityLog?.activity === "Idle") {
+      wakefulnessStatus = lastActivityLog.activity;
+    }
+
+    const idleTime = calculateTimeSpent(idle) / 1000;
+    const sleepingTime = calculateTimeSpent(sleeping) / 1000;
+
+    const currentTime = new Date();
+    let totalTime = 0;
+    let hoursRendered = 0;
+
+    if (dtr && dtr.timeOut === null) {
+      totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration;
+      hoursRendered = totalTime - (idleTime + sleepingTime);
+    } else {
+      totalTime = totalDuration;
+      hoursRendered = totalTime - (idleTime + sleepingTime);
+    }
+
+    let productivityPercentage = 100;
+    const nonProductiveTime = idleTime + sleepingTime;
+    if (nonProductiveTime > 0) {
+      productivityPercentage = ((totalTime - nonProductiveTime) / totalTime) * 100;
+    }
+
+    return NextResponse.json({
+      employeeStatus: statusEMP?.status,
+      wakefulnessStatus,
+      productivityPercentage: Math.round(productivityPercentage),
+      idleTime,
+      sleepingTime,
+      totalTime,
+      hoursRendered,
     });
 
   } catch (error) {

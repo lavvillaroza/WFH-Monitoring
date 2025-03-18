@@ -92,55 +92,53 @@ const ActivityMonitoring = () => {
       fetchSchedule();
     }, [employeeId]);
 
-  useEffect(() => {
-    console.log(employeeId);
-    if (!employeeId) return;
-    // Use SSE to listen for real-time updates of activity chart data
-    const eventSource = new EventSource(`/employeeAPI/humanActivityGraph?employeeId=${employeeId}`);
+    useEffect(() => {
+      console.log(employeeId);
+      if (!employeeId) return;
+    
+      const fetchActivityChart = async () => {
+        try {
+          const response = await fetch(`/employeeAPI/humanActivityGraph?employeeId=${employeeId}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+          setActivityChart(data);
+        } catch (error) {
+          console.error("❌ Error fetching activity logs:", error);
+        }
+      };
+    
+      // Fetch data immediately and then every 3 seconds
+      fetchActivityChart();
+      const interval = setInterval(fetchActivityChart, 3000);
+    
+      return () => clearInterval(interval); // Cleanup interval on component unmount
+    }, [employeeId]);
+    
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setActivityChart(data);
-      } catch (error) {
-        console.error("❌ Error parsing activity logs:", error);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("❌ SSE connection error:", error);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [employeeId]);
-
-  useEffect(() => {
-    if (!employeeId) return;
-
-    // Use SSE to listen for real-time updates of activity logs
-    const eventSource = new EventSource(`/employeeAPI/humanActivityLog?employeeId=${employeeId}`);
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setActivityLogs(data); // Update UI with latest logs
-      } catch (error) {
-        console.error("❌ Error parsing activity logs:", error);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("❌ SSE connection error:", error);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [employeeId]);
+    useEffect(() => {
+      if (!employeeId) return;
+    
+      const fetchActivityLogs = async () => {
+        try {
+          const response = await fetch(`/employeeAPI/humanActivityLog?employeeId=${employeeId}`);
+          if (!response.ok) throw new Error("Failed to fetch activity logs");
+          
+          const data = await response.json();
+          setActivityLogs(data);
+        } catch (error) {
+          console.error("❌ Error fetching activity logs:", error);
+        }
+      };
+    
+      // Fetch data initially and then every 3 seconds
+      fetchActivityLogs();
+      const interval = setInterval(fetchActivityLogs, 3000);
+    
+      return () => clearInterval(interval);
+    }, [employeeId]);
+    
 
   const getChartData = () => {
     if (!schedule) return { labels: [], datasets: [] };
