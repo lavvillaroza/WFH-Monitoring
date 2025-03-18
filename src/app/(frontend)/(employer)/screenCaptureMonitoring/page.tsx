@@ -5,7 +5,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import NavbarEmployer from "@/app/navbarEmployer/page";
 import { Doughnut } from "react-chartjs-2";
 import { useRouter } from "next/navigation";
-import userLogo from "@/app/img/user-icon.png";
+
 import Image from "next/image";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -150,7 +150,7 @@ const EmployeeMonitoring = () => {
             >
               {/* Profile Picture */}
               <Image
-                src={userLogo}
+                src="/img/user-icon.png"
                 alt="User Icon"
                 width={60}
                 height={60}

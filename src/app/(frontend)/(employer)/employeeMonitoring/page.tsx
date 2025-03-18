@@ -7,7 +7,7 @@ import { employees, Employee } from "../dummyData";
 import CustomPieChart from "../PieChartComponent";
 import { Doughnut } from "react-chartjs-2";
 import Image from "next/image";
-import userLogo from "@/app/img/user-icon.png";
+
 import { useRouter } from "next/navigation";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -374,7 +374,7 @@ const fetchYawningCount = async () => {
                   }}
                 >
                 <Image
-                  src={userLogo}
+                  src="/img/user-icon.png"
                   alt="User Icon"
                   width={60} 
                   height={60} 

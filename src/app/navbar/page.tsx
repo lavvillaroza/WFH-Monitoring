@@ -6,7 +6,7 @@ import { Menu, X, UserCircle, LogOut, CheckCircle, Play, ChevronDown } from "luc
 import { useRouter } from "next/navigation";
 import { CameraContext } from "../(frontend)/(employee)/context/CameraContext";
 import  TakeScreenShot from "@/app/components/takeScreenShot";
-import userLogo from "@/app/img/user-icon.png"
+
 import Image from "next/image";
 import TimeOutModal from "../(frontend)/(employee)/(timeKeeping)/modals/timeOut/page";
 
@@ -381,7 +381,7 @@ const Navbar = () => {
                         <div className="avatar avatar-online">
                                 <div className="w-9 h-9 rounded-full ring ">
                                     <Image
-                                        src={userLogo}
+                                        src="/img/user-icon.png"
                                         alt="User Icon"
                                         width={60} 
                                         height={60} 

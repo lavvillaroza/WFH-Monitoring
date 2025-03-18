@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, LogOut, CheckCircle, Settings2Icon } from "lucide-react";
 import Image from "next/image";
-import userLogo from "@/app/img/user-icon.png";
 import { json } from "stream/consumers";
 
 const NavbarEmployer = () => {
@@ -117,7 +116,7 @@ const NavbarEmployer = () => {
                     </div>
                     <div className="relative">
                         <button className="flex items-center space-x-2 text-black" onClick={() => setProfileOpen(!profileOpen)}>
-                            <Image src={userLogo} alt="User Icon" width={40} height={40} className="rounded-full" />
+                            <Image src="/img/user-icon.png" alt="User Icon" width={40} height={40} className="rounded-full" />
                             <span className="text-gray-600">{user ? user.name : "Loading..."}</span>
                         </button>
                         {profileOpen && (
