@@ -26,7 +26,10 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
+    console.log(data, "data hereee")
+
       if (!response.ok) throw new Error(data.error);
+
 
       setMessage("Login successful!");
       setMessageType("success");
@@ -42,7 +45,6 @@ const LoginPage = () => {
         })
       );
       localStorage.setItem("authToken", data.token);
-
       setTimeout(() => {
         setMessage("");
         if (data.user.role === "ADMIN") {

@@ -37,7 +37,12 @@ export async function GET(request: Request) {
     if (email && password) {
       // Check if user exists
       const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email ,
+          status:{
+            not:"RESIGN"
+          }
+        },
+        
       });
 
       if (!user) {

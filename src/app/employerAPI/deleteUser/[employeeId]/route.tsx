@@ -30,7 +30,7 @@ export async function PATCH(
     const updatedUser = await prisma.user.update({
       where: { employeeId },
       data: {
-        status: "INACTIVE",
+        status: "RESIGN",
         updatedAt: new Date(),
       },
     });

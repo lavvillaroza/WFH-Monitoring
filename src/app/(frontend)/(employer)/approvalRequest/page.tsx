@@ -77,6 +77,7 @@ const fetchNotificationLogs = async () => {
 
     setPendingRequests(sortedPendingRequests);
     setLoading(false);
+    setFilteredRequests(sortedPendingRequests)
   } catch (error) {
     console.error("Error fetching data:", error);
     setPendingRequests([]);
@@ -91,17 +92,20 @@ const handleMessageUpdate = (newMessage: string) => {
   console.log(pendingRequests)
   
   const handleDateRangeChange = () => {
-    const filtered = requests.filter((pendingRequests) => {
-      const requestDate = new Date(pendingRequests.createdAt);
+    const filtered = pendingRequests.filter((request) => {
+      const requestDate = new Date(request.createdAt);
       const start = startDate ? new Date(startDate) : null;
       const end = endDate ? new Date(endDate) : null;
-
+  
       return (!start || requestDate >= start) && (!end || requestDate <= end);
     });
-
+  
     setFilteredRequests(filtered);
     setCurrentPage(1);
   };
+
+  // const filtered = filteredRequests.length > 0 ? filteredRequests | pendingRequests
+  
 
   const handleEdit = (request: any) => {
     setSelectedLeave(request);
@@ -134,14 +138,14 @@ const handleMessageUpdate = (newMessage: string) => {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-2 border rounded-md"
+                className="px-4 py-2 border rounded-md appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
               />
               <span>to</span>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-2 border rounded-md"
+                className="px-4 py-2 border rounded-md appearance-auto [&::-webkit-calendar-picker-indicator]:invert"
               />
               <button
                 onClick={handleDateRangeChange}
@@ -174,8 +178,8 @@ const handleMessageUpdate = (newMessage: string) => {
                       <tr>
                         <td colSpan="5" className="text-center py-4">Loading...</td>
                       </tr>
-                    ) : pendingRequests.length > 0 ? (
-                      pendingRequests.map((request) => (
+                    ) : filteredRequests.length > 0 ? (
+                      filteredRequests.map((request) => (
                         <tr key={request.id}>
                           <td className="px-4 py-2 border-b text-black text-center">
                             {new Date(request.createdAt).toLocaleDateString()}
