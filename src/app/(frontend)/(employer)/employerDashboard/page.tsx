@@ -221,8 +221,7 @@ const Dashboard = () => {
     
 
   const getDonutData = (employee) => {
-    console.log(employee)
-    if (!employee) {
+    if (!humanActivityLog) {
       const avg = calculateAverageProductivity();
       return {
         labels: ["No Data"],

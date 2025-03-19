@@ -44,14 +44,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const [idleThresholdName, setIdleThresholdName] = useState<string>("");
   const [sleepingThresholdName, setSleepingThresholdName] = useState<string>("");
 
-  const updateOnClose = async ()=>{
-
-    const response = await fetch(`/employerAPI/getEmployeeStatus?employeeId=${employeeId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
+ 
   useEffect(() => {
     fetchThresholds();
   }, []);
@@ -144,6 +137,23 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, []);
+
+  const updateOnClose = async ()=>{
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setEmployeeId(user.employeeId);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+
+    const response = await fetch(`/employerAPI/getEmployeeStatus?employeeId=${employeeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
 
   const updateActivity = async (remarks: string, activity: string) => {
     if (!employeeId) {
