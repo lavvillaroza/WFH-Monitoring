@@ -96,7 +96,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <CameraProvider>
-          {checkedIn && <TakeScreenShot />} {/* Render component conditionally */}
+          {/* {checkedIn && <TakeScreenShot />} Render component conditionally */}
           {children}
         </CameraProvider>
       </body>

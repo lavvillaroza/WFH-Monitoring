@@ -43,46 +43,50 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   const [sleepingThresholds, setSleepingThreshold] = useState<number | null>(null);
   const [idleThresholdName, setIdleThresholdName] = useState<string>("");
   const [sleepingThresholdName, setSleepingThresholdName] = useState<string>("");
+  const [settings, setSettings] = useState({
+    sleepingThreshold: 0,
+    idleThreshold: 0,
+    screenshotThreshold: 0,
+});
 
- 
+  const updateOnClose = async ()=>{
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setEmployeeId(user.employeeId);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+
+    const response = await fetch(`/employerAPI/getEmployeeStatus?employeeId=${employeeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
   useEffect(() => {
-    fetchThresholds();
+    fetchConfig();
+    console.log("fetch thresholds hereee ")
   }, []);
   
-  const fetchThresholds = async () => {
-    try {
-      const res = await fetch("/employeeAPI/thresholds");
-  
-      if (!res.ok) {
-        throw new Error(`Failed to fetch: ${res.statusText}`);
-      }
-  
-      const data = await res.json();
-  
-      // Ensure the correct data structure
-      if (Array.isArray(data)) {
-        //setarrayThreshold(data);
-  
-        // Extract specific thresholds
-        const idle = data.find((t) => t.name === "idleThreshold");
-        const sleeping = data.find((t) => t.name === "sleepingThreshold");
-  
-        if (idle) {
-          setIdleThresholdName(idle.name);
-          setIdleThreshold(idle.threshold);
-        }
-  
-        if (sleeping) {
-          setSleepingThresholdName(sleeping.name);
-          setSleepingThreshold(sleeping.threshold);
-        }
-      } else {
-        console.error("Unexpected data format:", data);
-      }
-    } catch (error) {
-      console.error("Error fetching thresholds:", error);
+  const fetchConfig = async () => {
+    const configSettings = await fetch("/employerAPI/configSettings/");
+    const configData = await configSettings.json();
+
+    if (configData && Array.isArray(configData)) {
+        const sleepingThreshold = configData.find(item => item.name === "sleepingThreshold")?.threshold || 1;
+        const idleThreshold = configData.find(item => item.name === "idleThreshold")?.threshold || 1;
+        const screenshotThreshold = configData.find(item => item.name === "screenShotThreshold")?.threshold || 1;
+
+        setSettings({
+            sleepingThreshold,
+            idleThreshold,
+            screenshotThreshold
+        });
     }
-  };
+};
   
 
 
@@ -137,23 +141,6 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, []);
-
-  const updateOnClose = async ()=>{
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setEmployeeId(user.employeeId);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-
-    const response = await fetch(`/employerAPI/getEmployeeStatus?employeeId=${employeeId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
 
   const updateActivity = async (remarks: string, activity: string) => {
     if (!employeeId) {
@@ -395,11 +382,11 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
             setSleepingTimer(0);
 
             let idleThreshold=0;
-            if(idleThresholds===null){
-              idleThreshold=10;
+            if(settings.idleThreshold === 0){
+              idleThreshold= 10;
             }
-              if(idleThresholdName==="idleThreshold"){
-                idleThreshold = idleThresholds / 1000;
+              if(settings.idleThreshold !== 0){
+                idleThreshold = settings.idleThreshold / 1000;
               }
             if (updatedTimer >= idleThreshold && !isIdle && !isModalOpen) {
               console.log("User is out of area");
@@ -456,11 +443,11 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
           setIdleTimer(0);
 
           let sleepingThreshold=0;
-              if(sleepingThresholds===null){
+              if(settings.sleepingThreshold === 0){
                 sleepingThreshold=10;
               }
-              if(sleepingThresholdName==="sleepingThreshold"){
-                sleepingThreshold = sleepingThresholds / 1000;
+              if(settings.sleepingThreshold !== 0){
+                sleepingThreshold = settings.sleepingThreshold / 1000;
               }
           if (updatedTimer >= sleepingThreshold && !isAsleep && !isModalOpen) {
             console.log("User is sleeping");

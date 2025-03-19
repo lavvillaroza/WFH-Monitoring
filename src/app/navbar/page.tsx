@@ -102,6 +102,8 @@ const Navbar = () => {
         if(selectedAction==="Time Out"){
             if(!takeScreenshot){
                 setTakeScreenshot(true);
+            }else{
+                setTakeScreenshot(false);
             }
         }
     }, []);
