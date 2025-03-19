@@ -50,6 +50,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
 });
 
   const updateOnClose = async ()=>{
+    fetchConfig();
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -91,6 +92,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
 
 
   const handleModalResponse = async (response: boolean) => {
+    fetchConfig();
     userResponseRef.current = response;
     setIsModalOpen(false);
 
@@ -131,6 +133,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   }));
 
   useEffect(() => {
+
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -367,6 +370,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
     }
 
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    fetchConfig();
 
     try {
       const detection = await faceapi
@@ -446,6 +450,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
               if(settings.sleepingThreshold === 0){
                 sleepingThreshold=10;
               }
+              console.log(settings.sleepingThreshold ," sleep threhold hereeee")
               if(settings.sleepingThreshold !== 0){
                 sleepingThreshold = settings.sleepingThreshold / 1000;
               }
@@ -478,7 +483,21 @@ useEffect(() => {
   //   setIdleTimer(0);
   //   setSleepingTimer(0);
   // };
+  const storedUser = localStorage.getItem("user");
 
+  const fetchUser = () =>{
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setEmployeeId(user.employeeId);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }
+
+
+  
   // Set up interval for face detection
   const interval = setInterval(() => {
   // Attach multiple event listeners for user activity detection
@@ -492,6 +511,8 @@ useEffect(() => {
   // window.addEventListener("focus", resetTimers);
 
     detectUserState();
+    fetchUser();
+    fetchConfig();
   }, 1000);
 
   // Cleanup function to remove event listeners and clear interval on unmount

@@ -41,6 +41,7 @@ const Navbar = () => {
 
     useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    let employeeId = ""
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
@@ -53,7 +54,7 @@ const Navbar = () => {
                 }
     
                 const user = JSON.parse(storedUser);
-                const employeeId = user.employeeId;
+                 employeeId = user.employeeId;
                 const response = await fetch(`/employeeAPI/dtr?employeeId=${employeeId}`);
     
                 if (!response.ok) {
@@ -98,14 +99,40 @@ const Navbar = () => {
         };
     
         fetchLastDTR();
-        //justin to add
-        if(selectedAction==="Time Out"){
-            if(!takeScreenshot){
+        const checkScreenshot =async () => {
+      
+            const userResponse = await fetch("/employerAPI/user");
+            const userData = await userResponse.json();
+
+            const userActivity = userData.find((u) => u.employeeId === employeeId)
+            console.log(userActivity.status,"selected action here")
+            console.log(takeScreenshot , " take screenshot here")
+
+            if(userActivity.status === "ACTIVE"){
+                localStorage.setItem("permissionToShare","false")
+                const permission = localStorage.getItem("permissionToShare")
+                console.log(permission, "permission here")
+                console.log(userActivity.status ,"activity status heree")
                 setTakeScreenshot(true);
+                if(permission === "false" ){
+                    setTakeScreenshot(true);
+                }else{
+                    setTakeScreenshot(false);
+                }
             }else{
-                setTakeScreenshot(false);
+                setTakeScreenshot(false)
             }
         }
+        //justin to add
+    
+
+        const interval = setInterval(() => {
+            fetchLastDTR();
+            checkScreenshot();
+          }, 1000);
+  
+          return () => clearInterval(interval); // Cleanup on unmount
+  
     }, []);
 
 
@@ -264,6 +291,7 @@ const Navbar = () => {
             setLogoutMessage(false);
             localStorage.removeItem("authToken");
             localStorage.removeItem("user");
+            localStorage.removeItem("permissionToShare")
     
             if (cameraContext) {
                 cameraContext.stopCamera();

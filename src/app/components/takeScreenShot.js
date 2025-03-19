@@ -16,6 +16,7 @@ export default function TakeScreenShot() {
     try {
       const track = mediaStream?.getVideoTracks()[0];
       if (!track) return;
+      localStorage.setItem("permissionToShare", "true");
 
       const imageCapture = new ImageCapture(track);
       const bitmap = await imageCapture.grabFrame();
@@ -91,6 +92,7 @@ export default function TakeScreenShot() {
                     setMediaStream(stream);
                     const track = stream.getVideoTracks()[0];
                     console.log("User selected:", track.getSettings().displaySurface);
+                    localStorage.setItem("permissionToShare", "true");
                     track.addEventListener("ended", () => {
                         console.log("User stopped screen sharing.");
                         setMediaStream(null);
