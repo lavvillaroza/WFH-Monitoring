@@ -50,7 +50,6 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
 });
 
   const updateOnClose = async ()=>{
-    fetchConfig();
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -67,31 +66,38 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   }
 }
 
+    const fetchConfig = async () => {
+    try {
+      const response = await fetch("/employerAPI/configSettings"); // Adjust API URL
+      const data = await response.json();
+      setSettings(data); // Update state with API response
+      console.log("Fetched settings:", data);
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    }
+  };
+
+  // Fetch settings when component mounts
   useEffect(() => {
     fetchConfig();
-  }, []);
-  
-  const fetchConfig = async () => {
-    const configSettings = await fetch("/employerAPI/configSettings/");
-    const configData = await configSettings.json();
+  }, []); // Run only on mount
 
-    if (configData && Array.isArray(configData)) {
-        const sleepingThreshold = configData.find(item => item.name === "sleepingThreshold")?.threshold || 1;
-        const idleThreshold = configData.find(item => item.name === "idleThreshold")?.threshold || 1;
-        const screenshotThreshold = configData.find(item => item.name === "screenShotThreshold")?.threshold || 1;
+  useEffect(() => {
+    if (settings.idleThreshold === 0 || settings.sleepingThreshold === 0) {
+      const interval = setInterval(() => {
+        fetchConfig();
+        console.log("Fetching config every 10s...", settings);
+      }, 10000);
 
-        setSettings({
-            sleepingThreshold,
-            idleThreshold,
-            screenshotThreshold
-        });
+      return () => clearInterval(interval); // Cleanup on unmount/settings change
     }
-};
+  }, [settings]); // Depend on `settings` so it updates dynamically
+
+    
   
 
 
   const handleModalResponse = async (response: boolean) => {
-    fetchConfig();
     userResponseRef.current = response;
     setIsModalOpen(false);
 
@@ -356,7 +362,6 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const detectUserState = async () => {
-    fetchConfig();
     if (!videoRef.current || !modelsLoaded || !faceapi || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -438,6 +443,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       const rightEyeRatio = rightEyeHeight / rightEyeWidth;
 
       console.log("left eye: " + leftEyeRatio + " right eye: " + rightEyeRatio);
+      fetchConfig();
 
       if (leftEyeRatio > -0.28 && rightEyeRatio > -0.28) {
         setSleepingTimer((prev) => {
@@ -510,8 +516,6 @@ useEffect(() => {
   // window.addEventListener("focus", resetTimers);
 
     detectUserState();
-    fetchUser();
-    fetchConfig();
   }, 1000);
 
   // Cleanup function to remove event listeners and clear interval on unmount
