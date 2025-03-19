@@ -14,6 +14,8 @@ export async function GET() {
       { error: error.message || "An unknown error occurred" }, 
       { status: 500 }
     );
+  }finally {
+    await prisma.$disconnect();
   }
 }
 // POST: Add a new employee
@@ -27,6 +29,8 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error adding employee:", error);
     return NextResponse.json({ error: "Error adding employee" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -50,5 +54,7 @@ export async function PUT(req: Request) {
   } catch (error) {
     console.error("Error updating employee:", error);
     return NextResponse.json({ error: "Error updating employee" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }

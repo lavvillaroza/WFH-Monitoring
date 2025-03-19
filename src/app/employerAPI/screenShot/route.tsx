@@ -41,6 +41,8 @@ export async function POST(req: Request) {
       { error: error.message || "Unknown internal server error" },
       { status: 500 }
     );
+  }finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -84,6 +86,8 @@ export async function GET(req: Request) {
       { error: "Internal server error", details: error.message },
       { status: 500 }
     );
+  }finally {
+    await prisma.$disconnect();
   }
 }
 

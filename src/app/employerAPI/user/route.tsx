@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         email: body.email,
         password: hashedPassword,
         role: roleEnum,
-        status: "ACTIVE",
+        status: "INACTIVE",
       },
     });
 
@@ -53,16 +53,22 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("❌ Error creating user:", error.message);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }
 
 // GET: Fetch all employees
 export async function GET() {
   try {
-    const employees = await prisma.user.findMany();
+    const employees = await prisma.user.findMany({
+
+  });
     return NextResponse.json(employees, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: "Error fetching employees" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }
 

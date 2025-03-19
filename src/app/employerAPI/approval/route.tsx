@@ -142,5 +142,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error: any) {
     console.error("Error updating Record request:", error.message, error);
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }

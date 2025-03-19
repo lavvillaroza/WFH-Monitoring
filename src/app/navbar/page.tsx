@@ -91,6 +91,8 @@ const Navbar = () => {
     
                 } else {
                     setSelectedAction("Time In");
+                    console.log(lastDTR,"last ldr here")
+                    console.log("time in 1")
                     setIsCameraOn(false);
                 }
             } catch (error) {
@@ -129,7 +131,7 @@ const Navbar = () => {
         const interval = setInterval(() => {
             fetchLastDTR();
             checkScreenshot();
-          }, 1000);
+          }, 5000);
   
           return () => clearInterval(interval); // Cleanup on unmount
   
@@ -253,6 +255,7 @@ const Navbar = () => {
     
             if (response.ok) {
                 setSelectedAction(selectedAction === "Time In" ? "Time Out" : "Time In"); 
+                console.log("time in 2")
             } else {
                 console.error("Failed to log action");
             }

@@ -14,6 +14,9 @@ export async function GET() {
       { error: error.message || "An unknown error occurred" }, 
       { status: 500 }
     );
+    
+  }finally {
+    await prisma.$disconnect();
   }
 }
 // POST: Add a new employee
@@ -63,10 +66,11 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ message: "Settings updated successfully" }, { status: 200 });
 
+
   } catch (error: any) {
     console.error("Error updating Config request:", error.message, error);
     return NextResponse.json({ error: "Internal Server Error", details: error.message }, { status: 500 });
 }   finally {
-  await prisma.$disconnect(); // Ensure database connection is closed
+  await prisma.$disconnect();
 }
 }

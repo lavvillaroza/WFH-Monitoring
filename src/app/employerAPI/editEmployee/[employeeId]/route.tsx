@@ -38,5 +38,7 @@ export async function PUT(request: Request, { params }: { params: { employeeId: 
   } catch (error: any) {
     console.error("❌ Error updating employee:", error.message);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }

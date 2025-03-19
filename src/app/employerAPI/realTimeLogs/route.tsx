@@ -38,5 +38,7 @@ export async function GET(req: Request) {
     } catch (error) {
       console.error("❌ Error fetching activity logs:", error);
       return NextResponse.json( { error: "Internal server error", details: error.message || error.toString() }, { status: 500 });
+    }finally {
+      await prisma.$disconnect();
     }
   }

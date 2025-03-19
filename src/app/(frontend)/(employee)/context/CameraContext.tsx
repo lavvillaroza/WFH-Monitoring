@@ -69,7 +69,6 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     fetchConfig();
-    console.log("fetch thresholds hereee ")
   }, []);
   
   const fetchConfig = async () => {
@@ -357,6 +356,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const detectUserState = async () => {
+    fetchConfig();
     if (!videoRef.current || !modelsLoaded || !faceapi || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -370,7 +370,6 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
     }
 
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    fetchConfig();
 
     try {
       const detection = await faceapi

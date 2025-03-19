@@ -46,5 +46,7 @@ export async function GET() {
       { error: "Error fetching notifications", details: error },
       { status: 500 }
     );
+  }finally {
+    await prisma.$disconnect();
   }
 }

@@ -51,25 +51,31 @@ const EmployeeMonitoring = () => {
       }
       const usersData = await userResponse.json();
   
-      const employeesWithStatus = employeesData.map((employee) => {
-        const user = usersData.find((user) => user.email === employee.email);
-        if (user) {
-          return {
-            ...employee,
-            status: user.status,
-            password: user.password, 
-            role:user.role,// Ensure password is included
-          };
-        }
-        return employee;
-      });
-  
+      const employeesWithStatus = employeesData
+            .map((employee) => {
+              const user = usersData.find((user) => user.email === employee.email);
+
+              if (user && user.status !== "RESIGN") {
+                return {
+                  ...employee,
+                  status: user.status,
+                  password: user.password, 
+                  role: user.role,
+                };
+              }
+
+              return null; // Mark employees to be excluded
+            })
+            .filter(Boolean); // Remove `null` values (employees with "RESIGN" status)
+
+
+      
       setEmployees(employeesWithStatus);
     } catch (error) {
       console.error("Error fetching employees or users:", error);
     }
   };
-
+console.log(employees, "employees here")
 
 const fetchYawningCount = async () => {
   try {

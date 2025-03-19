@@ -94,12 +94,14 @@ export async function GET(req: Request) {
             where: {
                 employeeId,
                 createdAt: {
-                    gte: startOfDay, // Greater than or equal to start of the day
-                    lte: endOfDay,   // Less than or equal to end of the day
+                    gte: startOfDay, // Start of the day
+                    lte: endOfDay,   // End of the day
                 },
             },
+            orderBy: {
+                createdAt: "desc", // Change to "asc" for the earliest record
+            },
         });
-
 
         return NextResponse.json(lastRecord, { status: 200 });
     } catch (error) {
@@ -107,3 +109,4 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+
