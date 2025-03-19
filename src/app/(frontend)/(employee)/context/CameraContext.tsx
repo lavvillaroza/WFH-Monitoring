@@ -71,7 +71,7 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch("/employerAPI/configSettings"); // Adjust API URL
       const data = await response.json();
       setSettings(data); // Update state with API response
-      console.log("Fetched settings:", data);
+      console.log("Fetched settings:", settings);
     } catch (error) {
       console.error("Error fetching settings:", error);
     }
@@ -382,19 +382,24 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
         .withFaceLandmarks()
         .withFaceDescriptor();
 
+        const idleThresholdA = settings.find(item => item.name === "idleThreshold")?.threshold || 0;
+        const sleepingThresholdA = settings.find(item => item.name === "sleepingThreshold")?.threshold || 0;
+
+
         if (!detection || !detection.landmarks) {
           console.log("No face detected");
           setIdleTimer((prev) => {
             const updatedTimer = prev + 1; // Increment the timer by 1
             console.log(`Idle Timer: ${updatedTimer}`);
+            console.log(idleThresholdA ,"time idle hereee 2")
             setSleepingTimer(0);
 
             let idleThreshold=0;
-            if(settings.idleThreshold === 0){
+            if(idleThresholdA === 0){
               idleThreshold= 10;
             }
-              if(settings.idleThreshold !== 0){
-                idleThreshold = settings.idleThreshold / 1000;
+              if(idleThresholdA !== 0){
+                idleThreshold = idleThresholdA / 1000;
               }
             if (updatedTimer >= idleThreshold && !isIdle && !isModalOpen) {
               console.log("User is out of area");
@@ -452,12 +457,12 @@ export const CameraProvider = ({ children }: { children: ReactNode }) => {
           setIdleTimer(0);
 
           let sleepingThreshold=0;
-              if(settings.sleepingThreshold === 0){
+              if(sleepingThresholdA === 0){
                 sleepingThreshold=10;
               }
-              console.log(settings.sleepingThreshold ," sleep threhold hereeee")
-              if(settings.sleepingThreshold !== 0){
-                sleepingThreshold = settings.sleepingThreshold / 1000;
+              console.log(sleepingThresholdA ," sleep threhold hereeee")
+              if(sleepingThresholdA !== 0){
+                sleepingThreshold = sleepingThresholdA / 1000;
               }
           if (updatedTimer >= sleepingThreshold && !isAsleep && !isModalOpen) {
             console.log("User is sleeping");
