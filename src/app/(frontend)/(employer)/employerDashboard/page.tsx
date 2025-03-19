@@ -34,91 +34,154 @@ const Dashboard = () => {
     if (!authToken) {
       router.push("/"); // Redirect if not logged in
     } else {
-      fetchEmployees();
       fetchNotificationLogs();
     }
   }, []);
 
-  const fetchEmployees = async () => {
-    const eventSource = new EventSource("/employerAPI/realTimeLogs");
-    try {
-      // Fetch employee data
-      const employeeResponse = await fetch("/employerAPI/employee");
-      if (!employeeResponse.ok) {
-        throw new Error("Failed to fetch employees");
-      }
-      const employeesData = await employeeResponse.json();
+  // const fetchEmployees = async () => {
+  //   const eventSource = new EventSource("/employerAPI/realTimeLogs");
+  //   try {
+  //     // Fetch employee data
+  //     const employeeResponse = await fetch("/employerAPI/employee");
+  //     if (!employeeResponse.ok) {
+  //       throw new Error("Failed to fetch employees");
+  //     }
+  //     const employeesData = await employeeResponse.json();
 
-      const ActivityLogResponse = await fetch("/employerAPI/humanActivityLog");
-      if (!employeeResponse.ok) {
-        throw new Error("Failed to fetch employees");
-      }
-      const ActivityLogData = await ActivityLogResponse.json();
+  //     const ActivityLogResponse = await fetch("/employerAPI/humanActivityLog");
+  //     if (!employeeResponse.ok) {
+  //       throw new Error("Failed to fetch employees");
+  //     }
+  //     const ActivityLogData = await ActivityLogResponse.json();
 
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
+  //     eventSource.onmessage = (event) => {
+  //       try {
+  //         const data = JSON.parse(event.data);
       
-          setActivityLogs(data); // Update UI with latest logs
-        } catch (error) {
-          console.error("❌ Error parsing activity logs:", error);
+  //         setActivityLogs(data); // Update UI with latest logs
+  //       } catch (error) {
+  //         console.error("❌ Error parsing activity logs:", error);
+  //       }
+  //     };
+      
+      
+      
+
+  //     eventSource.onerror = (error) => {
+  //       console.error("❌ SSE connection error:", error);
+  //       eventSource.close();
+  //     };
+
+  //     const totalDurations = ActivityLogData.reduce(
+  //       (acc, log) => {
+  //         if (log.activity === "Idle") {
+  //           acc.idle += log.duration;
+  //         } else if (log.activity === "Sleeping") {
+  //           acc.sleeping += log.duration;
+  //         }
+  //         return acc;
+  //       },
+  //       { idle: 0, sleeping: 0 } // Initial state
+  //     );
+
+  //     console.log("Total Idle Duration:", totalDurations.idle);
+  //     console.log("Total Sleeping Duration:", totalDurations.sleeping);
+  //     setHumanActivityLog(totalDurations)
+  
+  //     // Fetch user data (including passwords)
+  //     const userResponse = await fetch("/employerAPI/user");
+  //     if (!userResponse.ok) {
+  //       throw new Error("Failed to fetch users");
+  //     }
+  //     const usersData = await userResponse.json();
+  
+  //     const employeesWithStatus = employeesData.map((employee) => {
+  //       const user = usersData.find((user) => user.email === employee.email);
+  //       if (user) {
+  //         return {
+  //           ...employee,
+  //           status: user.status,
+  //           employeeId: user.employeeId,
+  //           password: user.password, 
+  //           role:user.role,// Ensure password is included
+  //         };
+  //       }
+  //       return employee;
+  //     });
+  
+  //     setEmployees(employeesWithStatus);
+  //     console.log(employees)
+  //   } catch (error) {
+  //     console.error("Error fetching employees or users:", error);
+  //   }
+  //   return () => {
+  //     eventSource.close();
+  //   };
+  // };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch employee data
+        const employeeResponse = await fetch("/employerAPI/employee");
+        if (!employeeResponse.ok) {
+          throw new Error("Failed to fetch employees");
         }
-      };
-      
-      
-      
+        const employeesData = await employeeResponse.json();
 
-      eventSource.onerror = (error) => {
-        console.error("❌ SSE connection error:", error);
-        eventSource.close();
-      };
+        const ActivityLogResponse = await fetch("/employerAPI/humanActivityLog");
+        if (!ActivityLogResponse.ok) {
+          throw new Error("Failed to fetch activity logs");
+        }
+        const ActivityLogData = await ActivityLogResponse.json();
 
-      const totalDurations = ActivityLogData.reduce(
-        (acc, log) => {
-          if (log.activity === "Idle") {
-            acc.idle += log.duration;
-          } else if (log.activity === "Sleeping") {
-            acc.sleeping += log.duration;
+        setActivityLogs(ActivityLogData);
+
+        const totalDurations = ActivityLogData.reduce(
+          (acc, log) => {
+            if (log.activity === "Idle") {
+              acc.idle += log.duration;
+            } else if (log.activity === "Sleeping") {
+              acc.sleeping += log.duration;
+            }
+            return acc;
+          },
+          { idle: 0, sleeping: 0 } // Initial state
+        );
+
+        setHumanActivityLog(totalDurations);
+
+        // Fetch user data
+        const userResponse = await fetch("/employerAPI/user");
+        if (!userResponse.ok) {
+          throw new Error("Failed to fetch users");
+        }
+        const usersData = await userResponse.json();
+
+        const employeesWithStatus = employeesData.map((employee) => {
+          const user = usersData.find((user) => user.email === employee.email);
+          if (user) {
+            return {
+              ...employee,
+              status: user.status,
+              employeeId: user.employeeId,
+              password: user.password,
+              role: user.role,
+            };
           }
-          return acc;
-        },
-        { idle: 0, sleeping: 0 } // Initial state
-      );
+          return employee;
+        });
 
-      console.log("Total Idle Duration:", totalDurations.idle);
-      console.log("Total Sleeping Duration:", totalDurations.sleeping);
-      setHumanActivityLog(totalDurations)
-  
-      // Fetch user data (including passwords)
-      const userResponse = await fetch("/employerAPI/user");
-      if (!userResponse.ok) {
-        throw new Error("Failed to fetch users");
+        setEmployees(employeesWithStatus);
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
-      const usersData = await userResponse.json();
-  
-      const employeesWithStatus = employeesData.map((employee) => {
-        const user = usersData.find((user) => user.email === employee.email);
-        if (user) {
-          return {
-            ...employee,
-            status: user.status,
-            employeeId: user.employeeId,
-            password: user.password, 
-            role:user.role,// Ensure password is included
-          };
-        }
-        return employee;
-      });
-  
-      setEmployees(employeesWithStatus);
-      console.log(employees)
-    } catch (error) {
-      console.error("Error fetching employees or users:", error);
-    }
-    return () => {
-      eventSource.close();
     };
-  };
+
+    fetchData(); // Initial fetch
+    const interval = setInterval(fetchData, 3000); // Fetch every 3 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
 
   
 

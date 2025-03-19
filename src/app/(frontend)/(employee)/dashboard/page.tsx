@@ -326,12 +326,12 @@ const Dashboard = () => {
               <h2 className="text-xl font-bold mb-4">Productivity vs Idle Time vs Sleeping Time</h2>
 
               <div className="mb-4">
-                <label htmlFor="dateRange" className="text-sm font-medium">Filter by: </label>
+                <label htmlFor="dateRange" className="text-sm font-medium bg-white">Filter by: </label>
                 <select
                   id="dateRange"
                   value={dateRange}
                   onChange={handleDateRangeChange}
-                  className="mt-2 border p-2 rounded"
+                  className="mt-2 border p-2 rounded bg-white"
                 >
                   <option value="Daily">Daily</option>
                   <option value="Monthly">Monthly</option>

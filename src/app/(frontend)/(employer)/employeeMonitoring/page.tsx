@@ -120,75 +120,61 @@ const fetchYawningCount = async () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!selectedEmployee) return;
   
-
-  const handleEmployee =  (employeeId) => {
-    if (!employeeId) return;
-    SethoursRendered("");
-
-    // Use SSE to listen for real-time updates of activity chart data
-    const eventSource = new EventSource(`/employeeAPI/dashboard?employeeId=${employeeId}`);
- 
-
-    eventSource.onmessage = (event) => {
-      
+    const fetchData = async () => {
       try {
-        const data = JSON.parse(event.data);
-
+        const response = await fetch(`/employeeAPI/dashboard?employeeId=${selectedEmployee.employeeId}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+  
+        const data = await response.json();
+  
         if (!data || Object.keys(data).length === 0) {
-          console.warn("No data received from SSE connection.");
+          console.warn("No data received from API.");
           SetIdle(0);
           SetSleep(0);
           SetTotalTime(0);
-          setActivityStatus("ACTIVE");
+          setActivityStatus("INACTIVE");
           setWakefulnessStatus("Idle");
           setProductivityPercentage(0);
           SethoursRendered("");
         } else {
           SetIdle(data.idleTime || 0);
           SetSleep(data.sleepingTime || 0);
-          SetTotalTime(data.totaltime || 0);
-          setActivityStatus(data.employeeStatus || "ACTIVE");
+          SetTotalTime(data.totalTime || 0);
+          setActivityStatus(data.employeeStatus || "INACTIVE");
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
-          const totalSeconds = data.totaltime || 0;
-          // Convert to HH:MM:SS format
+          
+          const totalSeconds = data.totalTime || 0;
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
           const seconds = totalSeconds % 60;
-
-          // Format as "H hrs M mins S secs"
           const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
-          console.log(employeeId,"empoyee id here",data)
+          
           SethoursRendered(formattedTime);
         }
       } catch (error) {
-        setActivityStatus("ACTIVE");
+        console.error("Error fetching dashboard data:", error);
+        setActivityStatus("INACTIVE");
         setWakefulnessStatus("Idle");
         setProductivityPercentage(0);
         SetIdle(0);
         SetSleep(0);
         SetTotalTime(0);
-        SethoursRendered("");
       }
     };
+  
+    // Fetch data immediately, then every 3 seconds
+    fetchData();
+    const interval = setInterval(fetchData, 3000);
+  
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [selectedEmployee]);
 
-    eventSource.onerror = (error) => {
-      setActivityStatus("ACTIVE");
-      setWakefulnessStatus("Idle");
-      setProductivityPercentage(0);
-      SetIdle(0);
-      SetSleep(0);
-      SetTotalTime(0);
-      SethoursRendered("");
+  
 
-      eventSource.close(); // Close the connection gracefully
-    };
-
-    return () => {
-      eventSource.close(); // Clean up when component unmounts
-    };
-  };
 
   
   const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -263,30 +249,29 @@ const fetchYawningCount = async () => {
 
 
   useEffect(() => {
-    console.log(selectedEmployee + "console here")
     if (!selectedEmployee) return;
-
-    // Use SSE to listen for real-time updates of activity logs
-    const eventSource = new EventSource(`/employeeAPI/humanActivityLog?employeeId=${selectedEmployee.employeeId}`);
-
-    eventSource.onmessage = (event) => {
+  
+    const fetchData = async () => {
       try {
-        const data = JSON.parse(event.data);
-        setActivityLogs(data); // Update UI with latest logs
+        const response = await fetch(`/employeeAPI/humanActivityLog?employeeId=${selectedEmployee.employeeId}`);
+        if (!response.ok) throw new Error("Failed to fetch data");
+  
+        const data = await response.json();
+        console.log("Fetched activity log:", data);
+        setActivityLogs(data)
       } catch (error) {
-        console.error("❌ Error parsing activity logs:", error);
+        console.error("Error fetching activity log:", error);
       }
     };
-
-    eventSource.onerror = (error) => {
-      console.error("❌ SSE connection error:", error);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [selectedEmployee]);
+  
+    // Fetch data every 3 seconds
+    const intervalId = setInterval(fetchData, 3000);
+  
+    // Cleanup interval on component unmount or when `selectedEmployee` changes
+    return () => clearInterval(intervalId);
+  
+  }, [selectedEmployee]); 
+    
   
 
   const getStatusColor = (status: string) => {
@@ -370,7 +355,6 @@ const fetchYawningCount = async () => {
                   className="p-4 bg-gray-100 rounded-lg shadow-md cursor-pointer hover:bg-gray-200 transition-all duration-200 flex items-center"
                   onClick={() => {
                     setSelectedEmployee(employee);
-                    handleEmployee(employee.employeeId);
                   }}
                 >
                 <Image
