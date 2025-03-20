@@ -73,7 +73,7 @@ const ManageEmployees = () => {
     if (!authToken) {
       router.push("/");
     } else {
-      fetchEmployees();
+      fetchEmployees()
     }
   }, []);
 
@@ -100,6 +100,7 @@ const ManageEmployees = () => {
  
 
   const fetchEmployees = async () => {
+
     try {
       // Fetch employee data
       const employeeResponse = await fetch("/employerAPI/employee");
@@ -511,9 +512,9 @@ const ManageEmployees = () => {
                 </button>
               </div>
             </div>
-        
-
           </div>
+          
+          
         )}
 
 

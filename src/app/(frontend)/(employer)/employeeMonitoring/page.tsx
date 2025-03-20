@@ -34,6 +34,7 @@ const EmployeeMonitoring = () => {
   const [activityLogs, setActivityLogs] = useState<{ activity: string; start: string; end: string,empId:string }[]>([]);
   const [hoursRendered, SethoursRendered] = useState("");
   const [yawningFrequency, setYawningFrequency] = useState({});
+  const [isFullScreenLoading, setIsFullScreenLoading] = useState(false);
 
   const fetchEmployees = async () => {
     try {
@@ -260,9 +261,12 @@ useEffect(() => {
   //   };
   // };
 
+  
 
   useEffect(() => {
     if (!selectedEmployee) return;
+    setIsFullScreenLoading(true)
+
   
     const fetchData = async () => {
       try {
@@ -271,21 +275,23 @@ useEffect(() => {
   
         const data = await response.json();
         console.log("Fetched activity log:", data);
-        setActivityLogs(data)
+        setActivityLogs(data);
       } catch (error) {
         console.error("Error fetching activity log:", error);
+      }finally{
+        setIsFullScreenLoading(false)
+
       }
     };
   
-    // Fetch data every 3 seconds
+    fetchData();
+  
     const intervalId = setInterval(fetchData, 3000);
   
-    // Cleanup interval on component unmount or when `selectedEmployee` changes
     return () => clearInterval(intervalId);
+  }, [selectedEmployee]);
   
-  }, [selectedEmployee]); 
-    
-  
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -297,6 +303,8 @@ useEffect(() => {
         return "text-red-500";
       case "Sleeping":
         return "text-blue-500";
+      case "Inactive":
+        return "text-gray-500";  
       default:
         return "text-gray-500";
     }
@@ -379,7 +387,7 @@ useEffect(() => {
                 />
                  <div className="flex-1 flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
-                   <p className={`text-sm font-medium ${getStatusColor(employee.activityStatus)}`}>
+                   <p className={`text-sm font-medium ${getStatusColor(employee.status === "ACTIVE" ?  employee.activityStatus : employee.status)}`}>
                      {(employee.status === "ACTIVE" ?  employee.activityStatus : employee.status).toUpperCase()}
                    </p>
                  </div>
@@ -465,6 +473,11 @@ useEffect(() => {
           </div>
         </div>
       </div>  
+      {isFullScreenLoading && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <span className="loading loading-infinity w-32 h-32 text-info"></span>
+            </div>
+          )}
      </div>
 
 

@@ -35,8 +35,18 @@ const ApprovalRequest = () => {
       router.push("/");
     } else {
       fetchNotificationLogs();
+      
+    const intervalId = setInterval(() => {
+      fetchNotificationLogs();
+    }, 5000); 
+  
+    return () => clearInterval(intervalId);
     }
+
+    
   }, []);
+
+  
 
   const handleMouseLeave = () => {
     setDropdownOpen(null); // Close dropdown when mouse leaves

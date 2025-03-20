@@ -137,6 +137,9 @@ const Dashboard = () => {
   //     eventSource.close();
   //   };
   // };
+  const handleNavigation = () =>{
+    router.push("/approvalRequest")
+  }
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -382,7 +385,7 @@ const Dashboard = () => {
                             <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
-                              onClick={() => handleNavigation(req.file_type)}
+                              onClick={() => handleNavigation()}
                             >
                               {req.file_type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
                             </span>
@@ -418,7 +421,7 @@ const Dashboard = () => {
                             <span className="text-xs">filed a{" "}</span>
                             <span
                               className="cursor-pointer hover:text-yellow-400 text-xs"
-                              onClick={() => handleNavigation(req.file_type)}
+                              onClick={() => handleNavigation()}
                             >
                               {req.file_type}: {req.status} ({new Date(req.createdAt).toLocaleString()})
                             </span>

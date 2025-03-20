@@ -21,6 +21,7 @@ const EmployeeMonitoring = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFullScreenLoading, setIsFullScreenLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,11 +29,11 @@ const EmployeeMonitoring = () => {
     if (!authToken) {
       router.push("/");
     } else {
-      fetchEmployees();
+      setIsFullScreenLoading(true); // Show loader
+      fetchEmployees().finally(() => setIsFullScreenLoading(false)); // Hide loader after fetch
+      
     }
   }, []);
-
-
   
   const handleDateFilter = async () => {
     if (!selectedEmployee || !startDate || !endDate) return;
@@ -40,7 +41,7 @@ const EmployeeMonitoring = () => {
     const startDateUTC = new Date(startDate).toISOString();
     const endDateUTC = new Date(endDate).toISOString();
   
-    setIsLoading(true); // Start loading
+    setIsFullScreenLoading(true); // Show loader
   
     try {
       const res = await fetch(
@@ -54,7 +55,7 @@ const EmployeeMonitoring = () => {
       console.error("Error fetching filtered screenshots:", error);
       setScreenshots([]);
     } finally {
-      setIsLoading(false); // Stop loading after fetching is done
+      setIsFullScreenLoading(false); // Hide loader after fetching
     }
   };
   
@@ -76,12 +77,14 @@ const EmployeeMonitoring = () => {
     try {
       const res = await fetch(`/employerAPI/screenShot?employeeId=${employeeId}`);
       if (!res.ok) throw new Error("Failed to fetch screenshots");
-
+      setIsFullScreenLoading(true)
       const data = await res.json();
       setScreenshots(data.screenshots);
     } catch (error) {
       console.error("Error fetching screenshots:", error);
       setScreenshots([]);
+    }finally{
+      setIsFullScreenLoading(false)
     }
   };
 
@@ -173,10 +176,10 @@ const EmployeeMonitoring = () => {
         </div>
 
 
-        {/* Employee Details Modal */}
+            {/* Employee Details Modal */}
         {isModalOpen && selectedEmployee && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl flex flex-col max-h-[80vh]">
               <h2 className="text-xl font-semibold text-gray-500">{selectedEmployee.name}</h2>
 
               {/* Date Range Filter */}
@@ -206,8 +209,8 @@ const EmployeeMonitoring = () => {
                 </button>
               </div>
 
-              {/* Screenshots Section */}
-              <div className="mt-4">
+              {/* Scrollable Content Area */}
+              <div className="mt-4 flex-1 overflow-y-auto">
                 <h3 className="text-lg font-semibold">Screenshots</h3>
                 {screenshots.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-3">
@@ -228,15 +231,22 @@ const EmployeeMonitoring = () => {
                 ) : (
                   <p className="text-gray-500 mt-2">No screenshots available.</p>
                 )}
-               {isLoading &&<span className="loading loading-bars loading-xl text-warning text-center"></span>}
+                {isLoading && <span className="loading loading-bars loading-xl text-warning text-center"></span>}
               </div>
 
-              <button className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md w-full" onClick={() => setIsModalOpen(false)}>
-                Close
-              </button>
+              {/* Stuck at Bottom - Close Button */}
+              <div className="sticky bottom-0 left-0 bg-white py-4">
+                <button
+                  className="bg-red-500 text-white px-4 py-2 rounded-md w-full"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}
+
 
         {/* Image Preview Modal */}
         {selectedImage && (
@@ -245,7 +255,13 @@ const EmployeeMonitoring = () => {
           </div>
         )}
       </div>
+      {isFullScreenLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <span className="loading loading-infinity w-32 h-32 text-info"></span>
+        </div>
+      )}
     </div>
+    
   );
 };
 

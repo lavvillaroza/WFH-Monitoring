@@ -67,20 +67,33 @@ export async function PATCH(req: NextRequest) {
         await prisma.dailyTimeRecord.update({
           where: { id: checkDTR.id },
           data: {
-            ...(type === 'time-in' ? { timeIn: new Date(dateTime) } : { timeOut: new Date(dateTime) }),
+            ...(type === "time-in"
+              ? { timeIn: new Date(dateTime) }
+              : { 
+                  timeOut: new Date(dateTime),
+                  duration: Math.floor((new Date(dateTime).getTime() - checkDTR.timeIn.getTime()) / 1000) // Calculate duration in seconds
+                }),
           },
         });
       } else {
+        const currentDate = new Date();
+        const timeIn = type === "time-in" ? new Date(dateTime) : null;
+        const timeOut = type === "time-out" ? new Date(dateTime) : null;
+        
+        const duration = timeIn && timeOut ? Math.floor((timeOut.getTime() - timeIn.getTime()) / 1000) : 0;
+      
         await prisma.dailyTimeRecord.create({
           data: {
             employeeId,
             date: new Date(dateTime),
-            timeIn: type === 'time-in' ? new Date(dateTime) : null,
-            timeOut: type === 'time-out' ? new Date(dateTime) : null,
+            timeIn,
+            timeOut,
             remarks: null,
+            duration, // Store duration in seconds
           },
         });
       }
+      
     }
      
    
@@ -125,16 +138,12 @@ export async function PATCH(req: NextRequest) {
         }
       }
       
-
       //OT
 
       async function updateOverTime(){
 
       }
-
-
    
-
     return NextResponse.json(
       { message: "Record request updated successfully", record: updatedRecord },
       { status: 200 }

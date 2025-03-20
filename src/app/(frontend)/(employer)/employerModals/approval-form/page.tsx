@@ -20,8 +20,15 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({ isOpen, onClose, record, 
 
   useEffect(() => {
     if (record) {
+      
       setType(record.file_type === 'DTRP' ? record.type : record.leaveType);
-      setDateTime(record.date ? new Date(record.date).toISOString().slice(0, 16) : "");
+      setDateTime(
+        record.date
+          ? new Date(new Date(record.date).getTime() + 8 * 60 * 60 * 1000)
+              .toISOString()
+              .slice(0, 16)
+          : ""
+      );
       setRemarks(record.file_type === 'DTRP' ? record.remarks : record.reason)
       setAlertMessage(record.reason || "");
     } else {
