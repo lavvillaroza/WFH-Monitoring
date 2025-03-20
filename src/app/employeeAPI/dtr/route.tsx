@@ -76,7 +76,7 @@ export async function POST(req: Request) {
 }
 
 //fetch null time out to check if the last entry is time in
-
+//fetch null time out to check if the last entry is time in
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
@@ -86,26 +86,119 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
         }
 
-        const today = new Date();
-        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+        // Fetch all unique dates where the employee has clocked in
+        const uniqueDates = await prisma.$queryRaw<
+            { createdDate: Date }[]
+        >`SELECT DISTINCT DATE(date) AS createdDate FROM DailyTimeRecord WHERE employeeId = ${employeeId} ORDER BY createdDate DESC`;
 
-        const lastRecord = await prisma.dailyTimeRecord.findFirst({
-            where: {
-                employeeId,
-                createdAt: {
-                    gte: startOfDay, // Start of the day
-                    lte: endOfDay,   // End of the day
+        let dtrData = [];
+
+        for (const { createdDate } of uniqueDates) {
+            // Convert createdDate to start and end of the day
+            const startOfDay = new Date(createdDate);
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const endOfDay = new Date(createdDate);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            // Get first time in for the unique date
+            const firstTimeIn = await prisma.dailyTimeRecord.findFirst({
+                where: { 
+                    employeeId, 
+                    date: {
+                        gte: startOfDay,
+                        lt: endOfDay
+                    }
                 },
-            },
-            orderBy: {
-                createdAt: "desc", // Change to "asc" for the earliest record
-            },
-        });
+                orderBy: { timeIn: "asc" },
+                select: { timeIn: true }
+            });
 
-        return NextResponse.json(lastRecord, { status: 200 });
+            // Get last time out for the unique date
+            const lastTimeOut = await prisma.dailyTimeRecord.findFirst({
+                where: { 
+                    employeeId, 
+                    date: {
+                        gte: startOfDay,
+                        lt: endOfDay
+                    },
+                    timeOut: { not: null },
+                },
+                orderBy: { timeOut: "desc" },
+                select: { timeOut: true }
+            });
+
+            // Calculate total duration (excluding idle and sleeping time)
+            const employeeDTR = await prisma.dailyTimeRecord.findMany({
+                where: { 
+                    employeeId, 
+                    date: {
+                        gte: startOfDay,
+                        lt: endOfDay
+                    },
+                    timeOut: { not: null }
+                },
+                select: { duration: true },
+            });
+
+            const totalDuration = employeeDTR.reduce((sum, record) => sum + (record.duration ?? 0), 0);
+
+            const calculateTimeSpent = (logs: any[]) => {
+                return logs.reduce((total, log) => {
+                    const startTime = new Date(log.start);
+                    const endTime = log.end ? new Date(log.end) : new Date();
+                    return total + (endTime.getTime() - startTime.getTime());
+                }, 0);
+            };
+
+            // Fetch Sleeping and Idle logs
+            const sleeping = await prisma.humanActivityLog.findMany({
+                where: { 
+                    employeeId, 
+                    activity: "Sleeping", 
+                    start: { 
+                        gte: startOfDay, 
+                        lt: endOfDay 
+                    }
+                }
+            });
+
+            const idle = await prisma.humanActivityLog.findMany({
+                where: { 
+                    employeeId, 
+                    activity: "Idle", 
+                    start: { 
+                        gte: startOfDay, 
+                        lt: endOfDay 
+                    }
+                }
+            });
+
+            const idleTime = calculateTimeSpent(idle) / 1000;
+            const sleepingTime = calculateTimeSpent(sleeping) / 1000;
+
+            let totalSeconds = totalDuration - (idleTime + sleepingTime);
+            totalSeconds = totalSeconds > 0 ? totalSeconds : 0;
+
+            // Convert total seconds to formatted time (HH hrs MM mins SS secs)
+            const hours = Math.max(Math.floor(totalSeconds / 3600) - 1, 0);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
+
+            dtrData.push({
+                date: createdDate,
+                firstTimeIn: firstTimeIn?.timeIn || null,
+                lastTimeOut: lastTimeOut?.timeOut || null,
+                hoursRendered: formattedTime
+            });
+        }
+
+        return NextResponse.json({ dtrData }, { status: 200 });
+
     } catch (error) {
-        console.error("Error fetching last DTR:", error);
+        console.error("Error fetching DTR:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+

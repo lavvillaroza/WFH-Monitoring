@@ -105,8 +105,7 @@ export async function GET(req: Request) {
     let hoursRendered = 0;
 
     if (dtr && dtr.timeOut === null) {
-      const time =  Math.floor(currentTime.getTime() - dtr.timeIn.getTime()) / 1000
-      totalTime = time + totalDuration;
+      totalTime = Math.floor(currentTime.getTime() - dtr.timeIn.getTime()) / 1000 + totalDuration;
       hoursRendered = totalTime - (idleTime + sleepingTime);
     } else {
       totalTime = totalDuration;

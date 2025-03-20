@@ -94,13 +94,15 @@ const Dashboard = () => {
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
           
-          const totalSeconds = data.totalTime || 0;
+          const totalSeconds = Math.floor(data.hoursRendered || 0); // Ensure integer value
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
+          const seconds = Math.floor(totalSeconds % 60); // Ensure integer
+
           const formattedTime = `${hours} hrs ${minutes} mins ${seconds} secs`;
-          
+
           SethoursRendered(formattedTime);
+
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -195,24 +197,26 @@ const Dashboard = () => {
                 </span>
               </p>
               <p>
-                <strong>Productivity:</strong>
+              <strong>Productivity:</strong>
                 <span
                   className={`ml-2 px-2 py-1 rounded text-white text-xs ${
-                    productivityPercentage <= 50 ? "bg-red-500" : "bg-green-500"
+                    activityStatus !== "ACTIVE" || productivityPercentage <= 50 ? "bg-red-500" : "bg-green-500"
                   }`}
                 >
-                 {activityStatus === "ACTIVE" ? productivityPercentage+"%" : "N/A" } 
+                  {activityStatus === "ACTIVE" ? `${productivityPercentage}%` : "N/A"}
                 </span>
               </p>
               <p>
                 <strong>Wakefulness:</strong>
                 <span
                   className={`ml-2 px-2 py-1 rounded text-white text-xs ${
-                    wakefulnessStatus === "Awake"
+                    activityStatus !== "ACTIVE"
+                    ? "bg-red-500"
+                      :wakefulnessStatus === "Awake"
                       ? "bg-green-500"
                       : wakefulnessStatus === "Idle"
                       ? "bg-yellow-500"
-                      : wakefulnessStatus === "Sleeping"
+                      : wakefulnessStatus === "Sleeping" 
                       ? "bg-red-500"
                       : "bg-gray-500"
                   }`}
