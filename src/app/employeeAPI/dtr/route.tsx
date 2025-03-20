@@ -8,10 +8,33 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { employeeId, timeIn, timeOut, remarks } = body;
 
+        const today = new Date();
+        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      
+
         if (!employeeId) {
             return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
         }
 
+        const lastRecord = await prisma.dailyTimeRecord.findFirst({
+            where: {
+                employeeId,
+                createdAt: {
+                    gte: startOfDay, // Start of the day
+                    lte: endOfDay,   // End of the day
+                },
+            },
+            orderBy: {
+                createdAt: "desc", // Change to "asc" for the earliest record
+            },
+        });
+
+        if (lastRecord && lastRecord.timeIn !== null){
+            return NextResponse.json({ success: "Already have time in",lastRecord }, { status: 200 });
+        }
+        
         if (timeIn) {
             // Create a new record for "Time In"
             await prisma.dailyTimeRecord.create({
