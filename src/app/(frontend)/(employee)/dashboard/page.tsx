@@ -94,7 +94,7 @@ const Dashboard = () => {
           setWakefulnessStatus(data.wakefulnessStatus || "Idle");
           setProductivityPercentage(data.productivityPercentage || 100);
           
-          const totalSeconds = data.totalTime || 0;
+          const totalSeconds = Math.floor(data.totalTime || 0);
           const hours = Math.floor(totalSeconds / 3600);
           const minutes = Math.floor((totalSeconds % 3600) / 60);
           const seconds = totalSeconds % 60;

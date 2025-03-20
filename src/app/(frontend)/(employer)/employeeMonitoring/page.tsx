@@ -114,17 +114,24 @@ const fetchYawningCount = async () => {
 
   
 
-  useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
+useEffect(() => {
+  const authToken = localStorage.getItem("authToken");
 
-    if (!authToken) {
-      router.push("/"); // Redirect if not logged in
-    } else {
-      fetchEmployees();
-      fetchYawningCount();
+  if (!authToken) {
+    router.push("/"); 
+    return;
+  }
 
-    }
-  }, []);
+  fetchEmployees();
+  fetchYawningCount();
+
+  const intervalId = setInterval(() => {
+    fetchEmployees();
+    fetchYawningCount();
+  }, 5000); 
+
+  return () => clearInterval(intervalId);
+}, []);
 
   useEffect(() => {
     if (!selectedEmployee) return;
@@ -373,7 +380,7 @@ const fetchYawningCount = async () => {
                  <div className="flex-1 flex justify-between items-center">
                    <h3 className="text-lg font-semibold text-gray-800">{employee.name}</h3>
                    <p className={`text-sm font-medium ${getStatusColor(employee.activityStatus)}`}>
-                     {employee.activityStatus}
+                     {(employee.status === "ACTIVE" ?  employee.activityStatus : employee.status).toUpperCase()}
                    </p>
                  </div>
                </div>

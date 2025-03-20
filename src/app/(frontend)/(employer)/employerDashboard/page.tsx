@@ -34,9 +34,28 @@ const Dashboard = () => {
     if (!authToken) {
       router.push("/"); // Redirect if not logged in
     } else {
-      fetchNotificationLogs();
+    
     }
   }, []);
+
+
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+  
+    if (!authToken) {
+      router.push("/"); 
+      return;
+    }
+  
+   
+  
+    const intervalId = setInterval(() => {
+      fetchNotificationLogs();
+    }, 5000); 
+  
+    return () => clearInterval(intervalId);
+  }, []);
+  
 
   // const fetchEmployees = async () => {
   //   const eventSource = new EventSource("/employerAPI/realTimeLogs");
