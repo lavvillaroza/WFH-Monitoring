@@ -291,6 +291,10 @@ useEffect(() => {
     return () => clearInterval(intervalId);
   }, [selectedEmployee]);
   
+  const formatDateToPHT = (dateString) => {
+    const options = { timeZone: "Asia/Manila", hour12: false };
+    return new Date(new Date(dateString).toLocaleString("en-US", options)).toLocaleString("en-US", options);
+  };
 
 
   const getStatusColor = (status: string) => {
@@ -440,8 +444,9 @@ useEffect(() => {
                         <li key={index}>
                           <span className="font-medium text-gray-500">{log.activity}</span>
                           <span className="text-gray-500 text-xs ml-2">
-                            {log.start} - {log.end ? log.end : "Ongoing"}
-                          </span>
+                           {formatDateToPHT(log.start)} -{" "}
+                          {log.end ? formatDateToPHT(log.end) : "Ongoing"}
+                        </span>
                         </li>
                       ))
                     ) : (
