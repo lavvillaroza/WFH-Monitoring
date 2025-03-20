@@ -14,6 +14,7 @@ export async function GET(req: Request) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const currentTime = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
@@ -75,12 +76,15 @@ export async function GET(req: Request) {
     const dtr = await prisma.dailyTimeRecord.findFirst({
       where: {
         employeeId,
-        timeIn: { gte: today },
+        timeIn: {
+          gte: today,
+          lt: tomorrow,
+        },
         timeOut: null,
       },
-      orderBy: { timeIn: "asc" },
+      orderBy: { timeIn: "desc" },
       select: { timeIn: true, timeOut: true },
-    });
+    })
 
     const employeeDTR = await prisma.dailyTimeRecord.findMany({
       where: { employeeId, timeIn: { gte: today }, timeOut: { not: null } },
@@ -97,12 +101,12 @@ export async function GET(req: Request) {
     const idleTime = calculateTimeSpent(idle) / 1000;
     const sleepingTime = calculateTimeSpent(sleeping) / 1000;
 
-    const currentTime = new Date();
     let totalTime = 0;
     let hoursRendered = 0;
 
     if (dtr && dtr.timeOut === null) {
-      totalTime = Math.floor((currentTime.getTime() - timein.getTime()) / 1000) - totalDuration;
+      const time =  Math.floor(currentTime.getTime() - dtr.timeIn.getTime()) / 1000
+      totalTime = time + totalDuration;
       hoursRendered = totalTime - (idleTime + sleepingTime);
     } else {
       totalTime = totalDuration;
