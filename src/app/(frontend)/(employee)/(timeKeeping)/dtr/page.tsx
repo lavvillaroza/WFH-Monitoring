@@ -36,7 +36,7 @@ const DTR = () => {
       }
 
       const queryParams = new URLSearchParams({ employeeId });
-      const res = await fetch(`/employeeAPI/dtr?${queryParams.toString()}`, {
+      const res = await fetch(`/employeeAPI/dtr-viewpage?${queryParams.toString()}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 

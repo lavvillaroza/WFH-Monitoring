@@ -11,12 +11,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const currentTime = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
 
   try {
     const employeeStatus = await prisma.employeeDetails.findUnique({
@@ -32,14 +28,19 @@ export async function GET(req: Request) {
       select: { status: true },
     });
 
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
     const dailyTimeRecord = await prisma.dailyTimeRecord.findFirst({
       where: {
         employeeId,
-        timeIn: {
-          gte: today,
-          lt: tomorrow,
-        },
+        date: {
+          gte: startOfDay,
+          lt: endOfDay
+      }
       },
       orderBy: { timeIn: "asc" },
       select: { timeIn: true, timeOut: true },
@@ -49,7 +50,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ }, { status: 200 });
     }
 
-    const timein = new Date(dailyTimeRecord.timeIn);
+    //const timein = new Date(dailyTimeRecord.timeIn);
 
     const calculateTimeSpent = (logs: any[]) => {
       return logs.reduce((total, log) => {
@@ -60,15 +61,18 @@ export async function GET(req: Request) {
     };
 
     const sleeping = await prisma.humanActivityLog.findMany({
-      where: { employeeId, activity: "Sleeping", start: { gte: today } },
+      where: { employeeId, activity: "Sleeping", start: {  gte: startOfDay,
+        lt: endOfDay} },
     });
 
     const idle = await prisma.humanActivityLog.findMany({
-      where: { employeeId, activity: "Idle", start: { gte: today } },
+      where: { employeeId, activity: "Idle", start: {  gte: startOfDay,
+        lt: endOfDay } },
     });
 
     const lastActivityLog = await prisma.humanActivityLog.findFirst({
-      where: { employeeId, start: { gte: today }, end: null },
+      where: { employeeId, start: {  gte: startOfDay,
+        lt: endOfDay }, end: null },
       orderBy: { start: "desc" },
       select: { activity: true },
     });
@@ -76,9 +80,9 @@ export async function GET(req: Request) {
     const dtr = await prisma.dailyTimeRecord.findFirst({
       where: {
         employeeId,
-        timeIn: {
-          gte: today,
-          lt: tomorrow,
+        date: {
+          gte: startOfDay,
+          lt: endOfDay
         },
         timeOut: null,
       },
@@ -87,7 +91,8 @@ export async function GET(req: Request) {
     })
 
     const employeeDTR = await prisma.dailyTimeRecord.findMany({
-      where: { employeeId, timeIn: { gte: today }, timeOut: { not: null } },
+      where: { employeeId, date: {  gte: startOfDay,
+        lt: endOfDay }, timeOut: { not: null } },
       select: { duration: true },
     });
 
@@ -111,7 +116,7 @@ export async function GET(req: Request) {
       totalTime = totalDuration;
       hoursRendered = totalTime - (idleTime + sleepingTime);
     }
-
+    
     let productivityPercentage = 100;
     const nonProductiveTime = idleTime + sleepingTime;
     if (nonProductiveTime > 0) {

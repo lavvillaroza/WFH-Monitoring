@@ -94,7 +94,9 @@ const Navbar = () => {
                     console.log(lastDTR,"last ldr here")
                     console.log("time in 1")
                     setIsCameraOn(false);
+                    if(cameraContext){
                     await cameraContext.stopCamera();
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching last DTR:", error);
@@ -141,57 +143,22 @@ const Navbar = () => {
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-       // const parsedUser = JSON.parse(storedUser); // Parse the stored JSON
-      //  const employeeId = parsedUser.employeeId;
-
-        // const checkIfIn = async()  =>{
-        //     const empResponse = await fetch(`/employerAPI/ifCheckIn?employeeId=${employeeId}`, {
-        //         method: "GET",
-        //         headers: {
-        //           "Content-Type": "application/json",
-        //         },
-        //       });
-    
-        //       const data = await empResponse.json();
-        //       console.log(data, 'data here');
-    
-        //       if (data.employees != null) {
-        //         setIfTimeIn(true)
-        //         setSelectedAction("Time Out")
-        //       }
-        // }
-        // checkIfIn();
-
         const handleBeforeUnload = async () => {
             if (selectedAction === "Time Out" && storedUser) { 
                 const user = JSON.parse(storedUser);
                 const employeeId = user.employeeId;
                 const timestamp = new Date();
     
-                // await fetch("/employeeAPI/dtr", {
-                //     method: "POST",
-                //     headers: { "Content-Type": "application/json" },
-                //     body: JSON.stringify({
-                //         employeeId: employeeId,
-                //         timeOut: timestamp,
-                //         remarks: "Auto clock-out due to page close",
-                //     }),
-                // });
-                const activity="Idle";
-                const startTime = new Date().toISOString();
-                let end=null;
-                let userRemarks=null;
-                await fetch("/employeeAPI/humanActivityLog", {
+                await fetch("/employeeAPI/dtr", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      activity,
-                      employeeId,
-                      start: startTime,
-                      end: end,
-                      remarks: userRemarks,
+                        employeeId: employeeId,
+                        timeOut: timestamp,
+                        remarks: "Auto clock-out due to page close",
                     }),
-                  });
+                });
+                
                   setIsCameraOn(false);
             }
         };
