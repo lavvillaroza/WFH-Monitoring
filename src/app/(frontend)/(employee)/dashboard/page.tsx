@@ -201,7 +201,7 @@ const Dashboard = () => {
                     productivityPercentage <= 50 ? "bg-red-500" : "bg-green-500"
                   }`}
                 >
-                  {productivityPercentage}%
+                 {activityStatus === "ACTIVE" ? productivityPercentage+"%" : "/NA" } 
                 </span>
               </p>
               <p>
@@ -217,7 +217,7 @@ const Dashboard = () => {
                       : "bg-gray-500"
                   }`}
                 >
-                  {wakefulnessStatus}
+                 {activityStatus === "ACTIVE" ? wakefulnessStatus : "/NA" }  
                 </span>
               </p>
               <p>

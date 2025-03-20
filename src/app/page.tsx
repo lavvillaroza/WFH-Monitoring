@@ -66,7 +66,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-900 to-teal-600 p-4">
       {/* Welcome Title */}
-      <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">Welcome to Employee Monitoring</h1>
+      <h1 className="text-3xl md:text-4xl font-bold text-white mb-6">Welcome to StaffWatch</h1>
 
       {/* Message Box */}
       {message && (

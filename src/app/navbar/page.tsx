@@ -52,7 +52,10 @@ const Navbar = () => {
                     console.error("User not found in localStorage.");
                     return;
                 }
-    
+                if(selectedAction==="Time In"){
+                    await cameraContext.stopCamera();
+                    setIsCameraOn(false); 
+                }
                 const user = JSON.parse(storedUser);
                  employeeId = user.employeeId;
                 const response = await fetch(`/employeeAPI/dtr?employeeId=${employeeId}`);
@@ -135,7 +138,7 @@ const Navbar = () => {
   
           return () => clearInterval(interval); // Cleanup on unmount
   
-    }, []);
+    }, [selectedAction]);
 
 
     useEffect(() => {
