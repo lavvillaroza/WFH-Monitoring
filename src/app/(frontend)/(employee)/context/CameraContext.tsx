@@ -133,9 +133,11 @@ const fetchConfig = async () => {
     if (isModalOpen) {
       if(currentActivity==="Idle"){
         setMessage("Are you still there? Please confirm your presence");
+        stopCamera();
       }
       else if(currentActivity==="Sleeping"){
       setMessage("Are you asleep? Please confirm your presence");
+      stopCamera();
       }
       stopCamera();
     }
