@@ -44,18 +44,21 @@ const EmployeeMonitoring = () => {
     const endDateUTC = new Date(endDate).toISOString();
   
     setIsFullScreenLoading(true); // Show loader
+    setCurrentPage(1); // Reset pagination to first page
   
     try {
       const res = await fetch(
-        `/employerAPI/screenShot?employeeId=${selectedEmployee.employeeId}&startDate=${startDateUTC}&endDate=${endDateUTC}`
+        `/employerAPI/screenShot?employeeId=${selectedEmployee.employeeId}&startDate=${startDateUTC}&endDate=${endDateUTC}&page=1`
       );
       if (!res.ok) throw new Error("Failed to fetch screenshots");
   
       const data = await res.json();
       setScreenshots(data.screenshots);
+      setTotalPages(data.totalPages); // Ensure pagination updates correctly
     } catch (error) {
       console.error("Error fetching filtered screenshots:", error);
       setScreenshots([]);
+      setTotalPages(1); // Reset to 1 if no data found
     } finally {
       setIsFullScreenLoading(false); // Hide loader after fetching
     }
@@ -108,7 +111,11 @@ const EmployeeMonitoring = () => {
   const fetchScreenshots = async (employeeId, page = 1) => {
     try {
       setIsFullScreenLoading(true);
-      const res = await fetch(`/employerAPI/screenShot?employeeId=${employeeId}&page=${page}`);
+      const res = await fetch(
+        `/employerAPI/screenShot?employeeId=${employeeId}&page=${page}${
+          startDate && endDate ? `&startDate=${new Date(startDate).toISOString()}&endDate=${new Date(endDate).toISOString()}` : ""
+        }`
+      );
       if (!res.ok) throw new Error("Failed to fetch screenshots");
   
       const data = await res.json();
@@ -118,6 +125,7 @@ const EmployeeMonitoring = () => {
     } catch (error) {
       console.error("Error fetching screenshots:", error);
       setScreenshots([]);
+      setTotalPages(1);
     } finally {
       setIsFullScreenLoading(false);
     }
