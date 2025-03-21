@@ -130,6 +130,7 @@ export async function PATCH(req: NextRequest) {
               timeIn: new Date(timeIn),
               timeOut: new Date(timeOut),
               remarks: 'On Leave',
+              duration: 32400,
             },
           });
       
