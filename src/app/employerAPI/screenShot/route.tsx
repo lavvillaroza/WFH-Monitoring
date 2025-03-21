@@ -51,6 +51,8 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const employeeId = searchParams.get("employeeId");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = 10; // Limit per page
 
     if (!employeeId) {
       return NextResponse.json({ error: "Employee ID is required" }, { status: 400 });
@@ -58,17 +60,24 @@ export async function GET(req: Request) {
 
     const screenshots = await prisma.screenShotModel.findMany({
       where: {
-        employeeId: employeeId, // Fixed req.query issue
+        employeeId: employeeId,
         date: {
           gte: searchParams.get("startDate") ? new Date(searchParams.get("startDate")!) : undefined,
           lte: searchParams.get("endDate") ? new Date(searchParams.get("endDate")!) : undefined,
         },
       },
+      skip: (page - 1) * pageSize, // Pagination logic
+      take: pageSize, // Limit to 10 per page
+      orderBy: {
+        date: "desc", // Sort by latest first
+      },
     });
 
-    if (!screenshots.length) {
-      return NextResponse.json({ screenshots: [] }, { status: 200 });
-    }
+    const totalCount = await prisma.screenShotModel.count({
+      where: {
+        employeeId: employeeId,
+      },
+    });
 
     const formattedScreenshots = screenshots.map((screenshot) => ({
       id: screenshot.id,
@@ -78,15 +87,19 @@ export async function GET(req: Request) {
       createdAt: screenshot.date,
     }));
 
-    return NextResponse.json({ screenshots: formattedScreenshots }, { status: 200 });
+    return NextResponse.json({ 
+      screenshots: formattedScreenshots, 
+      totalPages: Math.ceil(totalCount / pageSize),
+      currentPage: page
+    }, { status: 200 });
+
   } catch (error: any) {
     console.error("Error fetching screenshots:", error);
-
     return NextResponse.json(
       { error: "Internal server error", details: error.message },
       { status: 500 }
     );
-  }finally {
+  } finally {
     await prisma.$disconnect();
   }
 }

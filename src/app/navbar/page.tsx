@@ -37,6 +37,9 @@ const Navbar = () => {
         "/overtime": "Overtime",
     };
 
+    
+      
+
    
 
     useEffect(() => {
@@ -237,8 +240,11 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         const storedUser = localStorage.getItem("user");
+        console.log(storedUser,"store user here")
         setProfileOpen(false);
+      
         setLogoutMessage(true);
+       
     
         if (selectedAction === "Time Out" && storedUser) {
             const user = JSON.parse(storedUser);

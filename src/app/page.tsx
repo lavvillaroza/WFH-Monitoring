@@ -12,6 +12,27 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
+  const handleUpdateAdmin = async (employeeId, action) => {
+    try {
+      const response = await fetch(`/employerAPI/handleAdminStatus?employeeId=${employeeId}`, {
+        method: "PUT", // ✅ Use PUT to match your API
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }), // ✅ Send action as JSON
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to update employee status");
+      }
+  
+      const data = await response.json();
+      console.log("Success:", data.message);
+      
+    } catch (error) {
+      console.error("Error updating employee status:", error);
+    }
+  };
+  
+
   const handleLogin = async () => {
     if (!email || !password) {
       setMessage("Email and password cannot be empty!");
@@ -26,7 +47,7 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
-    console.log(data, "data hereee")
+      console.log(data, "data hereee")
 
       if (!response.ok) throw new Error(data.error);
 
@@ -48,6 +69,8 @@ const LoginPage = () => {
       setTimeout(() => {
         setMessage("");
         if (data.user.role === "ADMIN") {
+
+         handleUpdateAdmin(data.user.employeeId,"LOGIN")
           router.push("/employerDashboard");
         } else if (data.user.role === "EMPLOYEE") {
           router.push("/dashboard");

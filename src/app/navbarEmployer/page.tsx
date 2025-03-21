@@ -32,6 +32,26 @@ const NavbarEmployer = () => {
 
     const activePage = pageTitles[pathname] || "Dashboard";
 
+    const handleUpdateAdmin = async (employeeId, action) => {
+        try {
+          const response = await fetch(`/employerAPI/handleAdminStatus?employeeId=${employeeId}`, {
+            method: "PUT", // ✅ Use PUT to match your API
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action }), // ✅ Send action as JSON
+          });
+      
+          if (!response.ok) {
+            throw new Error("Failed to update employee status");
+          }
+      
+          const data = await response.json();
+          console.log("Success:", data.message);
+          
+        } catch (error) {
+          console.error("Error updating employee status:", error);
+        }
+      };
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
@@ -59,6 +79,15 @@ const NavbarEmployer = () => {
     
 
     const handleLogout = () => {
+        const storedUser = localStorage.getItem("user");
+        if(storedUser){
+            const user = JSON.parse(storedUser);
+            const employeeId = user.employeeId;
+            const role = user.role
+            if(role === "ADMIN"){
+                handleUpdateAdmin(employeeId,"LOGOUT")
+            }
+        }
         setProfileOpen(false);
         setLogoutMessage(true);
         setTimeout(() => {

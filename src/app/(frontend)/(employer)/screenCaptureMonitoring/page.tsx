@@ -22,6 +22,8 @@ const EmployeeMonitoring = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFullScreenLoading, setIsFullScreenLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,29 +64,62 @@ const EmployeeMonitoring = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("/employerAPI/employee");
-      if (!res.ok) throw new Error("Failed to fetch employees");
-      const data = await res.json();
-      setEmployees(data);
+      // Fetch employee data
+      const employeeResponse = await fetch("/employerAPI/employee");
+      if (!employeeResponse.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+      const employeesData = await employeeResponse.json();
+  
+
+      const userResponse = await fetch("/employerAPI/user");
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const usersData = await userResponse.json();
+  
+      const employeesWithStatus = employeesData
+            .map((employee) => {
+              const user = usersData.find((user) => user.email === employee.email);
+
+              if (user && user.status !== "RESIGN") {
+                return {
+                  ...employee,
+                  status: user.status,
+                  password: user.password, 
+                  role: user.role,
+                };
+              }
+
+              return null; // Mark employees to be excluded
+            })
+            .filter(Boolean); // Remove `null` values (employees with "RESIGN" status)
+
+
+      
+      setEmployees(employeesWithStatus);
     } catch (error) {
-      console.error("Error fetching employees:", error);
+      console.error("Error fetching employees or users:", error);
     }
   };
-
+  
   console.log(employees)
 
-  const fetchScreenshots = async (employeeId) => {
+  const fetchScreenshots = async (employeeId, page = 1) => {
     try {
-      const res = await fetch(`/employerAPI/screenShot?employeeId=${employeeId}`);
+      setIsFullScreenLoading(true);
+      const res = await fetch(`/employerAPI/screenShot?employeeId=${employeeId}&page=${page}`);
       if (!res.ok) throw new Error("Failed to fetch screenshots");
-      setIsFullScreenLoading(true)
+  
       const data = await res.json();
       setScreenshots(data.screenshots);
+      setTotalPages(data.totalPages);
+      setCurrentPage(data.currentPage);
     } catch (error) {
       console.error("Error fetching screenshots:", error);
       setScreenshots([]);
-    }finally{
-      setIsFullScreenLoading(false)
+    } finally {
+      setIsFullScreenLoading(false);
     }
   };
 
@@ -168,8 +203,8 @@ const EmployeeMonitoring = () => {
               </div>
 
               {/* Status - Positioned at Bottom Right */}
-              <p className={`text-sm font-medium ${getStatusColor(employee.activityStatus)}`}>
-                {employee.activityStatus === null ? "Active" : employee.activityStatus}
+              <p className={`text-sm font-medium ${getStatusColor(employee.status === "ACTIVE" ?  employee.activityStatus : employee.status)}`}>
+                     {(employee.status === "ACTIVE" ?  employee.activityStatus : employee.status).toUpperCase()}
               </p>
             </div>
           ))}
@@ -208,6 +243,8 @@ const EmployeeMonitoring = () => {
                   Apply
                 </button>
               </div>
+             
+
 
               {/* Scrollable Content Area */}
               <div className="mt-4 flex-1 overflow-y-auto">
@@ -233,6 +270,26 @@ const EmployeeMonitoring = () => {
                 )}
                 {isLoading && <span className="loading loading-bars loading-xl text-warning text-center"></span>}
               </div>
+               {/* Pagination Controls */}
+               <div className="flex justify-between mt-4">
+                  <button
+                    className="bg-gray-300 px-4 py-2 rounded disabled:opacity-50"
+                    disabled={currentPage === 1}
+                    onClick={() => fetchScreenshots(selectedEmployee.employeeId, currentPage - 1)}
+                  >
+                    Previous
+                  </button>
+
+                  <span className="text-gray-700">Page {currentPage} of {totalPages}</span>
+
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => fetchScreenshots(selectedEmployee.employeeId, currentPage + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
 
               {/* Stuck at Bottom - Close Button */}
               <div className="sticky bottom-0 left-0 bg-white py-4">
