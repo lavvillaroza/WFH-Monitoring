@@ -202,6 +202,10 @@ const Reports = () => {
         doc.setFont("helvetica", "bold");
         doc.text(`${employee.name}`, 105, 25, { align: "center" });
 
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${employee.employeeId}`, 105, 25, { align: "center" });
+
          // Draw a horizontal line
         doc.setLineWidth(0.5); // Set line thickness
         doc.line(14, 35, 196, 35); // (startX, startY, endX, endY)
