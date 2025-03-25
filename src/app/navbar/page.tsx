@@ -26,8 +26,10 @@ const Navbar = () => {
     const [isCameraOn, setIsCameraOn] = useState(false);
     const [takeScreenshot,setTakeScreenshot] = useState(false)
     const [ifTimeIn ,setIfTimeIn] = useState(false)
-    // const [isModalOpen, setIsModalOpen] = useState(false);
-    // const [message, setMessage] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [timeoutReason, setTimeoutReason] = useState("Clocked-Out");
+
+
     const pageTitles: { [key: string]: string } = {
         "/dashboard": "Dashboard",
         "/activityMonitoring": "Activity Monitoring",
@@ -199,6 +201,13 @@ const Navbar = () => {
                         timeOut: null,
                         remarks: "",
                     };
+                    await fetch("/employeeAPI/dtr", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(requestBody),
+                    });
+            
+                 setSelectedAction("Time Out"); 
                 } else {
                     // Handle the case where cameraContext or permission is invalid
                     console.log("Camera permission not granted or camera context unavailable.");
@@ -206,36 +215,40 @@ const Navbar = () => {
                 }
                 
             } else if (selectedAction === "Time Out"){
-                if (cameraContext) {
-                    await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
-                    setIsCameraOn(false);
-              
-                requestBody = {
-                    employeeId: employeeId,
-                    timeOut: timestamp,
-                    remarks: "Clocked out",
-                };
-            }  
-        }
-    
-            const response = await fetch("/employeeAPI/dtr", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody),
-            });
-    
-            if (response.ok) {
-                setSelectedAction(selectedAction === "Time In" ? "Time Out" : "Time In"); 
-                console.log("time in 2")
-            } else {
-                console.error("Failed to log action");
+                    setIsModalOpen(true);
             }
+    
+            
         } catch (error) {
             console.error("Error logging action:", error);
         }
     };
     
+    const handleConfirmTimeOut = async () => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) return;
+
+    const user = JSON.parse(storedUser);
+    const employeeId = user.employeeId;
+    const timestamp = new Date();
+
+    await fetch("/employeeAPI/dtr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            employeeId: employeeId,
+            timeOut: timestamp,
+            remarks: timeoutReason,
+        }),
+    });
     
+            if (cameraContext) {
+                setSelectedAction("Time In");
+                await cameraContext.stopCamera(); // ✅ Stop camera when clocking out
+                setIsCameraOn(false);
+                setIsModalOpen(false);
+            }
+};
     
 
     const handleLogout = async () => {
@@ -477,15 +490,25 @@ const Navbar = () => {
         
             )}  
 
-
-             {/* <TimeOutModal 
-                        isOpen={isModalOpen} 
-                        onClose={() => {
-                            setIsModalOpen(false);
-                        }}
-                        refresh={() => {}} 
-                        setMessage={message} 
-                      /> */}
+        {isModalOpen && (
+           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 className="text-lg font-semibold mb-4">Please select a reason for Time Out</h2>
+                    <select
+                        className="border border-gray-300 p-2 rounded w-full mb-4"
+                        value={timeoutReason}
+                        onChange={(e) => setTimeoutReason(e.target.value)}
+                    >
+                        <option value="Clocked-Out">Clocked-Out</option>
+                        <option value="On-Break">On-Break</option>
+                    </select>
+                    <div className="flex justify-end space-x-4">
+                        <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-500 text-white rounded">Exit</button>
+                        <button onClick={handleConfirmTimeOut} className="px-4 py-2 bg-blue-600 text-white rounded">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        )}
         </>
      
     );

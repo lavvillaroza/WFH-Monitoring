@@ -29,12 +29,17 @@ export async function POST(req: Request) {
                   status: "ACTIVE", 
                 },
               });
-        } else if (timeOut) {
+        } else if (timeOut && remarks==="Clocked-Out") {
             // Find the latest record with a null timeOut
             const lastRecord = await prisma.dailyTimeRecord.findFirst({
                 where: { employeeId, timeOut: null },
                 orderBy: { date: "desc" }, // Get the latest record
             });
+           
+            if (!lastRecord) {
+                return NextResponse.json({ error: "No active Time In record found" }, { status: 400 });
+            }
+
             await prisma.user.update({
                 where: { employeeId: employeeId }, 
                 data: {
@@ -43,10 +48,6 @@ export async function POST(req: Request) {
               });
 
               
-            if (!lastRecord) {
-                return NextResponse.json({ error: "No active Time In record found" }, { status: 400 });
-            }
-        
             // Parse the timeOut and timeIn
             const timeIn = new Date(lastRecord.timeIn);  // Assume timeIn is a Date object
             const timeOutDate = new Date(timeOut);  // Convert string to Date object
@@ -64,6 +65,41 @@ export async function POST(req: Request) {
                 },
             });
             }
+            else if (timeOut && remarks==="On-Break") {
+                // Find the latest record with a null timeOut
+                const lastRecord = await prisma.dailyTimeRecord.findFirst({
+                    where: { employeeId, timeOut: null },
+                    orderBy: { date: "desc" }, // Get the latest record
+                });
+                
+                  
+                if (!lastRecord) {
+                    return NextResponse.json({ error: "No active Time In record found" }, { status: 400 });
+                }
+                await prisma.user.update({
+                    where: { employeeId: employeeId }, 
+                    data: {
+                      status: "ONBREAK", 
+                    },
+                  });
+    
+                // Parse the timeOut and timeIn
+                const timeIn = new Date(lastRecord.timeIn);  // Assume timeIn is a Date object
+                const timeOutDate = new Date(timeOut);  // Convert string to Date object
+            
+                // Calculate duration in seconds
+                const durationInSeconds = Math.floor((timeOutDate.getTime() - timeIn.getTime()) / 1000);
+            
+                // Update the found record with timeOut, duration, and remarks
+                await prisma.dailyTimeRecord.update({
+                    where: { id: lastRecord.id },
+                    data: {
+                        timeOut: timeOutDate,
+                        duration: durationInSeconds,
+                        remarks: remarks || "On-Break",  // Use default remark if none is provided
+                    },
+                });
+                }
         else {
             return NextResponse.json({ error: "Invalid request" }, { status: 400 });
         }

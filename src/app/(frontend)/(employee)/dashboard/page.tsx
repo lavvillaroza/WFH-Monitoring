@@ -189,9 +189,10 @@ const Dashboard = () => {
               <p>
                 <strong>Activity:</strong>
                 <span
-                  className={`ml-2 px-2 py-1 rounded text-white text-xs ${
-                    activityStatus === "ACTIVE" ? "bg-green-500" : "bg-red-500"
-                  }`}
+                  className={`ml-2 px-2 py-1 rounded text-white text-xs 
+                    ${activityStatus === "ACTIVE" ? "bg-green-500" : 
+                    activityStatus === "INACTIVE" ? "bg-red-500" : 
+                    activityStatus === "ONBREAK" ? "bg-yellow-500" : "bg-white"}`}
                 >
                   {activityStatus}
                 </span>
