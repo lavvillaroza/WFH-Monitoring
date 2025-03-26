@@ -200,7 +200,8 @@ const Reports = () => {
         // Employee Name
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text(`${employee.name},`,`${employee.employeeId}`, 105, 25, { align: "center" });
+        doc.text(`${employee.name}, ${employee.employeeId}`, 105, 25, { align: "center" });
+
 
 
 
